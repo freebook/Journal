@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: sql.xml 616 2013-06-14 05:10:30Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>SQL 优化</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>sql</keyword>
+			<keyword>mysql, mssql, oracle</keyword>
+			<keyword>postgresql</keyword>
+			<keyword>sql92,sql99</keyword>
+		</keywordset>
+		<pubdate>$Date: 2013-06-14 13:10:30 +0800 (Fri, 14 Jun 2013) $</pubdate>
+		<releasewww>$Id: sql.xml 616 2013-06-14 05:10:30Z netkiller $</releasewww>
+	</articleinfo>
+	<section>
+		<title>日期型字段做索引</title>
+		<para>日期型字段做索引最长遇到的问题就是时间重复，导致返回结果非预期数量</para>
+
+		<para>实验环境：MySQL, create_time是unixtime风格的日期型字段ctime TIMESTAMP型的字段。</para>
+		<para>首先未ctime创建索引</para>
+		<screen>
+		<![CDATA[
+CREATE TABLE `members_tmp` (
+	`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`member_id` INT(11) NOT NULL,
+	`user_id` INT(11) NOT NULL DEFAULT '0',
+	`fields` TEXT NOT NULL,
+	`create_time` INT(10) UNSIGNED NOT NULL DEFAULT '0',
+	`ctime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	INDEX `user_id` (`user_id`),
+	INDEX `member_id` (`member_id`),
+	INDEX `ctime` (`ctime`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=40168;
+		]]>
+		</screen>
+		<screen>
+		<![CDATA[
+select count(id) as c from  members_tmp  where ctime > '2011-';
+或
+select count(id) as c from  members_tmp  where ctime like '201%';
+		]]>
+		</screen>
+		<para>删除索引 INDEX `ctime` (`ctime`) 再次查看你会发现结果有所变化 </para>
+
+		<para>查看重复记录</para>
+		<screen>
+		<![CDATA[
+explain select * from (select *,count(id) as c from  members_tmp  where ctime like '2012-%' group by ctime) as tmp order by c desc;
+		]]>
+		</screen>
+
+
+		<section>
+			<title>/etc/security/limits.conf</title>
+
+			<para>下面更省事，但不建议使用*通配符，这样任何用户都不限制。</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+			<para>而上面我市针对www用户设置，也就是web服务器，其他用户是受限的。</para>
+		</section>
+		<section>
+			<title>/etc/sysctl.conf</title>
+			<para>内核参数调整</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>history 格式设置</title>
+			<para>设置history格式，是他能够记录命令的输入时间</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+
+
+	</section>
+	<section>
+		<title>常用网络软件服务安装</title>
+
+		<section>
+			<title>net-snmp</title>
+			<para>用于服务器的状态监控</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+	</section>
+
+	<section>
+		<title>php-5.4.9</title>
+		<para>由于redhat与centosYUM源中尚未提供php-fpm所以我采用编译安装，网上有一些爱好者制作过php-fpm的rpm包。是否使用你自己那注意。</para>
+		<para>安装fedora的YUM源，我们需要一些devel包。</para>
+		<screen>
+
+		</screen>
+		<para>安装编译器与开发包</para>
+
+
+		<![CDATA[
+
+		]]>
+		</screen>
+
+		<section>
+			<title>配置php.ini</title>
+
+			<para>备份配置文件，防止不小心改错而又找不出问题出在哪里。</para>
+
+			<para>php默认提供两个配置文件模板php.ini-development用于开发和测试环境；php.ini-production用于生产环境。他们差异是php.ini-development会显示调试信息，即 error_display = On. </para>
+			<screen>
+
+			</screen>
+			<para>下面更改仅供参考，需要根据你的具体情况配置，不要照搬。</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>配置 php-fpm</title>
+			<para>安装启动脚本</para>
+			<screen>
+
+			</screen>
+			<para>修改配置文件</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+			<para>察看配置项</para>
+			<screen>
+
+			</screen>
+		</section>
+		<section>
+			<title>将php加入PATH环境变量</title>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>PHP　Extension - APC</title>
+			<para>Apc</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+			<para>查看安装情况</para>
+			<screen>
+# /srv/php/bin/php -m | grep apc
+apc
+			</screen>
+		</section>
+
+		<section>
+			<title>phpredis</title>
+			<para>安装git版本控制客户端</para>
+			<screen>
+yum install git
+			</screen>
+			<para>从github仓库中克隆一份代码到本地</para>
+			<screen>
+git clone git://github.com/nicolasff/phpredis.git
+			</screen>
+			<para>编译安装phpredis； 我暂时没有找到 pecl的phpredis源</para>
+			<screen>
+			<![CDATA[
+cd phpredis
+phpize
+./configure --with-php-config=/srv/php-5.4.9/bin/php-config
+make && make install
+			]]>
+			</screen>
+			<para>创建配置文件</para>
+			<screen>
+			<![CDATA[
+cat > /srv/php-5.4.9/etc/conf.d/redis.ini <<EOF
+extension=redis.so
+EOF
+			]]>
+			</screen>
+			<para>查看安装情况</para>
+			<screen>
+# php -m | grep redis
+redis
+			</screen>
+		</section>
+		<section>
+			<title>编译中遇到问题如何处理？</title>
+			<para>下面我们来模拟一个场景，例如 configure的时候出现下面提示</para>
+			<screen>
+configure: error: Can not find recode.h anywhere under yes /usr/local /usr /opt.
+			</screen>
+			<para>提示找不到recode。h文件，很好办，首先搜索recode包</para>
+			<screen>
+
+			</screen>
+			<para>然后安装devel包,记住之需要安装devel包即可，其他都是多余。</para>
+			<screen>
+[root@haproxy php-5.4.9]# yum install recode-devel -y
+			</screen>
+			<para>然后重新运行configure</para>
+		</section>
+	</section>
+	<section>
+		<title>nginx-1.2.5</title>
+		<para>为web服务器创建一个用户，我喜欢使用www,id为80更容易记，同时将一个单独分区挂在/www上用户存放web应用程序。</para>
+		<screen>
+
+		</screen>
+		<para>添加nginx的YUM源</para>
+		<screen>
+		<![CDATA[
+
+		]]>
+		</screen>
+		<para>开始安装nginx</para>
+		<screen>
+		<![CDATA[
+
+		]]>
+		</screen>
+		<para>如果你不懂编译器优化，建议你使用rpm方案。在不优化的情况下编译出来程序很臃肿。</para>
+		<para></para>
+		<screen>
+# rpm -qa | grep nginx
+nginx-1.2.5-1.el6.ngx.x86_64
+		</screen>
+		<section>
+			<title>/etc/nginx/nginx.conf</title>
+			<para>隐藏nginx版本号</para>
+			<screen>
+
+			</screen>
+		</section>
+		<section>
+			<title>host 配置</title>
+			<screen>
+
+			</screen>
+
+			<screen>
+
+			</screen>
+			<para>创建测试页面</para>
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+			<para>启动服务器</para>
+			<screen>
+
+			</screen>
+			<para>检查index.php输出</para>
+			<screen>
+
+			</screen>
+		</section>
+	</section>
+
+</article>
+
+
+

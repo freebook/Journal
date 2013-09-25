@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Author: netkiller $ -->
+<!-- $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>启东Shell编写</title>
+
+		&article.author.xml;
+
+		<abstract>
+			<para>.</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>iptables</keyword>
+			<keyword>access.log</keyword>
+			<keyword>error.log</keyword>
+		</keywordset>
+		<pubdate>$Data$</pubdate>
+		<releaseinfo>$Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $</releaseinfo>
+	</articleinfo>
+
+	<section>
+		<title>启用 shell</title>
+		<para>1 解决重复运行问题</para>
+		<para>1 记录PID以便可以停止Shell运维</para>
+		<screen>
+		<![CDATA[
+#!/bin/bash
+##############################################
+# $Author: netkiller $
+# $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $
+##############################################
+NAME=info
+BASEDIR='/www'
+PROG=$BASEDIR/bin/$(basename $0)
+LOGFILE=/var/tmp/$NAME.log
+PIDFILE=/var/tmp/$NAME.pid
+##############################################
+PHP=/usr/local/webserver/php/bin/php
+##############################################
+#echo $$
+#echo $BASHPID
+function start(){
+	if [ -f "$PIDFILE" ]; then
+		echo $PIDFILE
+		exit 2
+	fi
+
+	for (( ; ; ))
+	do
+		cd $BASEDIR/crontab/
+		$PHP readfile.php > $LOGFILE
+		$PHP chart_gold_silver_xml.php > /dev/null
+		sleep 60
+	done &
+	echo $! > $PIDFILE
+}
+function stop(){
+  	[ -f $PIDFILE ] && kill `cat $PIDFILE` && rm -rf $PIDFILE
+}
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+  	ps ax | grep chart.xml | grep -v grep | grep -v status
+	;;
+  restart)
+  	stop
+	start
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart}"
+	exit 2
+esac
+
+exit $?
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>htpasswd 密码批量生成</title>
+		<screen>
+		<![CDATA[
+#!/bin/bash
+
+PASSFILE=nginx.password
+[ ! -f $PASSFILE ] && touch $PASSFILE
+
+while read username password
+do
+        htpasswd -b -d $PASSFILE $username $password
+done << EOF
+neo     FwJSYxD4WBzPr4CQvxI8HIbV0yDkQi
+chen    2hsD3OgkeM4GPPcNYUceqL8ccMzXjU
+bg7nyt  XAq7Zcln8dGCTIIKt8GwwEwqmCN8d1
+netkiller       fcCIY3GaroTPCSW40XBrg0HNlmbLD7
+neochen DPSiWJtqUIaI2bUUobuX2PjdyzDGgI
+EOF
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>firewall</title>
+		<para>分析access.log 文件,将 top 30 的IP放入黑名单.</para>
+		<para>脚本具有黑白名单功能</para>
+		<screen>
+		<![CDATA[
+#!/bin/bash
+
+ACCCESS_LOG=/tmp/access.log
+TIMEPOINT='24/May/2012'
+BLACKLIST=/var/tmp/black
+WHITELIST=/var/tmp/white
+if [ ! -f ${BLACKLIST} ]; then
+    touch ${BLACKLIST}
+fi
+
+if [ ! -f ${WHITELIST} ]; then
+    touch ${WHITELIST}
+fi
+
+for deny in $(grep ${TIMEPOINT} ${ACCCESS_LOG} | awk '{print $1}' | awk -F'.' '{print $1"."$2"."$3"."$4}' | sort | uniq -c | sort -r -n | head -n 30| awk '{print $2}')
+do
+
+    if [ $(grep -c $deny ${WHITELIST}) -ne 0 ]; then
+        echo 'Allow IP:' $deny
+	iptables -D INPUT -p tcp --dport 443 -s $deny -j DROP
+	iptables -D INPUT -p tcp --dport 80 -s $deny -j DROP
+	continue
+    fi
+
+    if [ $(grep -c $deny ${BLACKLIST}) -eq 0 ] ; then
+
+	echo 'Deny IP:' $deny
+        echo $deny >> ${BLACKLIST}
+        iptables -I INPUT -p tcp --dport 443 -s $deny -j DROP
+        iptables -I INPUT -p tcp --dport 80 -s $deny -j DROP
+    fi
+done
+		]]>
+		</screen>
+	</section>
+</article>

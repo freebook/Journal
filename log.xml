@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: log.xml 559 2013-04-10 07:03:49Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>日志归档与数据挖掘</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+
+		<abstract>
+			<para>D语言写了一个程序将 WEB日志正则分解然后通过管道传递给数据库处理程序 </para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>iptables</keyword>
+			<keyword>access.log</keyword>
+			<keyword>error.log</keyword>
+		</keywordset>
+	</articleinfo>
+
+	<section>
+		<title>mysql</title>
+		<para>将WEB服务器日志通过管道处理然后写入数据库</para>
+		<para>处理程序源码</para>
+		<screen>
+		<![CDATA[
+$ vim match.d
+import std.regex;
+import std.stdio;
+import std.string;
+import std.array;
+
+void main()
+{
+    // nginx
+	//auto r = regex(`^(\S+) (\S+) (\S+) \[(.+)\] "([^"]+)" ([0-9]{3}) ([0-9]+) "([^"]+)" "([^"]+)" "([^"]+)"`);
+
+	// apache2
+	auto r = regex(`^(\S+) (\S+) (\S+) \[(.+)\] "([^"]+)" ([0-9]{3}) ([0-9]+) "([^"]+)" "([^"]+)"`);
+
+	foreach(line; stdin.byLine)
+	{
+
+		foreach(m; match(line, r)){
+			//writeln(m.hit);
+			auto c = m.captures;
+			c.popFront();
+			//writeln(c);
+			auto value = join(c, "\",\"");
+			auto sql = format("insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value(\"%s\");", value );
+			writeln(sql);
+		}
+	}
+}
+		]]>
+		</screen>
+		<para>编译</para>
+		<screen>
+$ dmd match.d
+$ strip match
+
+$ ls
+match  match.d  match.o
+		</screen>
+		<para>简单用法</para>
+		<screen>
+$ cat access.log | ./match
+		</screen>
+		<para>高级用法</para>
+		<screen>
+		<![CDATA[
+$ cat access.log | match | mysql -hlocalhost -ulog -p123456 logging
+		]]>
+		</screen>
+		<para>实时处理日志，首先创建一个管道，寻该日志文件写入管道中。</para>
+		<screen>
+cat  管道名 | match | mysql -hlocalhost -ulog -p123456 logging
+		</screen>
+		<para>这样就可以实现实时日志插入。</para>
+		<tip>
+			<para>上面程序稍加修改即可实现Hbase, Hypertable 本版</para>
+		</tip>
+	</section>
+	<section>
+		<title>Apache Pipe</title>
+		<para>Apache 日志管道过滤 CustomLog "| /srv/match >> /tmp/access.log" combined</para>
+		<screen>
+		<![CDATA[
+<VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+
+        #DocumentRoot /var/www
+        DocumentRoot /www
+        <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+        </Directory>
+        #<Directory /var/www/>
+        <Directory /www/>
+                Options Indexes FollowSymLinks MultiViews
+                AllowOverride None
+                Order allow,deny
+                allow from all
+        </Directory>
+
+        ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+        <Directory "/usr/lib/cgi-bin">
+                AllowOverride None
+                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+                Order allow,deny
+                Allow from all
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel warn
+
+        #CustomLog ${APACHE_LOG_DIR}/access.log combined
+        CustomLog "| /srv/match >> /tmp/access.log" combined
+
+    Alias /doc/ "/usr/share/doc/"
+    <Directory "/usr/share/doc/">
+        Options Indexes MultiViews FollowSymLinks
+        AllowOverride None
+        Order deny,allow
+        Deny from all
+        Allow from 127.0.0.0/255.0.0.0 ::1/128
+    </Directory>
+
+</VirtualHost>
+		]]>
+		</screen>
+		<para>经过管道转换过的日志效果</para>
+		<screen>
+		<![CDATA[
+$ tail /tmp/access.log
+insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET / HTTP/1.1","304","208","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
+insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET /favicon.ico HTTP/1.1","404","501","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
+insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET / HTTP/1.1","304","208","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>Log format</title>
+		<para>通过定义LogFormat可以直接输出SQL形式的日志</para>
+		<para>Apache</para>
+		<screen>
+LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %O" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+		</screen>
+		<para>Nginx</para>
+		<screen>
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+		</screen>
+		<para>但对于系统管理员使用grep,awk,sed,sort,uniq分析时造成一定的麻烦。所以我建议仍然采用正则分解</para>
+	</section>
+	<section>
+		<title>日志导入到 MongoDB</title>
+		<screen>
+# rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+# yum install mongodb
+		</screen>
+		<para>D语言日志处理程序</para>
+		<screen>
+		<![CDATA[
+import std.regex;
+//import std.range;
+import std.stdio;
+import std.string;
+import std.array;
+
+void main()
+{
+	// nginx
+	auto r = regex(`^(\S+) (\S+) (\S+) \[(.+)\] "([^"]+)" ([0-9]{3}) ([0-9]+) "([^"]+)" "([^"]+)" "([^"]+)"`);
+	// apache2
+	//auto r = regex(`^(\S+) (\S+) (\S+) \[(.+)\] "([^"]+)" ([0-9]{3}) ([0-9]+) "([^"]+)" "([^"]+)"`);
+	foreach(line; stdin.byLine)
+	{
+		//writeln(line);
+		//auto m = match(line, r);
+		foreach(m; match(line, r)){
+			//writeln(m.hit);
+			auto c = m.captures;
+			c.popFront();
+			//writeln(c);
+			/*
+			SQL
+			auto value = join(c, "\",\"");
+			auto sql = format("insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value(\"%s\");", value );
+			writeln(sql);
+			*/
+			// MongoDB
+			string bson = format("db.logging.access.save({
+						'remote_addr': '%s',
+						'remote_user': '%s',
+						'time_local': '%s',
+						'request': '%s',
+						'status': '%s',
+						'body_bytes_sent':'%s',
+						'http_referer': '%s',
+						'http_user_agent': '%s',
+						'http_x_forwarded_for': '%s'
+						})",
+						c[0],c[2],c[3],c[4],c[5],c[6],c[7],c[8],c[9]
+						);
+			writeln(bson);
+
+		}
+	}
+
+}
+		]]>
+		</screen>
+		<para>编译日志处理程序</para>
+		<screen>
+dmd mlog.d
+		</screen>
+		<para>用法</para>
+		<screen>
+cat /var/log/nginx/access.log | mlog | mongo 192.169.0.5/logging -uxxx -pxxx
+		</screen>
+		<para>处理压错过的日志</para>
+		<screen>
+# zcat /var/log/nginx/*.access.log-*.gz | /srv/mlog | mongo 192.168.6.1/logging -uneo -pchen
+		</screen>
+		<para>实时采集日志</para>
+		<screen>
+tail -f /var/log/nginx/access.log | mlog | mongo 192.169.0.5/logging -uxxx -pxxx
+		</screen>
+	</section>
+</article>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"http://www.oasis-open.org/docbook/xml/5.0b5/dtd/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Python Syslog Server</title>
+
+		&article.author.xml;
+
+		<abstract>
+			<para>本程序用于收集，防火墙，路由器，交换机等日志</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>cisco, asa 5550, firewall</keyword>
+			<keyword>python</keyword>
+			<keyword>syslog, rsyslog, syslog-ng</keyword>
+		</keywordset>		
+	</articleinfo>
+
+	<section>
+		<title>配置Cisco ASA 5550 Firewall</title>
+		<screen>
+logging enable 
+logging timestamp 
+logging trap warnings 
+logging host inside 172.16.0.5
+logging facility local0 
+		</screen>
+		<para>172.16.0.5 改为你的syslog服务器地址</para>
+	</section>	
+	<section>
+		<title>syslog 服务器脚本</title>
+		<para>*注意：python版本必须3.0以上</para>
+		<para>chmod 700 syslogd</para>
+		<para>./syslogd</para>
+		<screen>
+		<![CDATA[
+#!/srv/python/bin/python3
+# -*- encoding: utf-8 -*-
+# Cisco ASA Firewall - Syslog Server by neo
+# Author: neo<neo.chen@live.com>
+
+import logging
+import socketserver
+import threading
+
+LOG_FILE = '/var/log/asa5550.log'
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(message)s',
+                    datefmt='',
+                    filename=LOG_FILE,
+                    filemode='a')
+
+class SyslogUDPHandler(socketserver.BaseRequestHandler):
+
+    def handle(self):
+        data = bytes.decode(self.request[0].strip())
+        socket = self.request[1]
+        print( "%s : " % self.client_address[0], str(data))
+        logging.info(str(data))
+#        socket.sendto(data.upper(), self.client_address)
+
+if __name__ == "__main__":
+    try:
+        HOST, PORT = "0.0.0.0", 514
+        server = socketserver.UDPServer((HOST, PORT), SyslogUDPHandler)
+        server.serve_forever(poll_interval=0.5)
+    except (IOError, SystemExit):
+        raise
+    except KeyboardInterrupt:
+        print ("Crtl+C Pressed. Shutting down.")
+		]]>
+		</screen>
+	</section>
+</article>

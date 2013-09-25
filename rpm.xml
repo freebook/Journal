@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: rpm.xml 568 2013-04-18 09:23:23Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>怎样制作RPM包</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+
+		<abstract>
+			<para>我在网上找RPM包的制作例子几乎都是C源码编译安装然后生成RPM包， 而我的程序不是C写的很多时候是脚本语言如Python, PHP 甚至是 HTML文件。怎样制作RPM包呢? </para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>rpm</keyword>
+			<keyword>rpmbuild</keyword>
+			<keyword>src</keyword>
+		</keywordset>
+	</articleinfo>
+
+	<section>
+		<title>为HTML手册文档制作RPM包</title>
+		<para>下面是一个spec文件</para>
+		<para>保存为 doc.spec</para>
+		<screen>
+		<![CDATA[
+Summary: Netkiller's eBook
+Name: netkiller
+Version: 1.0.1
+Release: 1
+License: CC
+Group: Books/Computer books
+Packager: Neo Chen <netkiller@msn.com>
+URL: http://netkiller.github.io
+
+%description
+
+http://netkiller.github.io
+http://netkiller.sourceforge.net
+
+- Network: Firewall, Router, Switch, Cisco, H3C, Juniper,F5 Big-IP, Array
+- Security: OpenVPN, L2TP, PPTP, IPSec IP Tunnel
+- Cluster: SmartDNS, LVS, HAproxy, Keepalived, Heartbeat, MooseFS, GlusterFS
+- Web: Apache, Lighttpd, Nginx, Tomcat, Resin
+- Database: PostgreSQL, MySQL Cluster, MySQL Replication, Cassandra, MongoDB
+- Cache: APC Cache, XCache, Memcached, Squid, Varnish
+- Frameworks: PHP(CodeIgniter, Prado, Mach II, Qcodo, Smarty)
+- Python(Django, Pylons) Perl(Catalyst)
+- Search Engine: Solr, Sphinx, Crawler: Nutch
+- DIV-CSS, JQuery, Prototype, Google Map API
+- Virtualization: Xen, Kvm, OpenVZ
+
+%prep
+
+%build
+
+mkdir -p %{_buildrootdir}/%{name}-%{version}-%{release}.x86_64/usr/share/doc/
+
+%install
+
+rsync -auzv ~/workspace/public_html/mail/* %{_buildrootdir}/%{name}-%{version}-%{release}.x86_64/usr/share/doc/netkiller
+
+
+%pre
+
+%preun
+
+%post
+
+%postun
+
+%files
+/usr/share/doc
+
+%changelog
+		]]>
+		</screen>
+		<para>创建RPM包</para>
+		<screen>
+$ rpmbuild -bb doc.spec
+		</screen>
+		<para>输出信息类似下面</para>
+		<screen>
+		<![CDATA[
+$ rpmbuild -bb doc.spec
+Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.X07xhN
++ umask 022
++ cd /home/neo/rpmbuild/BUILD
++ exit 0
+Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.ANzKAA
++ umask 022
++ cd /home/neo/rpmbuild/BUILD
++ mkdir -p /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64
++ mkdir -p /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64/usr/share/doc/
++ exit 0
+Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.VQkPUn
++ umask 022
++ cd /home/neo/rpmbuild/BUILD
++ rsync -auzv /home/neo/workspace/public_html/mail/21cn.html /home/neo/workspace/public_html/mail/alpine.html /home/neo/workspace/public_html/mail/author.html /home/neo/workspace/public_html/mail/constituent.html /home/neo/workspace/public_html/mail/docbook.css /home/neo/workspace/public_html/mail/donations.html /home/neo/workspace/public_html/mail/evolution.html /home/neo/workspace/public_html/mail/exim4 /home/neo/workspace/public_html/mail/faq.html /home/neo/workspace/public_html/mail/fetchmail.html /home/neo/workspace/public_html/mail/format.content.html /home/neo/workspace/public_html/mail/format.to.html /home/neo/workspace/public_html/mail/gpg4win.html /home/neo/workspace/public_html/mail/ibook.epub /home/neo/workspace/public_html/mail/index.html /home/neo/workspace/public_html/mail/mail.client.html /home/neo/workspace/public_html/mail/mail.format.html /home/neo/workspace/public_html/mail/mail.server.exim4.html /home/neo/workspace/public_html/mail/mail.server.postfix.html /home/neo/workspace/public_html/mail/mail.service.html /home/neo/workspace/public_html/mail/mail.tools.html /home/neo/workspace/public_html/mail/mua.html /home/neo/workspace/public_html/mail/outlook.html /home/neo/workspace/public_html/mail/php.mail.html /home/neo/workspace/public_html/mail/postfix /home/neo/workspace/public_html/mail/preface.download.html /home/neo/workspace/public_html/mail/preface.html /home/neo/workspace/public_html/mail/qq.html /home/neo/workspace/public_html/mail/reader.html /home/neo/workspace/public_html/mail/smtp.error.html /home/neo/workspace/public_html/mail/sohu.html /home/neo/workspace/public_html/mail/tom.html /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64/usr/share/doc/netkiller
+sending incremental file list
+created directory /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64/usr/share/doc/netkiller
+21cn.html
+alpine.html
+author.html
+constituent.html
+docbook.css
+donations.html
+evolution.html
+faq.html
+fetchmail.html
+format.content.html
+format.to.html
+gpg4win.html
+ibook.epub
+index.html
+mail.client.html
+mail.format.html
+mail.server.exim4.html
+mail.server.postfix.html
+mail.service.html
+mail.tools.html
+mua.html
+outlook.html
+php.mail.html
+preface.download.html
+preface.html
+qq.html
+reader.html
+smtp.error.html
+sohu.html
+tom.html
+exim4/
+exim4/faq.html
+exim4/index.html
+postfix/
+postfix/configure.html
+postfix/index.html
+postfix/rspamd.html
+
+sent 127853 bytes  received 685 bytes  257076.00 bytes/sec
+total size is 280313  speedup is 2.18
++ /usr/lib/rpm/brp-compress
++ /usr/lib/rpm/brp-strip /usr/bin/strip
++ /usr/lib/rpm/brp-strip-static-archive /usr/bin/strip
++ /usr/lib/rpm/brp-strip-comment-note /usr/bin/strip /usr/bin/objdump
+Processing files: netkiller-1.0.1-1.x86_64
+unknown, 0: Warning: using regular magic file `/etc/magic'
+Provides: netkiller = 1.0.1-1 netkiller(x86-64) = 1.0.1-1
+Requires(interp): /bin/sh /bin/sh /bin/sh /bin/sh
+Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+Requires(pre): /bin/sh
+Requires(post): /bin/sh
+Requires(preun): /bin/sh
+Requires(postun): /bin/sh
+Checking for unpackaged file(s): /usr/lib/rpm/check-files /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64
+Wrote: /home/neo/rpmbuild/SRPMS/netkiller-1.0.1-1.src.rpm
+Wrote: /home/neo/rpmbuild/RPMS/x86_64/netkiller-1.0.1-1.x86_64.rpm
+Executing(%clean): /bin/sh -e /var/tmp/rpm-tmp.w9Y3wO
++ umask 022
++ cd /home/neo/rpmbuild/BUILD
++ /bin/rm -rf /home/neo/rpmbuild/BUILDROOT/netkiller-1.0.1-1.x86_64
++ exit 0
+		]]>
+		</screen>
+		<para>现在RPM已经制作完毕。</para>
+		<para>输出 RPM 详细信息。</para>
+		<screen>
+		<![CDATA[
+$ rpm -qpi /home/neo/rpmbuild/RPMS/x86_64/netkiller-1.0.1-1.x86_64.rpm
+Name        : netkiller
+Version     : 1.0.1
+Release     : 1
+Architecture: x86_64
+Install Date: (not installed)
+Group       : Books/Computer books
+Size        : 280313
+License     : CC
+Signature   : (none)
+Source RPM  : netkiller-1.0.1-1.src.rpm
+Build Date  : Thu 18 Apr 2013 04:51:07 PM CST
+Build Host  : ubuntu
+Relocations : (not relocatable)
+Packager    : Neo Chen <netkiller@msn.com>
+URL         : http://netkiller.github.io
+Summary     : Netkiller's eBook
+Description :
+
+http://netkiller.github.io
+http://netkiller.sourceforge.net
+
+- Network: Firewall, Router, Switch, Cisco, H3C, Juniper,F5 Big-IP, Array
+- Security: OpenVPN, L2TP, PPTP, IPSec IP Tunnel
+- Cluster: SmartDNS, LVS, HAproxy, Keepalived, Heartbeat, MooseFS, GlusterFS
+- Web: Apache, Lighttpd, Nginx, Tomcat, Resin
+- Database: PostgreSQL, MySQL Cluster, MySQL Replication, Cassandra, MongoDB
+- Cache: APC Cache, XCache, Memcached, Squid, Varnish
+- Frameworks: PHP(CodeIgniter, Prado, Mach II, Qcodo, Smarty)
+- Python(Django, Pylons) Perl(Catalyst)
+- Search Engine: Solr, Sphinx, Crawler: Nutch
+- DIV-CSS, JQuery, Prototype, Google Map API
+- Virtualization: Xen, Kvm, OpenVZ
+		]]>
+		</screen>
+		<para>查看RPM所包含的文件</para>
+		<screen>
+		<![CDATA[
+$ rpm -qpl /home/neo/rpmbuild/RPMS/x86_64/*
+/usr/share/doc
+/usr/share/doc/netkiller
+/usr/share/doc/netkiller/21cn.html
+/usr/share/doc/netkiller/alpine.html
+/usr/share/doc/netkiller/author.html
+/usr/share/doc/netkiller/constituent.html
+/usr/share/doc/netkiller/docbook.css
+/usr/share/doc/netkiller/donations.html
+/usr/share/doc/netkiller/evolution.html
+/usr/share/doc/netkiller/exim4
+/usr/share/doc/netkiller/exim4/faq.html
+/usr/share/doc/netkiller/exim4/index.html
+/usr/share/doc/netkiller/faq.html
+/usr/share/doc/netkiller/fetchmail.html
+/usr/share/doc/netkiller/format.content.html
+/usr/share/doc/netkiller/format.to.html
+/usr/share/doc/netkiller/gpg4win.html
+/usr/share/doc/netkiller/ibook.epub
+/usr/share/doc/netkiller/index.html
+/usr/share/doc/netkiller/mail.client.html
+/usr/share/doc/netkiller/mail.format.html
+/usr/share/doc/netkiller/mail.server.exim4.html
+/usr/share/doc/netkiller/mail.server.postfix.html
+/usr/share/doc/netkiller/mail.service.html
+/usr/share/doc/netkiller/mail.tools.html
+/usr/share/doc/netkiller/mua.html
+/usr/share/doc/netkiller/outlook.html
+/usr/share/doc/netkiller/php.mail.html
+/usr/share/doc/netkiller/postfix
+/usr/share/doc/netkiller/postfix/configure.html
+/usr/share/doc/netkiller/postfix/index.html
+/usr/share/doc/netkiller/postfix/rspamd.html
+/usr/share/doc/netkiller/preface.download.html
+/usr/share/doc/netkiller/preface.html
+/usr/share/doc/netkiller/qq.html
+/usr/share/doc/netkiller/reader.html
+/usr/share/doc/netkiller/smtp.error.html
+/usr/share/doc/netkiller/sohu.html
+/usr/share/doc/netkiller/tom.html
+		]]>
+		</screen>
+		<tip>
+			<para>只要将你要打包的内容放入 %{_buildrootdir}/%{name}-%{version}-%{release}.x86_64/usr/share/doc/netkiller 即可</para>
+			<para>这种方式不需要tar.gz包，故不能生成.src.rpm文件，即便升级里面也没有内容</para>
+		</tip>
+	</section>
+	<section>
+		<title>通过 .tar.gz 文件创建 rpm 与 src.rpm 包</title>
+		<para>准备tar包</para>
+		<screen>
+		<![CDATA[
+rsync -auzv --exclude=.git --exclude=.svn /home/neo/workspace/public_html/mail /tmp/netkiller-1.0.1
+cd /tmp
+tar -zcvf $topdir/SOURCES/netkiller-1.0.1.tar.gz netkiller-1.0.1
+cd -
+		]]>
+		</screen>
+		<para>package.spec</para>
+		<screen>
+		<![CDATA[
+Summary: Netkiller's eBook
+Name: netkiller
+Version: 1.0.1
+Release: 1
+License: CC
+Group: Books/Computer books
+Packager: Neo Chen <netkiller@msn.com>
+Source: %{name}-%{version}.tar.gz
+URL: http://netkiller.github.io
+
+%description
+
+http://netkiller.github.io
+http://netkiller.sourceforge.net
+
+- Network: Firewall, Router, Switch, Cisco, H3C, Juniper,F5 Big-IP, Array
+- Security: OpenVPN, L2TP, PPTP, IPSec IP Tunnel
+- Cluster: SmartDNS, LVS, HAproxy, Keepalived, Heartbeat, MooseFS, GlusterFS
+- Web: Apache, Lighttpd, Nginx, Tomcat, Resin
+- Database: PostgreSQL, MySQL Cluster, MySQL Replication, Cassandra, MongoDB
+- Cache: APC Cache, XCache, Memcached, Squid, Varnish
+- Frameworks: PHP(CodeIgniter, Prado, Mach II, Qcodo, Smarty)
+- Python(Django, Pylons) Perl(Catalyst)
+- Search Engine: Solr, Sphinx, Crawler: Nutch
+- DIV-CSS, JQuery, Prototype, Google Map API
+- Virtualization: Xen, Kvm, OpenVZ
+
+%prep
+
+%setup
+
+
+%build
+
+mkdir -p %{_buildrootdir}/%{name}-%{version}-%{release}.x86_64/usr/share/doc/netkiller
+
+%install
+
+rsync -auzv %{_builddir}/%{name}-%{version}/* %{_buildrootdir}/%{name}-%{version}-%{release}.x86_64/usr/share/doc/netkiller
+
+
+
+%pre
+
+%preun
+
+%post
+
+%postun
+
+%files
+/usr/share/doc
+
+
+%changelog
+		]]>
+		</screen>
+		<para>创建RPM包</para>
+		<screen>
+rpmbuild -bb package.spec
+		</screen>
+		<para>这里使用-bb参数，即可以创建 .rpm 与 .src.rpm 两个包</para>
+		<screen>
+$ find /home/neo/rpmbuild/ -name *.rpm
+/home/neo/rpmbuild/RPMS/x86_64/netkiller-1.0.1-1.x86_64.rpm
+/home/neo/rpmbuild/SRPMS/netkiller-1.0.1-1.src.rpm
+		</screen>
+		<screen>
+		<![CDATA[
+$ rpm -qpi /home/neo/rpmbuild/RPMS/x86_64/netkiller-1.0.1-1.x86_64.rpm
+Name        : netkiller
+Version     : 1.0.1
+Release     : 1
+Architecture: x86_64
+Install Date: (not installed)
+Group       : Books/Computer books
+Size        : 280313
+License     : CC
+Signature   : (none)
+Source RPM  : netkiller-1.0.1-1.src.rpm
+Build Date  : Thu 18 Apr 2013 05:02:30 PM CST
+Build Host  : ubuntu
+Relocations : (not relocatable)
+Packager    : Neo Chen <netkiller@msn.com>
+URL         : http://netkiller.github.io
+Summary     : Netkiller's eBook
+Description :
+
+http://netkiller.github.io
+http://netkiller.sourceforge.net
+
+- Network: Firewall, Router, Switch, Cisco, H3C, Juniper,F5 Big-IP, Array
+- Security: OpenVPN, L2TP, PPTP, IPSec IP Tunnel
+- Cluster: SmartDNS, LVS, HAproxy, Keepalived, Heartbeat, MooseFS, GlusterFS
+- Web: Apache, Lighttpd, Nginx, Tomcat, Resin
+- Database: PostgreSQL, MySQL Cluster, MySQL Replication, Cassandra, MongoDB
+- Cache: APC Cache, XCache, Memcached, Squid, Varnish
+- Frameworks: PHP(CodeIgniter, Prado, Mach II, Qcodo, Smarty)
+- Python(Django, Pylons) Perl(Catalyst)
+- Search Engine: Solr, Sphinx, Crawler: Nutch
+- DIV-CSS, JQuery, Prototype, Google Map API
+- Virtualization: Xen, Kvm, OpenVZ
+		]]>
+		</screen>
+		<screen>
+		<![CDATA[
+$ rpm -qpi /home/neo/rpmbuild/SRPMS/netkiller-1.0.1-1.src.rpm
+Name        : netkiller
+Version     : 1.0.1
+Release     : 1
+Architecture: x86_64
+Install Date: (not installed)
+Group       : Books/Computer books
+Size        : 71292
+License     : CC
+Signature   : (none)
+Source RPM  : (none)
+Build Date  : Thu 18 Apr 2013 05:02:30 PM CST
+Build Host  : ubuntu
+Relocations : (not relocatable)
+Packager    : Neo Chen <netkiller@msn.com>
+URL         : http://netkiller.github.io
+Summary     : Netkiller's eBook
+Description :
+
+http://netkiller.github.io
+http://netkiller.sourceforge.net
+
+- Network: Firewall, Router, Switch, Cisco, H3C, Juniper,F5 Big-IP, Array
+- Security: OpenVPN, L2TP, PPTP, IPSec IP Tunnel
+- Cluster: SmartDNS, LVS, HAproxy, Keepalived, Heartbeat, MooseFS, GlusterFS
+- Web: Apache, Lighttpd, Nginx, Tomcat, Resin
+- Database: PostgreSQL, MySQL Cluster, MySQL Replication, Cassandra, MongoDB
+- Cache: APC Cache, XCache, Memcached, Squid, Varnish
+- Frameworks: PHP(CodeIgniter, Prado, Mach II, Qcodo, Smarty)
+- Python(Django, Pylons) Perl(Catalyst)
+- Search Engine: Solr, Sphinx, Crawler: Nutch
+- DIV-CSS, JQuery, Prototype, Google Map API
+- Virtualization: Xen, Kvm, OpenVZ
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>如果你认为上面方法仍然复杂，可以尝试另一个工具 checkinstall</title>
+		<para>有兴趣可以去网上找学习资料</para>
+		<screen>
+$ apt-cache search checkinstall
+checkinstall - installation tracker
+		</screen>
+	</section>
+</article>

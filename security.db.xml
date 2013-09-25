@@ -1,0 +1,785 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: security.db.xml 650 2013-07-24 10:04:58Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"http://www.oasis-open.org/docbook/xml/5.0b5/dtd/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Linux 系统与数据库安全</title>
+
+		&article.author.xml;
+
+		<abstract>
+			<para>Linux 系统安全问题</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>linux</keyword>
+			<keyword>mysql</keyword>
+			<keyword>security</keyword>
+		</keywordset>
+	</articleinfo>
+
+	<section>
+		<title>帐号安全</title>
+		<para>帐号权限安全</para>
+		<section>
+			<title>Shell 安全</title>
+			<para>需求：限制用户权限,仅提供一些linux常用命令，用户监控linux系统于网络运行情况，不允许用户ssh登录后随意运行linux命令</para>
+			<orderedlist>
+				<listitem>
+					<para>用户不能进入到Shell环境</para>
+					<para>例如普通用户一旦登录web服务器可以看到web程序中的数据库配置</para>
+				</listitem>
+				<listitem>
+					<para>用户可以了解OS工作状态如内存,cpu,网络等等</para>
+					<para>例如：ping, tracepath, top, free, netstat</para>
+				</listitem>
+				<listitem>
+					<para>可以查看系统部分日志</para>
+					<para>例如：access.log, error.log, php-error.log ...</para>
+				</listitem>
+			</orderedlist>
+
+			<para>使用mgmt替代bash</para>
+			<screen>
+			<![CDATA[
+#!/bin/bash
+TITLE="Client"
+
+#USER=$(whiptail --inputbox "User:" 8 60 --title "$TITLE" 3>&1 1>&2 2>&3)
+
+#PASSWD=$(whiptail --title "$TITLE" --passwordbox "Passsword:" 8 60 3>&1 1>&2 2>&3)
+
+COMMAND=$(whiptail --title "$TITLE" --menu "Administrator Tools" 22 50 10 \
+"ping" "ping" \
+"tracepath" "tracepath" \
+"top" "top" \
+"free" "free"  \
+"ps" "ps"  \
+"netstat" "netstat"  \
+"lsof" "lsof"  \
+"iftop" "iftop"  \
+"log" "log" \
+3>&1 1>&2 2>&3)
+
+function option(){
+OPTION=$(whiptail --inputbox "COMMAND-LINE Options: " 8 60 --title "$TITLE" 3>&1 1>&2 2>&3)
+}
+
+function weblog(){
+LOG=$(whiptail --title "$TITLE" --menu "Logs" 22 50 8 \
+"/var/log/messages" "message"  \
+"/var/log/syslog" "syslog"  \
+"/var/log/nginx/access.log" "access.log" \
+"/var/log/nginx/error.log" "error.log"  \
+3>&1 1>&2 2>&3)
+
+}
+
+case $COMMAND in
+ping)
+    option
+    $COMMAND $OPTION
+    ;;
+tracepath)
+    option
+    $COMMAND $OPTION
+    ;;
+free)
+    $COMMAND -m
+    read
+    ;;
+top|iftop)
+    $COMMAND
+    ;;
+log)
+    weblog
+    tail -f $LOG
+    ;;
+ps|lsof)
+    option
+    $COMMAND $OPTION
+    read
+    ;;
+netstat)
+    option
+    $COMMAND $OPTION
+    read
+    ;;
+*)
+    exit $?
+esac
+
+			]]>
+			</screen>
+			<para>Shell 启动文件，主要用户隐藏 /srv/sbin/mgmt 文件（针对菜鸟）</para>
+			<screen>
+			<![CDATA[
+$ cat shell.c
+#include <stdlib.h>
+main()
+{
+	for (;;){
+		system("/srv/sbin/mgmt");
+	}
+}
+			]]>
+			</screen>
+			<para>编译.c文件</para>
+			<screen>
+gcc shell.c -o /bin/nsh
+			</screen>
+			<para>添加Shell到/etc/shells</para>
+			<screen>
+echo /bin/nsh >> /etc/shells
+			</screen>
+			<para>将用户shell更改为我们刚刚创建的nsh</para>
+			<screen>
+$ vim /etc/passwd
+
+www:x:33:33:www:/var/www:/bin/nsh
+ 			</screen>
+			<para>现在来作一个测试,如果正确应该现在为下面的TUI界面 </para>
+			<screen>
+			<![CDATA[
+ssh www@example.com
+
+              ┌───────────────────┤ Client ├───────────────────┐
+              │ Administrator Tools                            │
+              │                                                │
+              │               ping      ping                   │
+              │               tracepath tracepath              │
+              │               top       top                    │
+              │               free      free                   │
+              │               ps        ps                     │
+              │               netstat   netstat                │
+              │               lsof      lsof                   │
+              │               iftop     iftop                  │
+              │               log       log                    │
+              │                                                │
+              │                                                │
+              │           <Ok>               <Cancel>          │
+              │                                                │
+              └────────────────────────────────────────────────┘
+			]]>
+			</screen>
+ 			<tip>
+ 				<para>这里采用的方式是给用户提供一个界面的方式，另外还有更好的方案,你可以些一个Shell的外壳，你需要实现</para>
+				<orderedlist>
+					<listitem>
+						<para>与Shell相同的提示符</para>
+					</listitem>
+					<listitem>
+						<para>提供TAB补齐</para>
+					</listitem>
+					<listitem>
+						<para>上下光标键翻看历史命令，左右光标改变位置，Home/End 键到行首与行尾</para>
+					</listitem>
+					<listitem>
+						<para>Ctrl+R 搜索， Ctrl+D 退出</para>
+					</listitem>
+					<listitem>
+						<para>Ctrl+S,Ctrl+Q 等等</para>
+					</listitem>
+				</orderedlist>
+				<para>流程</para>
+				<screen>
+用户输入 -> 关键字过滤 -> 放行
+				</screen>
+				<para>例如用户输入 cd / 经过过滤器后， cd /home/usr/</para>
+				<para>例如用户输入 cd /aaa 经过过滤器后， cd /home/usr/aaa</para>
+				<para>rm -rf /usr/local 提示拒绝等等</para>
+				<para>我已经使用python实现上面的大部分功能（因为python受到很多限制）如果使用C可以100%实现，需要你的想想力了</para>
+ 			</tip>
+		</section>
+		<section>
+			<title>.history 文件</title>
+			<para>SA的操作记录问题</para>
+			<para>通过~/.bash_history文件记录系统管理员的操作记录，定制.bash_history格式</para>
+			<screen>
+HISTSIZE=1000
+HISTFILESIZE=2000
+HISTTIMEFORMAT="%Y-%m-%d-%H:%M:%S "
+export HISTTIMEFORMAT
+			</screen>
+			<para>看看实际效果</para>
+			<screen>
+$ history | head
+    1  2012-02-27-09:10:45 do-release-upgrade
+    2  2012-02-27-09:10:45 vim /etc/network/interfaces
+    3  2012-02-27-09:10:45 vi /etc/network/interfaces
+    4  2012-02-27-09:10:45 ping www.163.com
+			</screen>
+
+		</section>
+
+	</section>
+	<section>
+		<title>临时文件安全</title>
+		<para>临时文件不应该有执行权限</para>
+		<para>/tmp</para>
+		<screen>
+/dev/sda3 /tmp ext4 nosuid，noexec，nodev，rw 0 0
+		</screen>
+		<para>同时使用符号连接将/var/tmp 指向 /tmp</para>
+		<para>/dev/shm</para>
+		<screen>
+none /dev/shm tmpfs defaults，nosuid，noexec，rw 0 0
+		</screen>
+	</section>
+	<section>
+		<title>其他安全问题</title>
+		<para>/etc/sudoers</para>
+		<screen>
+		<![CDATA[
+Cmnd_Alias WEBMASTER = /usr/local/webserver/nginx/sbin/nginx, /usr/local/webserver/php/sbin/php-fpm, !/usr/local/webserver/mysql/bin/*
+www localhost = NETWORKING, SERVICES, DELEGATING, PROCESSES, WEBMASTER
+
+Cmnd_Alias Database = /usr/bin/mysqldump, /srv/mysql/bin/mysql, /u01/oracle/10.x.x/bin/sqlplus
+oralce localhost = NETWORKING, SERVICES, DELEGATING, PROCESSES, WEBMASTER, Database
+		]]>
+		</screen>
+		<para>使用www用户测试登录，无误后修改SSH配置文件，禁止root登录。</para>
+		<screen>
+		<![CDATA[
+vim /etc/ssh/sshd_config
+PermitRootLogin no
+		]]>
+		</screen>
+		<para>然后在测试从www su 到root</para>
+	</section>
+	<section>
+		<title>防火墙配置</title>
+		<para>封锁22等端口，避免相互跳转</para>
+		<screen>
+lokkit --enabled
+iptables -F
+iptables -A OUTPUT -p tcp -m multiport --dports 22,21,2049 -j REJECT
+/etc/init.d/iptables save
+iptables -L -n
+		</screen>
+		<para>web 服务器禁止使用ssh，作为跳板机</para>
+		<para>用户将不能使用ssh命令登陆到其他电脑</para>
+	</section>
+	<section>
+		<title>数据库安全</title>
+		<para>我们以MySQL为例，讲解怎样控制DBA权限。稍加修改即可用于oracle等服务器</para>
+		<orderedlist>
+			<listitem>
+				<para>DBA 没有系统SSH帐号，只有数据库帐号</para>
+			</listitem>
+			<listitem>
+				<para>系统管理员只能有SSH系统帐号，没有数据库帐号</para>
+			</listitem>
+			<listitem>
+				<para>DBA 可备份数据库，还原数据库指定的备份文件，但是接触不到备份文件</para>
+			</listitem>
+			<listitem>
+				<para>DBA 有权重启数据库以及修复损坏库/表文件，通过工具完成，而不是登录SSH运行命令</para>
+			</listitem>
+		</orderedlist>
+		<section>
+			<title>数据库程序安全</title>
+			<para>rpm, deb 等等包安装mysql后默认权限是 755</para>
+			<screen>
+$ ll /usr/bin/mysql*
+-rwxr-xr-x 1 root root  132132 2012-02-28 01:33 /usr/bin/mysql*
+-rwxr-xr-x 1 root root  111572 2012-02-28 01:31 /usr/bin/mysqlaccess*
+-rwxr-xr-x 1 root root   32468 2012-02-28 01:33 /usr/bin/mysqladmin*
+-rwxr-xr-x 1 root root 2030768 2011-09-14 23:04 /usr/bin/mysql-admin*
+lrwxrwxrwx 1 root root      10 2012-02-28 01:33 /usr/bin/mysqlanalyze -> mysqlcheck*
+-rwxr-xr-x 1 root root  147288 2012-02-28 01:33 /usr/bin/mysqlbinlog*
+-rwxr-xr-x 1 root root   12006 2012-02-28 01:31 /usr/bin/mysqlbug*
+-rwxr-xr-x 1 root root   24940 2012-02-28 01:33 /usr/bin/mysqlcheck*
+-rwxr-xr-x 1 root root  451016 2012-02-28 01:33 /usr/bin/mysql_client_test*
+-rwxr-xr-x 1 root root 7246484 2012-02-28 01:33 /usr/bin/mysql_client_test_embedded*
+-rwxr-xr-x 1 root root    4245 2012-02-28 01:31 /usr/bin/mysql_convert_table_format*
+-rwxr-xr-x 1 root root   23943 2012-02-28 01:31 /usr/bin/mysqld_multi*
+-rwxr-xr-x 1 root root   16642 2012-02-28 01:32 /usr/bin/mysqld_safe*
+-rwxr-xr-x 1 root root  101636 2012-02-28 01:33 /usr/bin/mysqldump*
+-rwxr-xr-x 1 root root    7402 2012-02-28 01:31 /usr/bin/mysqldumpslow*
+-rwxr-xr-x 1 root root    3315 2012-02-28 01:31 /usr/bin/mysql_find_rows*
+-rwxr-xr-x 1 root root    1261 2012-02-28 01:31 /usr/bin/mysql_fix_extensions*
+-rwxr-xr-x 1 root root    5834 2012-02-28 01:31 /usr/bin/mysql_fix_privilege_tables*
+-rwxr-xr-x 1 root root   32477 2012-02-28 01:31 /usr/bin/mysqlhotcopy*
+-rwxr-xr-x 1 root root   24584 2012-02-28 01:33 /usr/bin/mysqlimport*
+-rwxr-xr-x 1 root root   14657 2012-02-28 01:31 /usr/bin/mysql_install_db*
+lrwxrwxrwx 1 root root      10 2012-02-28 01:33 /usr/bin/mysqloptimize -> mysqlcheck*
+-rwxr-xr-x 1 root root 2006884 2011-09-14 23:04 /usr/bin/mysql-query-browser*
+lrwxrwxrwx 1 root root      10 2012-02-28 01:33 /usr/bin/mysqlrepair -> mysqlcheck*
+-rwxr-xr-x 1 root root   39016 2012-02-28 01:32 /usr/bin/mysqlreport*
+-rwxr-xr-x 1 root root    8066 2012-02-28 01:31 /usr/bin/mysql_secure_installation*
+-rwxr-xr-x 1 root root   17473 2012-02-28 01:31 /usr/bin/mysql_setpermission*
+-rwxr-xr-x 1 root root   23716 2012-02-28 01:33 /usr/bin/mysqlshow*
+-rwxr-xr-x 1 root root   45884 2012-02-28 01:33 /usr/bin/mysqlslap*
+-rwxr-xr-x 1 root root  208148 2012-02-28 01:33 /usr/bin/mysqltest*
+-rwxr-xr-x 1 root root 6960852 2012-02-28 01:33 /usr/bin/mysqltest_embedded*
+-rwxr-xr-x 1 root root 1334028 2012-02-28 01:33 /usr/bin/mysql_tzinfo_to_sql*
+-rwxr-xr-x 1 root root   64728 2012-02-28 01:33 /usr/bin/mysql_upgrade*
+-rwxr-xr-x 1 root root  149836 2012-02-28 01:33 /usr/bin/mysql_waitpid*
+-rwxr-xr-x 1 root root    2108 2012-02-22 01:28 /usr/bin/mysql-workbench*
+-rwxr-xr-x 1 root root 9885312 2012-02-22 01:29 /usr/bin/mysql-workbench-bin*
+-rwxr-xr-x 1 root root    3888 2012-02-28 01:31 /usr/bin/mysql_zap*
+
+			</screen>
+			<para>从安全角度考虑我们需要如下更改</para>
+			<screen>
+chown mysql:mysql /usr/bin/mysql*
+chmod 700 /usr/bin/mysql*
+			</screen>
+			<para>mysql用户是DBA专用用户</para>
+		</section>
+		<section>
+			<title>数据库客户端安全</title>
+			<para>DBA不需要通过SSH登录数据库服务器，然后运行mysql/sqlplus在登录数据库</para>
+			<section>
+				<title>bind-address</title>
+				<para>如果web与database 在一台机器上</para>
+				<screen>
+bind-address = 127.0.0.1
+				</screen>
+			</section>
+			<section>
+				<title>mysql 管理</title>
+				<screen>
+				<![CDATA[
+$ cat ../database/mysqltui
+#!/bin/bash
+TITLE="MySQL Client"
+
+HOST=$(whiptail --title "$TITLE" --menu "MySQL Host" 22 50 8 \
+"127.0.0.1" "localhost" \
+"172.16.0.1" "MySQL Master" \
+"172.16.0.2" "MySQL Slave 1" \
+"172.16.0.3" "MySQL Slave 2"  \
+3>&1 1>&2 2>&3)
+
+
+
+USER=$(whiptail --inputbox "MySQL User:" 8 60 --title "$TITLE" 3>&1 1>&2 2>&3)
+
+PASSWD=$(whiptail --title "$TITLE" --passwordbox "MySQL Password:" 8 60 3>&1 1>&2 2>&3)
+
+#DATABASE=$(mysqlshow -h$HOST -u$USER | egrep -o "|\w(.*)\w|" | grep -v "Databases" |awk '{print "\""$1"\" \""$1"\""}')
+#DATABASE=$(mysqlshow -h$HOST -u$USER | egrep -o "|\w(.*)\w|" | grep -v "Databases" |awk "{print \"$1\" \"$1\"}")
+
+#DB=$(whiptail --title "$TITLE" --menu "MySQL DATABASE" 22 50 8 $DATABASE  3>&1 1>&2 2>&3)
+
+DATABASE=$(whiptail --inputbox "MySQL Database:" 8 60 --title "$TITLE" 3>&1 1>&2 2>&3)
+
+echo $HOST $USER $PASSWD $DATABASE
+
+mysql -h$HOST -u$USER -p$PASSWD $DATABASE
+
+				]]>
+				</screen>
+
+
+				<para></para>
+				<screen>
+				<![CDATA[
+             ┌───┤ MySQL Adminstrator ├───┐
+             │ Menu                       │
+             │                            │
+             │       1 MySQL Manager      │
+             │       2 MySQL Backup       │
+             │       2 MySQL Restore      │
+             │                            │
+             │                            │
+             │    <Ok>        <Cancel>    │
+             │                            │
+             └────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Database Host                        │
+        │                                      │
+        │        127.0.0.1  localhost          │
+        │        172.16.0.1 mysql master       │
+        │        172.16.0.2 mysql slave        │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<para>/etc/php5/fpm/pool.d/www.conf</para>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ User                                 │
+        │                                      │
+        │ root________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Password                             │
+        │                                      │
+        │ ****________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<para>进入mysql客户端</para>
+				<screen>
+				<![CDATA[
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 503
+Server version: 5.1.58-1ubuntu1 (Ubuntu)
+
+Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+This software comes with ABSOLUTELY NO WARRANTY. This is free software,
+and you are welcome to modify and redistribute it under the GPL v2 license
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+				]]>
+				</screen>
+				<note>
+					<title>安全提示</title>
+					<orderedlist>
+						<listitem>
+							<para>从安全角度看，你可以去掉输入密码的过程。在终端提示符下输入</para>
+							<para>Enter password:</para>
+						</listitem>
+						<listitem>
+							<para>还可以写入～/.my.conf文件</para>
+							<para>这样ssh mysql@example.com的时候输入第一道密码，然后进入mysql不需要输入密码</para>
+						</listitem>
+						<listitem>
+							<para>如果需要输入密码对话到建议删除.bash_history</para>
+							<para>rm -rf .bash_history</para>
+							<para>ln -s /dev/null .bash_history</para>
+						</listitem>
+					</orderedlist>
+				</note>
+			</section>
+
+			<section>
+				<title>~/.mysql_history</title>
+				<para>通过~/.mysql_history文件记录DBA操作记录</para>
+				<para>插入时间点，在~/.bashrc中加入下面命令</para>
+				<screen>
+				<![CDATA[
+cat >> ~/.bashrc <<EOD
+echo `date` >> ~/.mysql_history
+EOD
+				]]>
+				</screen>
+				<screen>
+$ tail ~/.bashrc
+echo `date` >> ~/.mysql_history
+				</screen>
+				<para>查看实际效果</para>
+				<screen>
+$ tail ~/.mysql_history
+EXPLAIN SELECT * FROM stuff where id=3 \G
+EXPLAIN SELECT * FROM stuff where id='3' \G
+EXPLAIN SELECT * FROM stuff where id='2' \G
+Mon Feb 27 09:15:18 CST 2012
+EXPLAIN SELECT * FROM stuff where id='2' and created = '2012-02-01' \G
+EXPLAIN SELECT * FROM stuff where id='1' and created = '2012-02-01' \G
+EXPLAIN SELECT * FROM stuff where id='3' and created = '2012-02-01' \G
+EXPLAIN SELECT * FROM stuff where id='2' and created = '2012-02-01' \G
+EXPLAIN SELECT * FROM stuff where id='2' or created = '2012-02-01' \G
+EXPLAIN SELECT * FROM stuff where id='2' and created = '2012-02-01' \G
+Mon Feb 27 11:48:37 CST 2012
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>mysqldump 安全</title>
+			<section>
+				<title>数据备份</title>
+				<screen>
+				<![CDATA[
+MySQL Client
+             ┌───┤ MySQL Adminstrator ├───┐
+             │ Menu                       │
+             │                            │
+             │       1 MySQL Manager      │
+             │       2 MySQL Backup       │
+             │       2 MySQL Restore      │
+             │                            │
+             │                            │
+             │    <Ok>        <Cancel>    │
+             │                            │
+             └────────────────────────────┘
+				]]>
+				</screen>
+
+				<screen>
+				<![CDATA[
+MySQL Client
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Database Host                        │
+        │                                      │
+        │        127.0.0.1  localhost          │
+        │        172.16.0.1 mysql master       │
+        │        172.16.0.2 mysql slave        │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ User                                 │
+        │                                      │
+        │ root________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Password                             │
+        │                                      │
+        │ ****________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+
+				<screen>
+				<![CDATA[
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Backup File Name                     │
+        │                                      │
+        │ 2010-12-12.01:00:00_________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │                                      │
+        │ Backup?                              │
+        │                                      │
+        │                                      │
+        │        <Yes>           <No>          │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+
+			</section>
+			<section>
+				<title>数据恢复</title>
+				<para></para>
+
+				<screen>
+				<![CDATA[
+MySQL Client
+             ┌───┤ MySQL Adminstrator ├───┐
+             │ Menu                       │
+             │                            │
+             │       1 MySQL Manager      │
+             │       2 MySQL Backup       │
+             │       2 MySQL Restore      │
+             │                            │
+             │                            │
+             │    <Ok>        <Cancel>    │
+             │                            │
+             └────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Database Host                        │
+        │                                      │
+        │        127.0.0.1  localhost          │
+        │        172.16.0.1 mysql master       │
+        │        172.16.0.2 mysql slave        │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<para></para>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Backup History                       │
+        │                                      │
+        │        1  2010-12-03 03:00:00        │
+        │        2  2012-01-01 02:00:00        │
+        │        3  2012-02-01 02:00:00        │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ User                                 │
+        │                                      │
+        │ root________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │ Password                             │
+        │                                      │
+        │ ****________________________________ │
+        │                                      │
+        │       <Ok>           <Cancel>        │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+        ┌────────┤ MySQL Adminstrator ├────────┐
+        │                                      │
+        │ Restore?                             │
+        │                                      │
+        │                                      │
+        │        <Yes>           <No>          │
+        │                                      │
+        └──────────────────────────────────────┘
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>crontab 定时备份脚本于安全</title>
+			<para>网上备份脚本很多，但考虑都不周全。</para>
+			<para>这里增加了 umask 0077 保证创建备份文件只能是创建者跟root可以访问，其他用户没有权限，保证了备份档案的安全。</para>
+			<para>find $BACKUP_DIR -type f -mtime +$COPIES -delete 是负责备份的份数管理, 过期数据定时删除</para>
+			<para>创建专用的备份帐号</para>
+			<screen>
+grant select, lock tables on *.* to 'backup'@'192.168.1.200' identified by "123456";
+			</screen>
+			<para>crontab 备份脚本</para>
+			<screen>
+			<![CDATA[
+# cat /srv/bin/backup
+
+#!/bin/bash
+###################################
+# $Id: security.db.xml 650 2013-07-24 10:04:58Z netkiller $
+# Author: netkiller@msn.com
+# Home: http://netkiller.github.com
+###################################
+BACKUP_HOST="localhost"
+BACKUP_USER="backup"
+BACKUP_PASS=""
+BACKUP_DIR=/opt/backup
+BACKUP_DBNAME="test neo"
+#Number of copies
+COPIES=7
+####################################
+MYSQLDUMP="mysqldump"
+#TIMEPOINT=$(date -u +%Y-%m-%d)
+TIMEPOINT=$(date -u +%Y-%m-%d.%H:%M:%S)
+MYSQLDUMP_OPTS="-h $BACKUP_HOST -u$BACKUP_USER -p$BACKUP_PASS"
+####################################
+umask 0077
+test ! -d "$BACKUP_DIR" && mkdir -p "$BACKUP_DIR"
+test ! -w $BACKUP_DIR && echo "Error: $BACKUP_DIR is un-writeable." && exit 0
+
+for dbname in $BACKUP_DBNAME
+do
+    test ! -d "$BACKUP_DIR/$dbname" && mkdir -p "$BACKUP_DIR/$dbname"
+
+    $MYSQLDUMP $MYSQLDUMP_OPTS $dbname | gzip > $BACKUP_DIR/$dbname/$dbname.$TIMEPOINT.sql.gz
+done
+find $BACKUP_DIR -type f -mtime +$COPIES -delete
+			]]>
+			</screen>
+			<para>/srv/bin/backup 安全也至关重要，否则会泄漏备份用户的密码</para>
+			<screen>
+# chown mysql:mysql /srv/bin/backup
+# chmod 500 /srv/bin/backup
+			</screen>
+			<para>mysqldump 的安全</para>
+			<screen>
+# chown 700 /usr/bin/mysqldump
+			</screen>
+		</section>
+		<section>
+			<title>数据库归档文件</title>
+			<para>一般数据库服务器上可以保留一周的备份数据，历史数据需要保存到服务器以外的带库或者阵列柜中，怎么样保证这些数据的安全呢？ 我们采用下面方式</para>
+			<orderedlist>
+				<listitem>
+					<para>制作PGP/GPG密钥，密钥放置在数据库服务器上，证书做好备份，否则一旦丢失，将无法在将备份文件恢复</para>
+				</listitem>
+				<listitem>
+					<para>数据库备份后，首先进行压缩处理</para>
+				</listitem>
+				<listitem>
+					<para>然后使用公钥证书进行GPG/PGP数据加密</para>
+				</listitem>
+				<listitem>
+					<para>这时可以放心的将备份数据库搬出数据库服务器到带库或磁盘阵列柜中</para>
+				</listitem>
+			</orderedlist>
+			<para>恢复数据，将数据库备份文件复制到该数据库服务器，然后用私钥解密备份文件，再恢复到数据库到中</para>
+		</section>
+		<section>
+			<title>开发与测试环境的数据库安全问题</title>
+			<para>有时候需要将生产环境的数据复制到开发环境上，例如，测试的时候，重现bug需要真实数据，开发环境的模拟数据无法满足要求，这时需要将生产环境的数据拉到测试或开发环境。如果保证数据的安全非常重要。</para>
+			<para>最有效的手段是数据混淆，将重要的数据进行混淆扰乱顺序等等</para>
+			<para>扰乱手段有</para>
+			<orderedlist>
+				<listitem>
+				颠倒顺序
+				</listitem>
+				<listitem>
+				曾加干扰词
+				</listitem>
+				<listitem>
+				重置或替换数据，例如密码可以全部改为test (update user set passwd='test')
+				</listitem>
+				<listitem>
+				拼装数据 如 （131，137，135，133，139，138，168）后面加8位随机数
+				</listitem>
+			</orderedlist>
+		</section>
+		<section>
+			<title>与数据库有关的服务器安全问题</title>
+			<para>其他服务器不能安装mysql客户端与mysqldump备份工具</para>
+			<para>例如：web服务器只能通过php/jdbc/odbc等链接mysql数据库,
+web服务器卸载 mysql，mysqldump工具，防止用户登录查询以及将数据库远程备份，然后通过web下载数据库</para>
+			<screen>
+			<![CDATA[
+# adduser www
+# passwd www
+# chmod 500 -R /usr/local/webserver/mysql/bin/*
+# chown root:root -R /usr/local/webserver/mysql/bin/*
+			]]>
+			</screen>
+
+		</section>
+
+	</section>
+</article>

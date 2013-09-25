@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"http://www.oasis-open.org/docbook/xml/5.0b5/dtd/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Application Firewall Design</title>
+		<subtitle>Web Application Firewall， 7layer Firewall</subtitle>
+		&article.author.xml;
+
+		<abstract>
+			<para>提供web url的保护, 实现访问控制</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>iptables</keyword>
+			<keyword>access.log</keyword>
+			<keyword>error.log</keyword>
+		</keywordset>
+
+		<pubdate>$Id: appfirewall.xml 494 2012-11-21 10:25:26Z netkiller $</pubdate>
+	</articleinfo>
+	<section>
+		<title>功能说明</title>
+		<orderedlist>
+			<listitem><para>计数器</para></listitem>
+			<listitem><para>策略</para></listitem>
+			<listitem><para>访问控制</para></listitem>
+			<listitem><para>用户认证</para></listitem>
+		</orderedlist>
+		<section>
+			<title>访问控制列表 ACL</title>
+			<orderedlist>
+				<listitem><para>黑名单</para></listitem>
+				<listitem><para>白名单</para></listitem>
+			</orderedlist>
+		</section>
+		<section>
+			<title>用户认证</title>
+			<orderedlist>
+				<listitem><para>AAA</para></listitem>
+				<listitem><para>LDAP</para></listitem>
+				<listitem><para>MySQL</para></listitem>
+			</orderedlist>
+		</section>
+		<section>
+			<title>元素</title>
+			<orderedlist>
+				<listitem><para>IP地址，端口号</para></listitem>
+				<listitem><para>URL(GET)</para></listitem>
+				<listitem><para>POST</para></listitem>
+				<listitem><para>Cookie</para></listitem>
+				<listitem><para>HTTP Header</para></listitem>
+				<listitem><para>协议(HTTP,JASON,AJAX,SOAP,XML-RPM...)</para></listitem>
+			</orderedlist>
+		</section>
+	</section>
+	<section>
+		<title>使用方法</title>
+		<section>
+			<title>嵌入使用</title>
+			<para>作为SDK/API的方式使用</para>
+		</section>
+		<section>
+			<title>URL代理</title>
+			<para>http://app.mydomain.com/firewall/login</para>
+			<para>login: http://login.mydomain.com/</para>
+			<para>根据login关键字，将url跳转到指定的保护URL上面</para>
+		</section>
+		<section>
+			<title>代理方式</title>
+		</section>
+	</section>
+	<section>
+		<title>URL代理实现方式</title>
+		<para>http://app.mydomain.com/firewall/login</para>
+		<para></para>
+		<screen>
+		<![CDATA[
+login: http://login.mydomain.com/
+		]]>
+		</screen>
+		<screen>
+
+		</screen>
+	</section>
+	<section>
+		<title>example</title>
+		<screen>
+		<![CDATA[
+<?php
+/*
+* =====================================
+* Website: http://netkiller.github.com
+* Author: neo <netkiller@msn.com>
+* Email: netkiller@msn.com
+* =====================================
+*/
+class ApplicationFirewall{
+
+	protected $status;
+	protected $policy;
+	protected $chain;
+	protected $rule;
+	protected $match;
+	private $debug;
+	//$get,$post,$cookie,$server;
+
+	public function __construct() {
+		$this->name 	= "ApplicationFirewall";
+	}
+
+	public function __destruct() {
+		//print "Destroying " . $this->name . "\n";
+	}
+
+	public function enable(){
+		$this->status = true;
+	}
+	public function disable(){
+		$this->status = false;
+	}
+
+	public function get(){
+		if($this->status){
+			$this->chain 	= $_GET;
+			return($this);
+		}else{
+			return($this->status);
+		}
+	}
+
+	public function post(){
+		if($this->status){
+			$this->chain 	= $_GET;
+			return($this);
+		}else{
+			return($this->status);
+		}
+		$this->chain 	= $_POST;
+	}
+
+	public function cookie() {
+		if($this->status){
+			$this->chain = $_COOKIE;
+			return($this);
+		}else{
+			return($this->status);
+		}
+
+	}
+
+	public function server(){
+		if($this->status){
+			$this->chain = $_SERVER;
+			return($this);
+		}else{
+			return($this->status);
+		}
+	}
+
+	public function match($key, $value){
+		if($this->debug) print_r($this->chain);
+		$this->match = false;
+		if(!array_key_exists($this->chain, $key)){
+			if($this->chain[$key] == $value){
+				$this->match = true;
+			}
+		}
+		return($this);
+	}
+	public function policy($p){
+		$this->policy = $p;
+	}
+	public function counter($tm, $cnt){
+		return($this);
+	}
+	public function allow($fun = null){
+		if($this->status && $this->match){
+			if($fun){
+				$fun();
+			}
+		}
+		$this->destroy();
+		return($this->status);
+	}
+	public function deny($fun = null){
+		if($this->status && $this->match){
+			if($fun){
+				$fun();
+			}
+		}
+		$this->destroy();
+		return($this->status);
+	}
+	public function debug($tmp){
+		$this->debug = $tmp;
+	}
+	public function ip($ipaddr){
+		return $this->server()->match('REMOTE_ADDR', $ipaddr);
+	}
+	public function destroy(){
+		$this->chain = array();
+		$this->match = false;
+	}
+};
+
+#include_once('applicationfirewall.php')
+$fw = new ApplicationFirewall();
+
+$fw->debug(true);
+$fw->debug(false);
+$fw->enable();
+//$fw->disable();
+function test(){
+	echo 'OK';
+};
+function allow(){
+	echo 'allow';
+};
+function deny(){
+	echo 'deny';
+};
+//$fw->policy('blacklist');
+
+$fw->ip('192.168.3.17')->allow('allow');
+$fw->ip('192.168.3.17')->deny('deny');
+
+$fw->counter('1m',5)->match('id','1000')->deny('test');
+
+/*
+$fw->ip('172.16.0.0/24')->allow();
+$fw->ip('172.16.0.0','255.255.255.0')->allow();
+
+$fw->header(array('User-Agent' => 'MSIE5'))->deny()
+*/
+$fw->get()->match('id','1000')->deny('test');
+$fw->get()->match('name','chen')->allow('test');
+//$fw->get()->match(array('id' => '1000'))->deny();
+/*
+$fw->post()->data(array('action'=>'/login.php'))->allow()
+$fw->cookie()->data(array('userid'=>'test'))->deny()
+*/
+$fw->server()->match('HTTP_REFERER', 'http://www.mydomain.com/index.html')->allow('test');
+$fw->server()->match('REQUEST_METHOD', 'GET')->deny('test');
+
+$fw->disable();
+//$fw->destroy();
+		]]>
+		</screen>
+	</section>
+</article>

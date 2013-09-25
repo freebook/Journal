@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: postgresql.xml 650 2013-07-24 10:04:58Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/postgresql.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Ubuntu 12.04.1 LTS + PostgreSQL 9.1</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+<!--
+		<abstract>
+			<para></para>
+		</abstract>
+ -->
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>postgresql</keyword>
+			<keyword>9.1</keyword>
+			<keyword>psql</keyword>
+			<keyword>pg_hba.conf, postgresql.conf</keyword>
+		</keywordset>
+		<pubdate>$Date: 2013-07-24 18:04:58 +0800 (Wed, 24 Jul 2013) $</pubdate>
+		<releasewww>$Id: postgresql.xml 650 2013-07-24 10:04:58Z netkiller $</releasewww>
+	</articleinfo>
+
+	<section id="pgsql.install">
+		<title>Ubuntu 12.04.1 LTS</title>
+		<para>安装环境</para>
+		<para>PostgreSQL 9.1</para>
+		<command>$ sudo apt-get install postgresql</command>
+		<screen>
+$ sudo apt-get install postgresql
+		</screen>
+		<para>更改postgres管理员用户密码</para>
+		<screen>
+$ sudo passwd postgres
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+		</screen>
+		<para>然后切换到postgres用户环境</para>
+		<screen>
+$ su - postgres
+Password:
+Added user postgres.
+		</screen>
+		<para>进入psql客户款, PostgreSQL的psql命令相当于sqlplus,mysql命令</para>
+		<screen>
+$ psql
+psql (9.1.6)
+Type "help" for help.
+
+postgres=#
+		</screen>
+		<para>退出\q</para>
+		<screen>
+postgres=# \q
+		</screen>
+	</section>
+	<section id="pgsql.conf">
+		<title>PostgreSQL 配置</title>
+		<para>su 到 postgres 用户</para>
+		<screen>
+$ su - postgres
+Password:
+$ pwd
+/var/lib/postgresql
+$
+		</screen>
+		<para>备份配置文件，防止修改过程中损毁</para>
+		<screen>
+cp /etc/postgresql/9.1/main/postgresql.conf /etc/postgresql/9.1/main/postgresql.conf.original
+cp /etc/postgresql/9.1/main/pg_hba.conf /etc/postgresql/9.1/main/pg_hba.conf.original
+		</screen>
+		<section>
+			<title>postgresql.conf</title>
+			<para>启用tcp/ip连接，去掉下面注释,修改为你需要的IP地址，默认为localhost</para>
+			<screen>
+listen_addresses = 'localhost'
+			</screen>
+			<para>如果有多个网络适配器可以指定 'ip' 或 '*' 任何接口上的IP地址都可能listen.</para>
+			<screen>
+$ sudo vim /etc/postgresql/9.1/main/postgresql.conf
+
+listen_addresses = '*'
+			</screen>
+		</section>
+		<section>
+			<title>pg_hba.conf</title>
+			<para>pg_hba.conf配置文件的权限需要注意以下，-rw-r----- 1 postgres postgres  4649 Dec  5 18:00 pg_hba.conf</para>
+			<screen>
+$ ll /etc/postgresql/9.1/main/
+total 52
+drwxr-xr-x 2 postgres postgres  4096 Dec  6 09:40 ./
+drwxr-xr-x 3 postgres postgres  4096 Dec  5 18:00 ../
+-rw-r--r-- 1 postgres postgres   316 Dec  5 18:00 environment
+-rw-r--r-- 1 postgres postgres   143 Dec  5 18:00 pg_ctl.conf
+-rw-r----- 1 postgres postgres  4649 Dec  5 18:00 pg_hba.conf
+-rw-r----- 1 postgres postgres  1636 Dec  5 18:00 pg_ident.conf
+-rw-r--r-- 1 postgres postgres 19259 Dec  5 18:00 postgresql.conf
+-rw-r--r-- 1 postgres postgres   378 Dec  5 18:00 start.conf
+			</screen>
+			<para>pg_hba.conf配置文件负责访问权限控制</para>
+			<screen>
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+			</screen>
+			<glosslist>
+				<glossentry>
+					<glossterm>TYPE</glossterm>
+					<glossdef>
+						<para>
+							local 本地使用unix/socket 方式连接, host 使用tcp/ip socket 方式连接
+						</para>
+					</glossdef>
+				</glossentry>
+				<glossentry>
+					<glossterm>DATABASE</glossterm>
+					<glossdef>
+						<para>
+							数据库名.
+						</para>
+					</glossdef>
+				</glossentry>
+				<glossentry>
+					<glossterm>USER</glossterm>
+					<glossdef>
+						<para>
+							用户名.
+						</para>
+					</glossdef>
+				</glossentry>
+				<glossentry>
+					<glossterm>ADDRESS</glossterm>
+					<glossdef>
+						<para>
+							允许连接的IP地址，可以使用子网掩码.
+						</para>
+					</glossdef>
+				</glossentry>
+				<glossentry>
+					<glossterm>METHOD</glossterm>
+					<glossdef>
+						<para>
+							认真加密方式.
+						</para>
+					</glossdef>
+				</glossentry>
+			</glosslist>
+			<para>下面我们做一个简单测试，首先配置pg_hba。conf文件</para>
+			<screen>
+$ sudo vi /etc/postgresql/9.1/main/pg_hba.conf
+host    *			dba         0.0.0.0/0       md5
+host    test		test        0.0.0.0/0       md5
+			</screen>
+			<para>运行创建数据,用户 的SQL语句</para>
+			<screen>
+CREATE ROLE test LOGIN PASSWORD 'test' NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE;
+
+CREATE DATABASE test WITH OWNER = test ENCODING = 'UTF8' TABLESPACE = pg_default;
+			</screen>
+			<para>进入psql</para>
+			<screen>
+$ psql
+psql (9.1.6)
+Type "help" for help.
+
+postgres=# CREATE ROLE test LOGIN PASSWORD 'test' NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE;
+CREATE ROLE
+postgres=# CREATE DATABASE test WITH OWNER = test ENCODING = 'UTF8' TABLESPACE = pg_default;
+CREATE DATABASE
+postgres=# \q
+			</screen>
+			<para>使用psql登录</para>
+			<screen>
+			<![CDATA[
+$ psql -hlocalhost -Utest test
+Password for user test:
+psql (9.1.6)
+SSL connection (cipher: DHE-RSA-AES256-SHA, bits: 256)
+Type "help" for help.
+
+test=> \l
+                                  List of databases
+   Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
+-----------+----------+----------+-------------+-------------+-----------------------
+ postgres  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+ template0 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+           |          |          |             |             | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+           |          |          |             |             | postgres=CTc/postgres
+ test      | test     | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
+(4 rows)
+
+test=>
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>创建dba用户</title>
+		<para>创建一个远程维护数据库dba用户，具有创建数据库与创建用户的权限</para>
+		<screen>
+CREATE USER dba PASSWORD 'dba' CREATEDB CREATEUSER;
+CREATE ROLE
+		</screen>
+		<para>进入psql</para>
+		<screen>
+$ psql
+psql (9.1.6)
+Type "help" for help.
+
+postgres=# CREATE USER dba PASSWORD 'dba' CREATEDB CREATEUSER;
+CREATE ROLE
+postgres=# \q
+		</screen>
+
+		<para>使用psql登录</para>
+		<screen>
+$ psql -hlocalhost -Udba postgres
+Password for user dba:
+psql (9.1.6)
+SSL connection (cipher: DHE-RSA-AES256-SHA, bits: 256)
+Type "help" for help.
+
+postgres=#
+		</screen>
+	</section>
+
+</article>

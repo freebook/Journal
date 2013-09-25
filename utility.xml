@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: utility.xml 500 2012-12-04 09:01:55Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>运维常用在线工具</title>
+
+		&article.author.xml;
+
+		<abstract>
+			<para></para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>php, php-cgi, php-fastcgi</keyword>
+			<keyword>apache, nginx</keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date: 2012-12-04 17:01:55 +0800 (Tue, 04 Dec 2012) $</pubdate>
+		<release>$Id: utility.xml 500 2012-12-04 09:01:55Z netkiller $</release>
+	</articleinfo>
+
+	<section id="utility.ip">
+		<title>IP</title>
+
+		<section id="utility.ipzone">
+			<title>IP Zone</title>
+			<para><ulink url="http://www.ipdeny.com">http://www.ipdeny.com</ulink></para>
+		</section>
+		<section id="utility.myipaddr">
+			<title>What is my IP address?</title>
+			<para><ulink url="http://www.ipaddressworld.com/"></ulink></para>
+			<section>
+curl http://members.3322.org/dyndns/getip
+			</section>
+		</section>
+		<section id="utility.iptracking">
+			<title>IP Tracking</title>
+			<para><ulink url="http://www.ip-adress.com/ip_tracer/">http://www.ip-adress.com/ip_tracer/</ulink></para>
+		</section>
+		<section id="utility.ip138">
+			<title>ip138</title>
+			<para><ulink url="http://www.ip138.com">http://www.ip138.com</ulink></para>
+		</section>
+	</section>
+	<section id="utility.dns">
+		<title>DNS</title>
+		<section id="utility.whatsmydns">
+			<title>What's My DNS?</title>
+			<para><ulink url="http://www.whatsmydns.net/">http://www.whatsmydns.net/</ulink></para>
+		</section>
+	</section>
+	<section id="utility.route">
+		<title>Airline route maps</title>
+		<para><ulink url="http://www.airlineroutemaps.com">http://www.airlineroutemaps.com</ulink></para>
+	</section>
+	<section id="utility.http">
+		<title>HTTP</title>
+		<section>
+			<title>What's My User Agent?</title>
+			<para><ulink url="http://whatsmyuseragent.com/">http://whatsmyuseragent.com/</ulink></para>
+		</section>
+	</section>
+</article>

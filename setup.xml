@@ -1,0 +1,694 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>CentOS 6.4 + nginx-1.2.5 + php-5.4.15 + MySQL-5.5.31</title>
+		<subtitle>redis-2.4.10</subtitle>
+		&article.author.xml;
+
+		<abstract>
+			<para>在工作中，需要经常为新系统安装软件，重复而简单，但又不得不作，我将过去几年中工作中临时写的脚本这里了一下，能够实现半自动化安装标本，只需要Ctrl+C, Ctrl+V 快速粘贴复制，即可快速完成安装</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>linux</keyword>
+			<keyword>apache, lighttpd, nginx</keyword>
+			<keyword>php, </keyword>
+			<keyword> </keyword>
+		</keywordset>
+		<pubdate>$Date: 2013-05-31 19:25:25 +0800 (Fri, 31 May 2013) $</pubdate>
+		<releasewww>$Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $</releasewww>
+	</articleinfo>
+	<section>
+		<title>CentOS 6.3 64bit Minior 安装后 新机初始化常用软件包安装</title>
+		<screen>
+		<![CDATA[
+lokkit --disabled --selinux=disabled
+
+yum update -y
+rpm --import http://apt.sw.be/RPM-GPG-KEY.dag.txt
+rpm -K http://packages.sw.be/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm
+rpm -i http://packages.sw.be/rpmforge-release/rpmforge-release-0.5.2-2.el6.rf.x86_64.rpm
+
+yum install -y telnet wget rsync
+yum install -y system-config-network-tui
+yum install -y bind-utils
+yum install -y vim-enhanced
+
+yum install -y openssh-clients
+yum remove dhclient -y
+		]]>
+		</screen>
+		<section>
+			<title>/etc/resolv.conf</title>
+			<para>配置DNS</para>
+			<screen>
+			<![CDATA[
+echo -ne "
+search example.com
+nameserver 208.67.222.222
+nameserver 202.67.220.220
+nameserver 8.8.8.8
+nameserver 4.4.4.4
+" > /etc/resolv.conf
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>/etc/security/limits.conf</title>
+			<para>修改文件打开数</para>
+			<screen>
+			<![CDATA[
+cat >> /etc/security/limits.conf <<EOF
+root 	soft nofile 65536
+root 	hard nofile 65536
+www	soft nofile 65536
+www 	hard nofile 65536
+mysql	soft nofile 65536
+mysql 	hard nofile 65536
+EOF
+			]]>
+			</screen>
+			<para>下面更省事，但不建议使用*通配符，这样任何用户都不限制。</para>
+			<screen>
+			<![CDATA[
+echo -ne "
+
+* soft nofile 65536
+* hard nofile 65536
+" >> /etc/security/limits.conf
+			]]>
+			</screen>
+			<para>而上面我市针对www用户设置，也就是web服务器，其他用户是受限的。</para>
+		</section>
+		<section>
+			<title>/etc/sysctl.conf</title>
+			<para>内核参数调整</para>
+			<screen>
+			<![CDATA[
+cat >> /etc/sysctl.conf <<EOF
+
+net.ipv4.ip_local_port_range = 1024 65500
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_fin_timeout = 60
+net.ipv4.tcp_keepalive_time = 1200
+net.ipv4.tcp_max_syn_backlog = 8192
+net.ipv4.tcp_max_tw_buckets = 4096
+EOF
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>history 格式设置</title>
+			<para>设置history格式，是他能够记录命令的输入时间</para>
+			<screen>
+			<![CDATA[
+cat >> /etc/bashrc <<EOF
+
+export HISTTIMEFORMAT="%Y-%m-%d-%H:%M:%S "
+EOF
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>/etc/fstab</title>
+			<para>我一般分区规划是，/系统根分区,swap交换分区,/www数据分区，同时 禁止写入atime时间,因为/www频繁请求会影响IO </para>
+			<para>临时mount</para>
+			<screen>
+mount -o remount,noatime,nodiratime /dev/sda3 /mnt/your
+			</screen>
+			<para>LABEL 方式</para>
+			<screen>
+LABEL=/www                 /www                       ext3    defaults,noatime,nodiratime        1 1
+			</screen>
+			<para>UUID 方式</para>
+			<screen>
+UUID=eeff3e86-7964-4a48-ac02-51ea167ea6b2 /www        ext4    defaults,noatime,nodiratime        1 2
+			</screen>
+			<para>至此，Linux 的OS部分安装配置与优化完成。</para>
+		</section>
+
+	</section>
+	<section>
+		<title>常用网络软件服务安装</title>
+
+		<section>
+			<title>ntp</title>
+			<para>ntp 服务同步服务器的时间，需要安装。</para>
+			<screen>
+# redhat 5.6 cp /etc/ntp.conf.original /etc/ntp.conf
+yum install ntp -y
+			</screen>
+			<para>指定ntp服务器，如果你没有ntp server,下面步骤不用执行</para>
+			<screen>
+			<![CDATA[
+cp /etc/ntp.conf /etc/ntp.conf.original
+vim /etc/ntp.conf <<VIM > /dev/null 2>&1
+:22,24s/^/#/
+:25,25s/^/\rserver 172.16.3.51\rserver 172.16.3.52\r/
+:wq
+VIM
+			]]>
+			</screen>
+			<screen>
+service ntpd start
+chkconfig ntpd on
+			</screen>
+		</section>
+
+		<section>
+			<title>net-snmp</title>
+			<para>用于服务器的状态监控</para>
+			<screen>
+			<![CDATA[
+yum install net-snmp -y
+vi /etc/snmp/snmpd.conf <<VIM > /dev/null 2>&1
+:62,62s/systemview/all/
+:85,85s/^#//
+:wq
+VIM
+service snmpd start
+chkconfig snmpd on
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>nagios</title>
+			<para>服务器故障警告</para>
+			<screen>
+			<![CDATA[
+yum install -y nrpe nagios-plugins
+vi /etc/nagios/nrpe.cfg <<VIM > /dev/null 2>&1
+:%s/allowed_hosts=127.0.0.1/allowed_hosts=172.16.1.2/
+:wq
+VIM
+
+cat >> /etc/nagios/nrpe.cfg <<EOF
+
+#command[check_http]=/usr/lib64/nagios/plugins/check_http -I 127.0.0.1 -p 80 -u http://www.example.com/index.html
+command[check_swap]=/usr/lib64/nagios/plugins/check_swap -w 20% -c 10%
+command[check_all_disks]=/usr/lib64/nagios/plugins/check_disk -w 20% -c 10% -e
+EOF
+
+chkconfig nrpe on
+service nrpe start
+			]]>
+			</screen>
+		</section>
+
+		<section>
+			<title>rsync</title>
+			<para>我使用rsync来实现应用的部署。</para>
+			<screen>
+			<![CDATA[
+yum install xinetd rsync -y
+
+vim /etc/xinetd.d/rsync <<VIM > /dev/null 2>&1
+:%s/yes/no/
+:wq
+VIM
+
+cat > /etc/rsyncd.conf <<EOD
+uid = root
+gid = root
+use chroot = no
+max connections = 8
+pid file = /var/run/rsyncd.pid
+lock file = /var/run/rsync.lock
+log file = /var/log/rsyncd.log
+
+hosts deny=*
+hosts allow=192.168.2.0/255.255.255.0
+
+[www]
+    uid = www
+    gid = www
+    path = /www
+    ignore errors
+    read only = no
+    list = no
+    auth users = www
+    secrets file = /etc/rsyncd.passwd
+EOD
+
+cat >> /etc/rsyncd.passwd <<EOF
+www:xxxxxxxxxxxxxxxx
+EOF
+
+chmod 600 /etc/rsyncd.*
+chmod 600 /etc/rsyncd.passwd
+
+service xinetd restart
+			]]>
+			</screen>
+		</section>
+
+		<section>
+			<title>vsftpd</title>
+			<para>根据你的需要，选装。</para>
+			<screen>
+			<![CDATA[
+yum install -y vsftpd
+adduser --home-dir /www/target/logs/ --shell /sbin/nologin --password logs.xiu.com logs
+echo logs >> /etc/vsftpd/chroot_list
+
+vim /etc/vsftpd/vsftpd.conf <<VIM > /dev/null 2>&1
+:%s/#chroot_list_enable=YES/chroot_list_enable=YES/
+:%s/#chroot_list_file/chroot_list_file/
+VIM
+
+chkconfig vsftpd on
+service vsftpd start
+			]]>
+			</screen>
+		</section>
+
+	</section>
+	<section>
+		<title>MySQL-5.5.31</title>
+		<para>卸载旧的包，然后准备好rpm文件</para>
+		<screen>
+rpm -e --nodeps mysql-libs
+yum localinstall MySQL-*
+		</screen>
+		<para>安装后查看如下</para>
+		<screen>
+# rpm -qa | grep MySQL
+MySQL-client-5.5.31-1.el6.x86_64
+MySQL-shared-5.5.31-1.el6.x86_64
+MySQL-devel-5.5.31-1.el6.x86_64
+MySQL-shared-compat-5.5.31-1.el6.x86_64
+MySQL-server-5.5.31-1.el6.x86_64
+		</screen>
+	</section>
+	<section>
+		<title>php-5.4.15</title>
+		<para>由于redhat与centosYUM源中尚未提供php-fpm所以我采用编译安装，网上有一些爱好者制作过php-fpm的rpm包。是否使用你自己那注意。</para>
+		<para>安装fedora的YUM源，我们需要一些devel包。</para>
+		<screen>
+rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-7.noarch.rpm
+		</screen>
+		<para>安装编译器与开发包</para>
+		<screen>
+yum install gcc gcc-c++ make automake autoconf -y
+yum install curl-devel libmcrypt-devel gd-devel libjpeg-devel libpng-devel libXpm-devel libxml2-devel libxslt-devel mhash-devel recode-devel openssl-devel -y
+		</screen>
+		<para>安装下面三个rpm包，编译php不需要server与client两个包</para>
+		<screen>
+MySQL-shared-5.5.31-1.el6.x86_64
+MySQL-devel-5.5.31-1.el6.x86_64
+MySQL-shared-compat-5.5.31-1.el6.x86_64
+		</screen>
+		<para>将其放置在一个目录中，使用下面命令即可安装</para>
+		<screen>
+yum localinstall MySQL-*
+		</screen>
+		<para>前面的准备工作就绪后，便可以进入到php的安装阶段</para>
+		<screen>
+		<![CDATA[
+tar zxvf php-5.4.15.tar.gz
+cd php-5.4.15
+
+./configure --prefix=/srv/php-5.4.15 \
+--with-config-file-path=/srv/php-5.4.15/etc \
+--with-config-file-scan-dir=/srv/php-5.4.15/etc/conf.d \
+--enable-fpm \
+--with-fpm-user=www \
+--with-fpm-group=www \
+--with-curl \
+--with-gd \
+--with-jpeg-dir \
+--with-png-dir \
+--with-freetype-dir \
+--with-zlib-dir \
+--with-iconv \
+--with-mcrypt \
+--with-mysql \
+--with-mysqli=/usr/bin/mysql_config \
+--with-pdo-mysql \
+--with-mysql-sock=/var/lib/mysql/mysql.sock \
+--with-openssl=shared \
+--with-mhash=shared \
+--with-xsl=shared \
+--with-recode=shared \
+--with-pear \
+--enable-sockets \
+--enable-soap \
+--enable-mbstring \
+--enable-gd-native-ttf \
+--enable-zip \
+--enable-xml \
+--enable-bcmath \
+--enable-calendar \
+--enable-shmop \
+--enable-dba \
+--enable-wddx \
+--disable-debug
+
+
+make && make install
+		]]>
+		</screen>
+
+		<section>
+			<title>配置php.ini</title>
+
+			<para>备份配置文件，防止不小心改错而又找不出问题出在哪里。</para>
+			<screen>
+mkdir -p /srv/php-5.4.15/etc/conf.d
+cp php.ini-* /srv/php-5.4.15/etc/
+cp /srv/php-5.4.15/etc/php.ini-development /srv/php-5.4.15/etc/php.ini
+cp /srv/php-5.4.15/etc/pear.conf{,.original}
+ln -s /srv/php-5.4.15/ /srv/php
+			</screen>
+			<para>php默认提供两个配置文件模板php.ini-development用于开发和测试环境；php.ini-production用于生产环境。他们差异是php.ini-development会显示调试信息，即 error_display = On. </para>
+			<screen>
+# ls php.ini-*
+php.ini-development  php.ini-production
+			</screen>
+			<para>下面更改仅供参考，需要根据你的具体情况配置，不要照搬。</para>
+			<screen>
+			<![CDATA[
+vim /srv/php-5.4.15/etc/php.ini <<EOF > /dev/null 2>&1
+:%s#expose_php = On#expose_php = Off#
+:%s$;open_basedir = $open_basedir = /www/:/tmp/:/srv/php-5.4.15/lib/php/:/srv/php-5.4.15/bin/$
+:%s/memory_limit = 128M/memory_limit = 16M/
+:%s!;include_path = ".:/php/includes"!include_path = ".:/srv/php-5.4.15/lib/php:/srv/php-5.4.15/share"!
+:%s:extension_dir = "./":extension_dir = "/srv/php-5.4.15/lib/php/extensions":
+:%s/upload_max_filesize = 2M/upload_max_filesize = 8M/
+:%s/;cgi.fix_pathinfo=0/cgi.fix_pathinfo=1/
+:%s$;date.timezone =$date.timezone = Asia/Hong_Kong$
+:1367,1367s/session.save_handler = files/session.save_handler = redis/
+:1368,1368s#^#session.save_path = "tcp://127.0.0.1:6379"\r#
+:1415,1368s/session.name = PHPSESSID/session.name = JSESSIONID/
+:wq
+EOF
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>配置 php-fpm</title>
+			<para>安装启动脚本</para>
+			<screen>
+cp ./sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+chmod +x /etc/init.d/php-fpm
+
+chkconfig --add php-fpm
+chkconfig php-fpm on
+chkconfig --list php-fpm
+			</screen>
+			<para>修改配置文件</para>
+			<screen>
+			<![CDATA[
+cp /srv/php-5.4.15/etc/php-fpm.conf.default /srv/php-5.4.15/etc/php-fpm.conf
+
+vim /srv/php-5.4.15/etc/php-fpm.conf <<end > /dev/null 2>&1
+:25,25s/;//
+:32,32s/;//
+:wq
+end
+			]]>
+			</screen>
+			<para>察看配置项</para>
+			<screen>
+# grep -v '^;' /srv/php-5.4.15/etc/php-fpm.conf | grep -v '^$'
+[global]
+pid = run/php-fpm.pid
+
+
+[www]
+user = www
+group = www
+listen = 127.0.0.1:9000
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+			</screen>
+		</section>
+		<section>
+			<title>将php加入PATH环境变量</title>
+			<screen>
+			<![CDATA[
+vim  ~/.bash_profile <<END > /dev/null 2>&1
+:%s#bin#bin:/srv/php/bin#
+:wq
+END
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>PHP　Extension - APC</title>
+			<para>Apc</para>
+			<screen>
+			<![CDATA[
+pecl install apc
+
+cat > /srv/php-5.4.15/etc/conf.d/apc.ini <<EOF
+extension=apc.so
+EOF
+			]]>
+			</screen>
+			<para>查看安装情况</para>
+			<screen>
+# /srv/php/bin/php -m | grep apc
+apc
+			</screen>
+		</section>
+
+		<section>
+			<title>phpredis</title>
+			<para>安装git版本控制客户端</para>
+			<screen>
+yum install git
+			</screen>
+			<para>从github仓库中克隆一份代码到本地</para>
+			<screen>
+git clone git://github.com/nicolasff/phpredis.git
+			</screen>
+			<para>编译安装phpredis； 我暂时没有找到 pecl的phpredis源</para>
+			<screen>
+			<![CDATA[
+cd phpredis
+phpize
+./configure --with-php-config=/srv/php-5.4.15/bin/php-config
+make && make install
+			]]>
+			</screen>
+			<para>创建配置文件</para>
+			<screen>
+			<![CDATA[
+cat > /srv/php-5.4.15/etc/conf.d/redis.ini <<EOF
+extension=redis.so
+EOF
+			]]>
+			</screen>
+			<para>查看安装情况</para>
+			<screen>
+# php -m | grep redis
+redis
+			</screen>
+		</section>
+		<section>
+			<title>mongo</title>
+			<para>pecl 安装  mongo</para>
+			<screen>
+pecl install mongo
+			</screen>
+			<para>创建配置文件</para>
+			<screen>
+			<![CDATA[
+cat > /srv/php-5.4.15/etc/conf.d/mongo.ini <<EOF
+extension=mongo.so
+EOF
+			]]>
+			</screen>
+			<screen>
+# php -m | grep mongo
+mongo
+			</screen>
+		</section>
+		<section>
+			<title>编译中遇到问题如何处理？</title>
+			<para>下面我们来模拟一个场景，例如 configure的时候出现下面提示</para>
+			<screen>
+configure: error: Can not find recode.h anywhere under yes /usr/local /usr /opt.
+			</screen>
+			<para>提示找不到recode。h文件，很好办，首先搜索recode包</para>
+			<screen>
+[root@haproxy php-5.4.15]# yum search recode                                                                                                                                                                                                                        |  327 B     00:00
+============================ N/S Matched: recode ====================================
+php-recode.x86_64 : A module for PHP applications for using the recode library
+recode-devel.i686 : Header files and static libraries for development using recode
+recode-devel.x86_64 : Header files and static libraries for development using recode
+recode.i686 : Conversion between character sets and surfaces
+recode.x86_64 : Conversion between character sets and surfaces
+
+  Name and summary matches only, use "search all" for everything.
+			</screen>
+			<para>然后安装devel包,记住之需要安装devel包即可，其他都是多余。</para>
+			<screen>
+[root@haproxy php-5.4.15]# yum install recode-devel -y
+			</screen>
+			<para>然后重新运行configure</para>
+		</section>
+	</section>
+	<section>
+		<title>nginx-1.2.5</title>
+		<para>为web服务器创建一个用户，我喜欢使用www,id为80更容易记，同时将一个单独分区挂在/www上用户存放web应用程序。</para>
+		<screen>
+groupadd -g 80 www
+adduser -o --home /www --uid 80 --gid 80 -c "Web Application" www
+		</screen>
+		<para>添加nginx的YUM源</para>
+		<screen>
+		<![CDATA[
+cat > /etc/yum.repos.d/nginx.repo <<EOF
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/6/x86_64/
+gpgcheck=0
+enabled=1
+EOF
+		]]>
+		</screen>
+		<para>开始安装nginx</para>
+		<screen>
+		<![CDATA[
+yum search nginx
+
+yum install -y nginx
+chkconfig nginx on
+service nginx start
+		]]>
+		</screen>
+		<para>如果你不懂编译器优化，建议你使用rpm方案。在不优化的情况下编译出来程序很臃肿。</para>
+		<para></para>
+		<screen>
+# rpm -qa | grep nginx
+nginx-1.2.5-1.el6.ngx.x86_64
+		</screen>
+		<section>
+			<title>/etc/nginx/nginx.conf</title>
+			<para>隐藏nginx版本号</para>
+			<screen>
+vim /etc/nginx/nginx.conf
+
+http {
+...
+    server_tokens off;
+}
+			</screen>
+		</section>
+		<section>
+			<title>host 配置</title>
+			<screen>
+mkdir -p /www/www.mydomain.com/htdocs
+
+cd /etc/nginx/conf.d
+cp default.conf www.mydomain.com.conf
+vim www.mydomain.com.conf
+			</screen>
+
+			<screen>
+server {
+    listen       80;
+    server_name  www.mydomain.com;
+
+    charset utf-8;
+    access_log  /var/log/nginx/www.mydomain.com.access.log  main;
+
+    location / {
+        root   /www/www.mydomain.com/htdocs;
+        index  index.html index.php;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+    #
+    #location ~ \.php$ {
+    #    proxy_pass   http://127.0.0.1;
+    #}
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    location ~ \.php$ {
+        root           html;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  /www/www.mydomain.com/htdocs$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    location ~ /\.ht {
+        deny  all;
+    }
+}
+			</screen>
+			<para>创建测试页面</para>
+			<screen>
+			<![CDATA[
+cat >> /www/www.mydomain.com/htdocs/index.php <<PHP
+<?php
+phpinfo();
+PHP
+			]]>
+			</screen>
+			<para>启动服务器</para>
+			<screen>
+service php-fpm start
+service nginx start
+			</screen>
+			<para>检查index.php输出</para>
+			<screen>
+# curl -H HOST:www.mydomain.com http://127.0.0.1/index.php
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>redis-2.4.10</title>
+		<para>安装fedora的YUM源，</para>
+		<screen>
+rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-7.noarch.rpm
+		</screen>
+		<para>安装redis</para>
+		<screen>
+# yum install redis
+
+# chkconfig redis on
+
+# service redis start
+		</screen>
+	</section>
+	<section>
+		<title>MongoDB</title>
+		<screen>
+# yum install mongodb-server
+
+# chkconfig mongod on
+
+# service mongod start
+		</screen>
+	</section>
+</article>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/article/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>数据库与图片完美解决方案</title>
+		<subtitle>电商商品图品与数据库脏数据完美解决方案</subtitle>
+		&article.author.xml;
+		<pubdate>$Date: 2013-05-16 17:49:20 +0800 (Thu, 16 May 2013) $</pubdate>
+		<releaseinfo>$Id: mysql-plugin.xml 587 2013-05-16 09:49:20Z netkiller $</releaseinfo>
+		<abstract>
+			<para>你是是不是在开发中常常遇到，删除了数据库记录后，发现该记录对应的图片没有删除，或者删除了图片，数据库中仍有数据存在，你的网站脏数据（图片）成几何数增长，阅读下文这里为你提供了一个完美决方案。 </para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>mysql</keyword>
+			<keyword>plugin, udf</keyword>
+			<keyword>images</keyword>
+		</keywordset>
+	</articleinfo>
+
+	<section>
+		<title>背景</title>
+		<para>我以电商网站为例，一般的网站产品数据存放在数据库中，商品图片是上传到文件服务器，然后通过http服务器浏览商品图片。这是最基本的也是最常见做法。</para>
+		<para>稍复杂的方案是，如果图片数量庞大，会使用分布式文件系统方案。但是这些方案都不能保证数据的完整性，极易产生脏数据（垃圾数据）。脏数据是指当你删除了数据库表中的记录后，图片仍然存在，或者手工删除了图片，而数据库中的记录仍然存在。</para>
+		<para>将图片放入数据库中存放在BLOB的方法可以解决脏数据问题，典型的案例是公安的身份证系统。但这种方案的前提是，图片不能太大，数量不多，访问量不大。 这显然不适合电商网站。</para>
+		<para>2009年我在走秀网工作，商品图片与缩图文件900GB到2012离职已经有10TB，每天有成百上千的商品上架下架，很多商品下架后永远不会再上架，这些批量下架的商品数据不会删除，仅仅标记为删除，总是期望以后能继续使用，实际上再也不会有人过问，另一方面随着品类经理频繁更换，员工离职，这些商品会石沉大海，再也无人问均。这些商品所对应的图片也就脏数据主要来源。新的品类经历上任后，会重新拍照，上传新图片。</para>
+		<para>总之，删除数据库中的数据不能将图片删除就会产生脏数据。很多采用删除数据的时候去检查图片如果存在先删除图片，再删除数据的方法。这种方案也非完美解决方案，存在这图片先被删除，程序出错SQL没有运行，或者反之。</para>
+	</section>
+	<section>
+		<title>解决思路</title>
+		<para>如果删除图片能够成为事物处理中的一个环节，所有问题都能迎刃而解，可彻底解决脏数据的烦恼。</para>
+	</section>
+	<section>
+		<title>解决方案</title>
+		<para>mysql plugin 开发 udf。我写几个function</para>
+		<variablelist>
+			<title>UDF</title>
+			<varlistentry>
+				<term>image_check(filename)</term>
+				<listitem>
+					<para>检查图片是否存在.</para>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>image_remove(filename)</term>
+				<listitem>
+					<para>删除图片.</para>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>image_rename(oldfile,newfile)</term>
+				<listitem>
+					<para>更改图片文件名.</para>
+				</listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>image_md5sum(filename)</term>
+				<listitem>
+					<para>md5sum 主要用户图片是否被更改过.</para>
+				</listitem>
+			</varlistentry>
+		</variablelist>
+		<para>有了上面的function后你就可以在begin,commit,rollback 直接穿插使用，实现在事物处理期间做你爱做的事。</para>
+		<para>通过触发器更能保证数据完整性</para>
+		<screen>
+1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。
+2. delete 触发器的任务： 检查删除记录的时候，首先去删除图片，删除成功再删除该记录。
+		</screen>
+		<para>触发器进一步优化</para>
+		<screen>
+1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。如果上传成功再做image_md5sum 进行校验100% 正确后插入记录
+2. delete 触发器的任务： 检查删除记录的时候，首先去改图片文件名，然后删除该记录，最后删除图片，删除成功。如果中间环境失败 记录会rollback，图片会在次修改文件名改回来。100% 保险
+		</screen>
+	</section>
+	<section>
+		<title>plugin 的开发与使用</title>
+		<para>开发UDF你需要安装下面的软件包</para>
+		<screen>
+sudo apt-get install pkg-config
+sudo apt-get install libmysqlclient-dev
+
+sudo apt-get install gcc gcc-c++ make automake autoconf
+		</screen>
+		<para>编译udf，最后将so文件复制到 /usr/lib/mysql/plugin/</para>
+		<screen>
+./configure --prefix=/srv/mysql --with-mysql=/usr/bin/mysql_config
+		</screen>
+		<para>装载</para>
+		<screen>
+create function image_check returns boolean soname 'images.so';
+create function image_remove returns boolean soname 'images.so';
+create function image_rename returns boolean soname 'images.so';
+create function image_md5sum returns string soname 'images.so';
+		</screen>
+		<para>卸载</para>
+		<screen>
+drop function image_check;
+drop function image_remove;
+drop function image_rename;
+drop function image_md5sum;
+		</screen>
+
+	</section>
+
+</article>
