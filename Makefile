@@ -12,6 +12,7 @@ HTML := $(patsubst %.xml,%.html,$(wildcard *.xml))
 all: $(HTML)
 
 %.html: %.xml
+	@rm -rf $(PREFIX)/$@
 	@$(XSLTPROC) $(DSSSL) $< >  $(PREFIX)/$@
 
 clean:
