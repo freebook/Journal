@@ -165,6 +165,17 @@ LogFormat "%{User-agent}i" agent
                       '"$http_user_agent" "$http_x_forwarded_for"';
 		</screen>
 		<para>但对于系统管理员使用grep,awk,sed,sort,uniq分析时造成一定的麻烦。所以我建议仍然采用正则分解</para>
+		<para>产生有规则日志格式，Apache：</para>
+		<screen>
+LogFormat \
+        "\"%h\",%{%Y%m%d%H%M%S}t,%>s,\"%b\",\"%{Content-Type}o\",  \
+        \"%U\",\"%{Referer}i\",\"%{User-Agent}i\""
+		</screen>
+		<para>将access.log文件导入到mysql中</para>
+		<screen>
+LOAD DATA INFILE '/local/access_log' INTO TABLE tbl_name
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\'		
+		</screen>
 	</section>
 	<section>
 		<title>日志导入到 MongoDB</title>
