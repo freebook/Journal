@@ -14,6 +14,7 @@
 		<releaseinfo>$Id: mysql-plugin.xml 587 2013-05-16 09:49:20Z netkiller $</releaseinfo>
 		<abstract>
 			<para>你是是不是在开发中常常遇到，删除了数据库记录后，发现该记录对应的图片没有删除，或者删除了图片，数据库中仍有数据存在，你的网站脏数据（图片）成几何数增长，阅读下文这里为你提供了一个完美决方案。 </para>
+			<para>原文出处：<ulink url="http://netkiller.github.io/journal/mysql-plugin.html"/></para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -82,9 +83,14 @@ sudo apt-get install libmysqlclient-dev
 
 sudo apt-get install gcc gcc-c++ make automake autoconf
 		</screen>
+		<para><ulink url="https://github.com/netkiller/mysql-image-plugin" /></para>
 		<para>编译udf，最后将so文件复制到 /usr/lib/mysql/plugin/</para>
 		<screen>
-./configure --prefix=/srv/mysql --with-mysql=/usr/bin/mysql_config
+git clone https://github.com/netkiller/mysql-image-plugin.git
+cd mysql-image-plugin/src
+
+gcc -I/usr/include/mysql -I./ -fPIC -shared -o image.so image.c
+sudo mv image.so /usr/lib/mysql/plugin/
 		</screen>
 		<para>装载</para>
 		<screen>
