@@ -28,7 +28,7 @@
 		<para>我以电商网站为例，一般的网站产品数据存放在数据库中，商品图片是上传到文件服务器，然后通过http服务器浏览商品图片。这是最基本的也是最常见做法。</para>
 		<para>稍复杂的方案是，如果图片数量庞大，会使用分布式文件系统方案。但是这些方案都不能保证数据的完整性，极易产生脏数据（垃圾数据）。脏数据是指当你删除了数据库表中的记录后，图片仍然存在，或者手工删除了图片，而数据库中的记录仍然存在。</para>
 		<para>将图片放入数据库中存放在BLOB的方法可以解决脏数据问题，典型的案例是公安的身份证系统。但这种方案的前提是，图片不能太大，数量不多，访问量不大。 这显然不适合电商网站。</para>
-		<para>2009年我在走秀网工作，商品图片与缩图文件900GB到2012离职已经有10TB，每天有成百上千的商品上架下架，很多商品下架后永远不会再上架，这些批量下架的商品数据不会删除，仅仅标记为删除，总是期望以后能继续使用，实际上再也不会有人过问，另一方面随着品类经理频繁更换，员工离职，这些商品会石沉大海，再也无人问均。这些商品所对应的图片也就脏数据主要来源。新的品类经历上任后，会重新拍照，上传新图片。</para>
+		<para>2009年我在走秀网工作，商品图片与缩图文件900GB到2012离职已经有10TB，每天有成百上千的商品上架下架，很多商品下架后永远不会再上架，这些批量下架的商品数据不会删除，仅仅标记为删除，总是期望以后能继续使用，实际上再也不会有人过问，另一方面随着品类经理频繁更换，员工离职，这些商品会石沉大海，再也无人问均。这些商品所对应的图片也就脏数据主要来源。新的品类经理上任后，会重新拍照，上传新图片。</para>
 		<para>总之，删除数据库中的数据不能将图片删除就会产生脏数据。很多采用删除数据的时候去检查图片如果存在先删除图片，再删除数据的方法。这种方案也非完美解决方案，存在这图片先被删除，程序出错SQL没有运行，或者反之。</para>
 	</section>
 	<section>
@@ -64,18 +64,14 @@
 					<para>md5sum 主要用户图片是否被更改过.</para>
 				</listitem>
 			</varlistentry>
+			<varlistentry>
+				<term>image_move(filename,filename)</term>
+				<listitem>
+					<para>移动图片的位置</para>
+				</listitem>
+			</varlistentry>
 		</variablelist>
 		<para>有了上面的function后你就可以在begin,commit,rollback 直接穿插使用，实现在事物处理期间做你爱做的事。</para>
-		<para>通过触发器更能保证数据完整性</para>
-		<screen>
-1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。
-2. delete 触发器的任务： 检查删除记录的时候，首先去删除图片，删除成功再删除该记录。
-		</screen>
-		<para>触发器进一步优化</para>
-		<screen>
-1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。如果上传成功再做image_md5sum 进行校验100% 正确后插入记录
-2. delete 触发器的任务： 检查删除记录的时候，首先去改图片文件名，然后删除该记录，最后删除图片，删除成功。如果中间环境失败 记录会rollback，图片会在次修改文件名改回来。100% 保险
-		</screen>
 	</section>
 	<section>
 		<title>plugin 的开发与使用</title>
@@ -96,6 +92,7 @@ create function image_check returns boolean soname 'images.so';
 create function image_remove returns boolean soname 'images.so';
 create function image_rename returns boolean soname 'images.so';
 create function image_md5sum returns string soname 'images.so';
+create function image_move returns string soname 'images.so';
 		</screen>
 		<para>卸载</para>
 		<screen>
@@ -103,8 +100,52 @@ drop function image_check;
 drop function image_remove;
 drop function image_rename;
 drop function image_md5sum;
+drop function image_move;
 		</screen>
-
 	</section>
+	<section>
+		<title>在事务中使用该插件</title>
+		<para>插入图片流程，上传图片后，通过插件检查图片是否正确上传，然后插入记录</para>
+		<screen>
+begin;
+IF image_check('/path/to/images.jpg') THEN
+	insert into images(product_id,thumbnail,original) values(1000,'thumbnail/path/to/images.jpg','original/path/to/images.jpg');
+	commit;
+ELSE
+	image_remove('/path/to/images.jpg');
+END IF
+rollback;
+		</screen>
+		<para>删除商品采用image_move 方案，当出现异常rollback后还可以还原被删除的图片</para>
+		<screen>
+begin;
+IF image_check('/path/to/images.jpg') THEN
+	select thumbnail,original into @thumbnail,@original from images where id='1000' for delete;
+	delete from images where id='1000';
+	select image_move(@thumbnail,'recycle/path/to/');
+	select image_move(@original,'recycle/path/to/');
+	commit;
+END IF
 
+rollback;
+select image_move('recycle/path/to/images.jpg','path/to/images.jpg');
+		</screen>
+		<para>我们可以使用EVENT定时删除回收站内的图片</para>
+		<screen>
+image_remove('recycle/path/to/images.jpg');
+		</screen>
+	</section>
+	<section>
+		<title>通过触发器调用图片处理函数</title>
+		<para>通过触发器更能保证数据完整性</para>
+		<screen>
+1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。
+2. delete 触发器的任务： 检查删除记录的时候，首先去删除图片，删除成功再删除该记录。
+		</screen>
+		<para>触发器进一步优化</para>
+		<screen>
+1. insert 触发器的任务： 插入记录的时候通过image_check检查图片是否正常上传，如果非没有上传，数据插入失败。如果上传成功再做image_md5sum 进行校验100% 正确后插入记录
+2. delete 触发器的任务： 检查删除记录的时候，首先去改图片文件名，然后删除该记录，最后删除图片，删除成功。如果中间环境失败 记录会rollback，图片会在次修改文件名改回来。100% 保险
+		</screen>		
+	</section>
 </article>
