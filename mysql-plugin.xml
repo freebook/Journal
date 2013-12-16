@@ -76,7 +76,7 @@
 	</section>
 	<section>
 		<title>plugin 的开发与使用</title>
-		<para>开发UDF你需要安装下面的软件包</para>
+		<para>编译UDF你需要安装下面的软件包</para>
 		<screen>
 sudo apt-get install pkg-config
 sudo apt-get install libmysqlclient-dev
