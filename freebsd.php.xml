@@ -239,4 +239,17 @@ server {
 			</screen>
 		</example>
 	</section>
+	<section>
+		<title>phalcon 框架</title>
+		<para>使用pkg安装phalcon依赖php-5.4,所以需要使用ports编译安装</para>
+		<screen>
+cd /usr/ports/www/phalcon
+make install
+		</screen>
+		<para>确认安装成功</para>
+		<screen>
+# php -m | grep phalcon
+phalcon
+		</screen>
+	</section>
 </article>
