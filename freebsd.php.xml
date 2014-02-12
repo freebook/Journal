@@ -39,6 +39,10 @@ make install clean; rehash
 [X] FPM        Build FPM version (experimental)
 		]]>
 		</screen>
+		<para>php.ini</para>
+		<screen>
+# cp /usr/local/etc/php.ini-development /usr/local/etc/php.ini
+		</screen>
 		<para>FreeBSD启动是自动开启php-fpm服务</para>
 		<screen>
 		<![CDATA[
@@ -250,6 +254,59 @@ make install
 		<screen>
 # php -m | grep phalcon
 phalcon
+		</screen>
+		<para>配置nginx.conf</para>
+		<screen>
+    server {
+        listen       80;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   /www/phalcon/public;
+            index  index.html index.php;
+			if ($request_filename !~ (js|css|images|robots/.txt|.*\.html|index/.php) ) {
+            	rewrite ^/(.*)$ /index.php?_url=/$1 last;
+	    		break;
+			}
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/local/www/nginx-dist;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        location ~ \.php$ {
+        #location ~ /index.php/ {
+            root           /www/phalcon/public;
+            fastcgi_pass   127.0.0.1:9000;
+            fastcgi_index  index.php;
+            fastcgi_param  SCRIPT_FILENAME  /www/phalcon/public$fastcgi_script_name;
+            include        fastcgi_params;
+        }
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        location ~ /\.ht {
+            deny  all;
+        }
+    }
 		</screen>
 	</section>
 </article>
