@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>FreeBSD 10 + Nginx 1.4.4 + PHP 5.5.9 + MySQL 5.6.15</title>
+		<subtitle>How to Install Nginx and PHP-FPM on FreeBSD 10</subtitle>
+		&article.author.xml;
+		<pubdate>$Date$</pubdate>
+		<releaseinfo>$Id$</releaseinfo>
+		<abstract>
+			<para>FreeBSD 10.0 的 pkg 无法安装php-fpm 最终采用 posts 编译安装</para>
+			<para>http://netkiller.github.io/journal/freebsd.php.html</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>FreeBSD 10.0</keyword>
+			<keyword>PHP 5.5.9</keyword>
+			<keyword>MySQL 5.6.15</keyword>
+		</keywordset>
+	</articleinfo>
+
+ 	<section>
+		<title>PHP 5.5.9</title>
+ 		<para>文本格式回复</para>
+		<screen>
+cd /usr/ports/lang/php55
+make install clean; rehash
+		</screen>
+		<para>开启下面三个 PHP 编译选项</para>
+		<screen>
+		<![CDATA[
+[X] CLI        Build CLI version
+[X] CGI        Build CGI version
+[X] FPM        Build FPM version (experimental)
+		]]>
+		</screen>
+		<para>FreeBSD启动是自动开启php-fpm服务</para>
+		<screen>
+		<![CDATA[
+cat >> /etc/rc.conf <<EOF
+php_fpm_enable="YES"
+EOF
+		]]>
+		</screen>
+		<para>安装PHP扩展</para>
+		<screen>
+cd /usr/ports/lang/php55-extensions
+make install clean; rehash
+		</screen>
+		<para>FPM启动脚本</para>
+		<screen>
+# /usr/local/etc/rc.d/php-fpm start
+		</screen>
+	</section>
+
+	<section>
+		<title>MySQL 5.6.15</title>
+		<para>安装 mysql server 与 client</para>
+		<screen>
+		<![CDATA[
+pkg install mysql56-server
+pkg install mysql56-client
+		]]>
+		</screen>
+
+		<para>设置mysql root密码</para>
+		<screen>
+/usr/local/etc/rc.d/mysql-server onestart
+/usr/local/bin/mysqladmin -u root password 'newpassword'
+		</screen>
+
+		<para>FreeBSD 启动时开启MySQL服务</para>
+		<screen>
+		<![CDATA[
+cat >> /etc/rc.conf <<EOF
+mysql_enable="YES"
+EOF
+		]]>
+		</screen>
+		<para>MySQL 启动脚本</para>
+		<screen>
+# /usr/local/etc/rc.d/mysql-server
+		</screen>
+	</section>
+
+	<section>
+		<title>Nginx 1.4.4</title>
+		<para>所特殊需求，所以采用pkg安装</para>
+		<screen>
+# pkg install nginx
+		</screen>
+		<para>如果需要特别编译模块可以使用ports安装</para>
+		<screen>
+cd /usr/ports/www/nginx
+make install clean; rehash
+		</screen>
+		<para>服务开启</para>
+		<screen>
+		<![CDATA[
+cat >> /etc/rc.conf <<EOF
+nginx_enable="YES"
+EOF
+		]]>
+		</screen>
+		<para>Nginx 启动脚本的位置</para>
+		<screen>
+# /usr/local/etc/rc.d/nginx start
+		</screen>
+		<example>
+			<title>Nginx 配置文件</title>
+			<para>/usr/local/etc/nginx/nginx.conf</para>
+			<screen>
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    gzip  on;
+
+	include /usr/local/etc/nginx/conf.d/*.conf;
+
+}
+			</screen>
+			<para>/usr/local/etc/nginx/conf.d/host.domain.conf</para>
+			<screen>
+server {
+    listen       80;
+    server_name  localhost;
+
+    #charset koi8-r;
+
+    #access_log  logs/host.access.log  main;
+
+    location / {
+        root   /usr/local/www/nginx;
+        index  index.html index.php;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/local/www/nginx-dist;
+    }
+
+    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+    #
+    #location ~ \.php$ {
+    #    proxy_pass   http://127.0.0.1;
+    #}
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    location ~ \.php$ {
+        root           html;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  /usr/local/www/nginx$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    #location ~ /\.ht {
+    #    deny  all;
+    #}
+}
+
+
+# another virtual host using mix of IP-, name-, and port-based configuration
+#
+#server {
+#    listen       8000;
+#    listen       somename:8080;
+#    server_name  somename  alias  another.alias;
+
+#    location / {
+#        root   html;
+#        index  index.html index.htm;
+#    }
+#}
+
+
+# HTTPS server
+#
+#server {
+#    listen       443;
+#    server_name  localhost;
+
+#    ssl                  on;
+#    ssl_certificate      cert.pem;
+#    ssl_certificate_key  cert.key;
+
+#    ssl_session_timeout  5m;
+
+#    ssl_protocols  SSLv2 SSLv3 TLSv1;
+#    ssl_ciphers  HIGH:!aNULL:!MD5;
+#    ssl_prefer_server_ciphers   on;
+
+#    location / {
+#        root   html;
+#        index  index.html index.htm;
+#    }
+#}
+			</screen>
+		</example>
+	</section>
+</article>
