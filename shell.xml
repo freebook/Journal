@@ -9,7 +9,7 @@
 <article xml:base="http://netkiller.sourceforge.net/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>启东Shell编写</title>
+		<title>启动Shell编写</title>
 
 		&article.author.xml;
 

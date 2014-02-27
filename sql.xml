@@ -67,38 +67,7 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 		</screen>
 
 
-		<section>
-			<title>/etc/security/limits.conf</title>
-
-			<para>下面更省事，但不建议使用*通配符，这样任何用户都不限制。</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-			<para>而上面我市针对www用户设置，也就是web服务器，其他用户是受限的。</para>
-		</section>
-		<section>
-			<title>/etc/sysctl.conf</title>
-			<para>内核参数调整</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>history 格式设置</title>
-			<para>设置history格式，是他能够记录命令的输入时间</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-		</section>
-
-
-	</section>
+	
 	<section>
 		<title>常用网络软件服务安装</title>
 
@@ -123,10 +92,7 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 		<para>安装编译器与开发包</para>
 
 
-		<![CDATA[
-
-		]]>
-		</screen>
+	
 
 		<section>
 			<title>配置php.ini</title>
@@ -137,12 +103,7 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 			<screen>
 
 			</screen>
-			<para>下面更改仅供参考，需要根据你的具体情况配置，不要照搬。</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
+			
 		</section>
 		<section>
 			<title>配置 php-fpm</title>
@@ -150,25 +111,10 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 			<screen>
 
 			</screen>
-			<para>修改配置文件</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-			<para>察看配置项</para>
-			<screen>
-
-			</screen>
+			
+			
 		</section>
-		<section>
-			<title>将php加入PATH环境变量</title>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-		</section>
+		
 		<section>
 			<title>PHP　Extension - APC</title>
 			<para>Apc</para>
@@ -186,112 +132,20 @@ apc
 
 		<section>
 			<title>phpredis</title>
-			<para>安装git版本控制客户端</para>
-			<screen>
-yum install git
-			</screen>
-			<para>从github仓库中克隆一份代码到本地</para>
-			<screen>
-git clone git://github.com/nicolasff/phpredis.git
-			</screen>
-			<para>编译安装phpredis； 我暂时没有找到 pecl的phpredis源</para>
-			<screen>
-			<![CDATA[
-cd phpredis
-phpize
-./configure --with-php-config=/srv/php-5.4.9/bin/php-config
-make && make install
-			]]>
-			</screen>
-			<para>创建配置文件</para>
-			<screen>
-			<![CDATA[
-cat > /srv/php-5.4.9/etc/conf.d/redis.ini <<EOF
-extension=redis.so
-EOF
-			]]>
-			</screen>
-			<para>查看安装情况</para>
-			<screen>
-# php -m | grep redis
-redis
-			</screen>
+			
+		
+			
+			
 		</section>
 		<section>
 			<title>编译中遇到问题如何处理？</title>
 			<para>下面我们来模拟一个场景，例如 configure的时候出现下面提示</para>
-			<screen>
-configure: error: Can not find recode.h anywhere under yes /usr/local /usr /opt.
-			</screen>
+			
 			<para>提示找不到recode。h文件，很好办，首先搜索recode包</para>
-			<screen>
-
-			</screen>
-			<para>然后安装devel包,记住之需要安装devel包即可，其他都是多余。</para>
-			<screen>
-[root@haproxy php-5.4.9]# yum install recode-devel -y
-			</screen>
+			
 			<para>然后重新运行configure</para>
 		</section>
 	</section>
-	<section>
-		<title>nginx-1.2.5</title>
-		<para>为web服务器创建一个用户，我喜欢使用www,id为80更容易记，同时将一个单独分区挂在/www上用户存放web应用程序。</para>
-		<screen>
-
-		</screen>
-		<para>添加nginx的YUM源</para>
-		<screen>
-		<![CDATA[
-
-		]]>
-		</screen>
-		<para>开始安装nginx</para>
-		<screen>
-		<![CDATA[
-
-		]]>
-		</screen>
-		<para>如果你不懂编译器优化，建议你使用rpm方案。在不优化的情况下编译出来程序很臃肿。</para>
-		<para></para>
-		<screen>
-# rpm -qa | grep nginx
-nginx-1.2.5-1.el6.ngx.x86_64
-		</screen>
-		<section>
-			<title>/etc/nginx/nginx.conf</title>
-			<para>隐藏nginx版本号</para>
-			<screen>
-
-			</screen>
-		</section>
-		<section>
-			<title>host 配置</title>
-			<screen>
-
-			</screen>
-
-			<screen>
-
-			</screen>
-			<para>创建测试页面</para>
-			<screen>
-			<![CDATA[
-
-			]]>
-			</screen>
-			<para>启动服务器</para>
-			<screen>
-
-			</screen>
-			<para>检查index.php输出</para>
-			<screen>
-
-			</screen>
-		</section>
-	</section>
+	
 
 </article>
-
-
-

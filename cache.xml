@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>实操 Web Cache</title>
+		<subtitle>http://netkiller.github.io/journal/cache.html</subtitle>
+		&article.author.xml;
+		<pubdate>$Date$</pubdate>
+		<releaseinfo>$Id$</releaseinfo>
+		<abstract>
+			<para>http://netkiller.github.io/www/index.html</para>
+			<para></para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>If-Modified-Since, Last-Modified</keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+	</articleinfo>
+
+ 	<section>
+ 		<title>If-Modified-Since / Last-Modified</title>
+ 		<para>If-Modified-Since 小于 Last-Modified 返回 HTTP/1.1 200 OK, 否则返回 HTTP/1.0 304 Not Modified</para>
+
+ 		<section>
+			<title>静态文件</title>
+			<para>静态文件自动产生 Last-Modified 头</para>
+			<screen>
+# curl -I http://192.168.6.9/index.html
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 07:36:03 GMT
+Content-Type: text/html
+Content-Length: 6
+Last-Modified: Thu, 27 Feb 2014 07:29:50 GMT
+Connection: keep-alive
+Accept-Ranges: bytes
+			</screen>
+			<para>图片文件</para>
+			<screen>
+# curl -I http://192.168.6.9/image.png
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 07:37:18 GMT
+Content-Type: image/png
+Content-Length: 41516
+Last-Modified: Thu, 27 Feb 2014 07:36:59 GMT
+Connection: keep-alive
+Accept-Ranges: bytes
+			</screen>
+			<para>每次浏览器请求文件会携带  If-Modified-Since 头，将当前时间发送给服务器，与服务器的Last-Modified时间对对比，如果大于Last-Modified时间，返回HTTP/1.0 304 Not Modified不会重新打开文件，否则重新读取文件并返回内容</para>
+			<screen>
+# curl -H "If-Modified-Since: Fir, 28 Feb 2014 07:42:55 GMT" -I http://www.163.com/
+HTTP/1.0 304 Not Modified
+Date: Thu, 27 Feb 2014 07:51:20 GMT
+Content-Type: text/html; charset=GBK
+Expires: Thu, 27 Feb 2014 07:51:34 GMT
+Cache-Control: max-age=80
+Age: 54
+X-Via: 1.0 fjpt182:1 (Cdn Cache Server V2.0)
+Connection: keep-alive
+			</screen>
+
+			<note>
+	 			<title>注意</title>
+	 			<para>每一个WEB服务器的实现方式不一样，每个浏览器的实现方式也不同，例如我们对nginx与lighttpd测试，使用curl发送If-Modified-Since头，nginx 无法返回304始终返回200，而lighttpd 可以返回304</para>
+	 			<screen>
+				<![CDATA[
+# curl -H "If-Modified-Since: Fri, 29 Feb 2014 08:42:55 GMT" -I -v  http://192.168.6.9/index.html
+* About to connect() to 192.168.6.9 port 80 (#0)
+*   Trying 192.168.6.9... connected
+* Connected to 192.168.6.9 (192.168.6.9) port 80 (#0)
+> HEAD /index.html HTTP/1.1
+> User-Agent: curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.0.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+> Host: 192.168.6.9
+> Accept: */*
+> If-Modified-Since: Fri, 29 Feb 2014 08:42:55 GMT
+>
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< Server: nginx/1.0.15
+Server: nginx/1.0.15
+< Date: Thu, 27 Feb 2014 08:15:20 GMT
+Date: Thu, 27 Feb 2014 08:15:20 GMT
+< Content-Type: text/html
+Content-Type: text/html
+< Content-Length: 6
+Content-Length: 6
+< Last-Modified: Thu, 27 Feb 2014 07:29:50 GMT
+Last-Modified: Thu, 27 Feb 2014 07:29:50 GMT
+< Connection: keep-alive
+Connection: keep-alive
+< Accept-Ranges: bytes
+Accept-Ranges: bytes
+
+<
+* Connection #0 to host 192.168.6.9 left intact
+* Closing connection #0
+				]]>
+				</screen>
+	 			<para>lighttpd 会正常返回304</para>
+	 			<screen>
+				<![CDATA[
+# curl -H "If-Modified-Since: Fri, 28 Feb 2014 08:42:55 GMT" -I http://192.168.6.2/index.html
+HTTP/1.1 304 Not Modified
+Content-Type: text/html
+Accept-Ranges: bytes
+ETag: "4021085363"
+Last-Modified: Thu, 20 Feb 2014 09:45:00 GMT
+Date: Thu, 27 Feb 2014 08:10:49 GMT
+Server: lighttpd/1.4.31
+				]]>
+				</screen>
+				<para>在使用 Chrome / Firefox 浏览器测试一下，你很发现都能实现返回 304，包括 nginx.说明nginx 如果想返回304需要提供其他HTTP头，而不能仅仅推送 If-Modified-Since</para>
+	 		</note>
+
+		</section>
+		<section>
+			<title>动态文件</title>
+			<para>动态文件没有 Last-Modified 头，我们可以伪造一个</para>
+			<screen>
+			<![CDATA[
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 07:57:59 GMT
+Content-Type: text/html
+Connection: keep-alive
+			]]>
+			</screen>
+			<para>在程序中加入HTTP头推送操作,Last-Modified时间是27号，当前时间是28号，我们要让Last-Modified 小于当前时间才行。</para>
+			<screen>
+			<![CDATA[
+# cat index.php
+<?php
+header('Last-Modified: Thu, 27 Feb 2014 08:39:35 GMT' );
+//header('Last-Modified: ' .gmdate('D, d M Y H:i:s') . ' GMT' );
+?>
+Hello
+			]]>
+			</screen>
+			<para>现在你将看到 Last-Modified</para>
+			<screen>
+			<![CDATA[
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 08:32:40 GMT
+Content-Type: text/html
+Connection: keep-alive
+Last-Modified: Thu, 27 Feb 2014 08:32:39 GMT
+			]]>
+			</screen>
+			<note>
+				<title>注意</title>
+				<para>虽然我们让动态程序返回了 Last-Modified ，但浏览器不认，经过测试 Chrome / Firefox 均不会承认.php文件，并缓存其内容。</para>
+				<screen>
+				<![CDATA[
+# curl -H "If-Modified-Since: Fri, 28 Feb 2014 08:42:55 GMT" -I -v http://192.168.6.9/index.php
+* About to connect() to 192.168.6.9 port 80 (#0)
+*   Trying 192.168.6.9... connected
+* Connected to 192.168.6.9 (192.168.6.9) port 80 (#0)
+> HEAD /index.php HTTP/1.1
+> User-Agent: curl/7.19.7 (x86_64-redhat-linux-gnu) libcurl/7.19.7 NSS/3.14.0.0 zlib/1.2.3 libidn/1.18 libssh2/1.4.2
+> Host: 192.168.6.9
+> Accept: */*
+> If-Modified-Since: Fri, 28 Feb 2014 08:42:55 GMT
+>
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< Server: nginx/1.0.15
+Server: nginx/1.0.15
+< Date: Thu, 27 Feb 2014 08:39:36 GMT
+Date: Thu, 27 Feb 2014 08:39:36 GMT
+< Content-Type: text/html
+Content-Type: text/html
+< Connection: keep-alive
+Connection: keep-alive
+< Last-Modified: Thu, 27 Feb 2014 08:39:35 GMT
+Last-Modified: Thu, 27 Feb 2014 08:39:35 GMT
+* no chunk, no close, no size. Assume close to signal end
+
+<
+* Closing connection #0
+				]]>
+				</screen>
+				<para>Last-Modified 对动态程序来说没有起到实际作用</para>
+			</note>
+		</section>
+		<section>
+			<title>通过rewrite伪静态处理</title>
+			<para>index.php仍然是上面的那个php文件，我们只是做了伪静态</para>
+			<screen>
+			<![CDATA[
+location / {
+        root   /www;
+        index  index.html index.htm;
+		rewrite ^/test.html$ /index.php last;
+}
+			]]>
+			</screen>
+			<para>现在我们分别通过curl有chrome/firefox进行测试</para>
+
+			<screen>
+			<![CDATA[
+	# curl -H "If-Modified-Since: Fri, 28 Feb 2014 08:42:55 GMT" -I  http://192.168.6.9/test.html
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 08:55:19 GMT
+Content-Type: text/html
+Connection: keep-alive
+Last-Modified: Thu, 26 Feb 2014 08:39:35 GMT
+			]]>
+			</screen>
+			<para>经过测试无论是 curl 还是 chrome/firefox 均无法返回304.</para>
+			<para>下面是我的分析，仅供参考。用户请求index.html Nginx 会找到该文件读取 mtime 与 If-Modified-Since 匹配，如果If-Modified-Since大于 Last-Modified返回 304否则返回200.</para>
+			<para>为什么同样操作经过伪静态的test.html就不行呢？ 我分析当用户请求test.html Nginx 首先做Rewrite处理，然后跳转到index.php 整个过程nginx 并没有访问实际物理文件test.html也就没有mtime, 所以Nginx 返回200.</para>
+			<para>如果 Nginx 按预想的返回304，nginx 需要读取程序返回的HTTP头，Nginx 并没有这样的处理逻辑。</para>
+		</section>
+
+	</section>
+
+	<section>
+		<title>ETag / If-None-Match</title>
+		<para>etag on; 开启Nginx etag支持，lighttpd 默认开启</para>
+		<screen>
+		<![CDATA[
+server {
+    listen       80;
+    server_name phalcon;
+
+    charset utf-8;
+
+    access_log  /var/log/nginx/host.access.log  main;
+	etag on;
+    location / {
+        root   /www/phalcon/public;
+        index  index.html index.php;
+    }
+}
+		]]>
+		</screen>
+		<para>检查ETag输出</para>
+		<screen>
+# curl -I http://phalcon/img/css.png
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 27 Feb 2014 09:20:49 GMT
+Content-Type: image/png
+Content-Length: 1133
+Last-Modified: Fri, 14 Feb 2014 08:05:03 GMT
+Connection: keep-alive
+ETag: "52fdce2f-46d"
+Accept-Ranges: bytes
+		</screen>
+
+		<section>
+			<title>静态文件</title>
+			<para>首先查询etag值</para>
+			<screen>
+# curl -I http://phalcon/img/css.png
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 27 Feb 2014 09:25:41 GMT
+Content-Type: image/png
+Content-Length: 1133
+Last-Modified: Fri, 14 Feb 2014 08:05:03 GMT
+Connection: keep-alive
+ETag: "52fdce2f-46d"
+Accept-Ranges: bytes
+			</screen>
+			<para>然后向服务器发送If-None-Match HTTP头</para>
+			<screen>
+# curl -H 'If-None-Match: "52fdce2f-46d"' -I http://phalcon/img/css.png
+HTTP/1.1 304 Not Modified
+Server: nginx
+Date: Thu, 27 Feb 2014 09:25:44 GMT
+Last-Modified: Fri, 14 Feb 2014 08:05:03 GMT
+Connection: keep-alive
+ETag: "52fdce2f-46d"
+			</screen>
+			<para>这次比较顺利，成功返回HTTP/1.1 304 Not Modified</para>
+		</section>
+		<section>
+			<title>动态程序</title>
+			<para>默认情况输出如下</para>
+			<screen>
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx
+Date: Thu, 27 Feb 2014 09:29:13 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+			</screen>
+			<para>测试程序</para>
+			<screen>
+			<![CDATA[
+<?php
+header('Last-Modified: Thu, 26 Feb 2014 08:39:35 GMT' );
+header('Etag: "abcdefg"');
+#header('Last-Modified: ' .gmdate('D, d M Y H:i:s') . ' GMT' );
+?>
+Hello 
+			]]>
+			</screen>
+			<para>测试效果</para>
+			<screen>
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 09:41:06 GMT
+Content-Type: text/html
+Connection: keep-alive
+Last-Modified: Thu, 26 Feb 2014 08:39:35 GMT
+Etag: "abcdefg"
+
+[root@centos6 ~]# curl -H 'If-None-Match: "abcdefg"' -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 09:41:42 GMT
+Content-Type: text/html
+Connection: keep-alive
+Last-Modified: Thu, 26 Feb 2014 08:39:35 GMT
+Etag: "abcdefg"
+			</screen>
+			<para>测试情况与之前的Last-Modified结果一样</para>
+			<para>动态程序返回Etag真的就没有用了吗？</para>
+			<para>答案是：非也， 有一个方法可以让动态程序返回的 Etag 也能发挥作用，程序修改如下</para>
+			<screen>
+			<![CDATA[
+<?php
+$etag = md5('http://netkiller.github.io');
+cache($etag);
+function cache($etag)
+{
+        $http_if_none_match = null;
+        if(array_key_exists ('HTTP_IF_NONE_MATCH',$_SERVER)){
+                $http_if_none_match = $_SERVER['HTTP_IF_NONE_MATCH'];
+        }
+        
+        if ($http_if_none_match == $etag)  
+        { 
+                header('Etag: '.$etag, true, 304); 
+                exit; 
+        } else {
+                header('Etag: '.$etag);  
+        }
+        
+} 
+print_r($_SERVER);
+echo date("Y-m-d H:i:s");
+?>
+			]]>
+			</screen>
+			<para>首先查看Etag值</para>
+			<screen>
+# curl  -I http://192.168.6.9/test.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 10:07:19 GMT
+Content-Type: text/html
+Connection: keep-alive
+Etag: 7467675324d0f7a3e01ce5151848fedb
+			</screen>
+			<para>发送If-None-Match头</para>
+			<screen>
+# curl -H 'If-None-Match: 7467675324d0f7a3e01ce5151848fedb' -I http://192.168.6.9/test.php
+HTTP/1.1 304 Not Modified
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 10:07:39 GMT
+Connection: keep-alive
+Etag: 7467675324d0f7a3e01ce5151848fedb
+			</screen>
+			<para>达成预计效果，此种方法同样可以用于 Last-Modified，伪静态后效果更好</para>
+			<para>Etag 值的运算技巧，我习惯上采用URL同时配合伪静态例如</para>
+			<screen>
+$etag = $_SERVER['REQUEST_URI']
+			</screen>
+			<para>URL类似 http://www.example.com/news/100/1000.html 一次请求便缓存页面，这样带来一个更新的问题，于是又做了这样的处理</para>
+			<screen>
+http://www.example.com/news/100/1000.1.html			
+			</screen>
+			<para>.1.是版本号，每次修改后+1操作，.1.没有人格意义rewrite操作是会丢弃这个参数，仅仅是为了始终有新的URL对应内容</para>
+		</section>
+	</section>
+	<section>
+		<title>Expires / Cache-Control</title>
+		<para>前面所讲 Last-Modified 与 Etag 主要用于分辨文件是否修改过， 无法控制页面在浏览器端缓存的时间。Expires / Cache-Control 可以控制缓存的时间段</para>
+		<para>Expires 是 HTTP/1.0标准，Cache-Control是 HTTP/1.1标准。都能正常工作，HTTP/1.1规范中max-age优先级高于Expires,有些浏览器会联动设置，例如你设置了Cache-Control随之自动生成Expires，仅仅为了兼容。</para>
+		<section>
+			<title>静态文件</title>
+			<para>首先配置nginx设置html与png文件缓存1天</para>
+			<screen>
+location ~ .*\.(html|png)$
+{
+    expires      1d;
+}
+			</screen>
+			<para>当前情况</para>
+			<screen>
+# curl -I http://192.168.6.9/index.html
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 10:47:08 GMT
+Content-Type: text/html
+Content-Length: 6
+Last-Modified: Thu, 27 Feb 2014 07:29:50 GMT
+Connection: keep-alive
+Accept-Ranges: bytes
+			</screen>
+			<para>重启Nginx后的HTTP协议头多出Expires与Cache-Control</para>
+			<screen>
+# curl -I http://192.168.6.9/index.html
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 10:42:09 GMT
+Content-Type: text/html
+Content-Length: 3698
+Last-Modified: Fri, 26 Apr 2013 20:36:51 GMT
+Connection: keep-alive
+Expires: Fri, 28 Feb 2014 10:42:09 GMT
+Cache-Control: max-age=86400
+Accept-Ranges: bytes
+			</screen>
+		</section>
+		<section>
+			<title>动态文件</title>
+			<para>默认返回</para>
+			<screen>
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 11:45:05 GMT
+Content-Type: text/html
+Connection: keep-alive	
+			</screen>
+			<para>index.php 增加 Cache-Control 输出控制</para>
+			<screen>
+			<![CDATA[
+header('Cache-Control: max-age=259200');
+			]]>
+			</screen>
+			<para>再次查看</para>
+			<screen>
+# curl -I http://192.168.6.9/index.php
+HTTP/1.1 200 OK
+Server: nginx/1.0.15
+Date: Thu, 27 Feb 2014 11:53:48 GMT
+Content-Type: text/html
+Connection: keep-alive
+Cache-Control: max-age=259200
+			</screen>
+		</section>
+	</section>
+</article>
