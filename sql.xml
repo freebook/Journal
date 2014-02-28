@@ -67,7 +67,7 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 		</screen>
 
 
-	
+	</section>
 	<section>
 		<title>常用网络软件服务安装</title>
 
@@ -85,66 +85,21 @@ explain select * from (select *,count(id) as c from  members_tmp  where ctime li
 	<section>
 		<title>php-5.4.9</title>
 		<para>由于redhat与centosYUM源中尚未提供php-fpm所以我采用编译安装，网上有一些爱好者制作过php-fpm的rpm包。是否使用你自己那注意。</para>
-		<para>安装fedora的YUM源，我们需要一些devel包。</para>
-		<screen>
-
-		</screen>
-		<para>安装编译器与开发包</para>
-
-
-	
 
 		<section>
 			<title>配置php.ini</title>
 
 			<para>备份配置文件，防止不小心改错而又找不出问题出在哪里。</para>
 
-			<para>php默认提供两个配置文件模板php.ini-development用于开发和测试环境；php.ini-production用于生产环境。他们差异是php.ini-development会显示调试信息，即 error_display = On. </para>
-			<screen>
-
-			</screen>
 			
 		</section>
-		<section>
-			<title>配置 php-fpm</title>
-			<para>安装启动脚本</para>
-			<screen>
 
-			</screen>
-			
-			
-		</section>
-		
 		<section>
 			<title>PHP　Extension - APC</title>
 			<para>Apc</para>
-			<screen>
-			<![CDATA[
 
-			]]>
-			</screen>
-			<para>查看安装情况</para>
-			<screen>
-# /srv/php/bin/php -m | grep apc
-apc
-			</screen>
 		</section>
 
-		<section>
-			<title>phpredis</title>
-			
-		
-			
-			
-		</section>
-		<section>
-			<title>编译中遇到问题如何处理？</title>
-			<para>下面我们来模拟一个场景，例如 configure的时候出现下面提示</para>
-			
-			<para>提示找不到recode。h文件，很好办，首先搜索recode包</para>
-			
-			<para>然后重新运行configure</para>
-		</section>
 	</section>
 	
 
