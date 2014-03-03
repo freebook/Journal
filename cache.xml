@@ -29,7 +29,7 @@
 		<para>Nginx安装脚本 https://github.com/oscm/shell/blob/master/nginx/nginx.sh</para>
 		<para>php安装脚本 https://github.com/oscm/shell/blob/master/php/5.5.8.sh</para>
 	</section>
- 	<section>
+ 	<section id="modified">
  		<title>文件修改日期 If-Modified-Since / Last-Modified</title>
  		<para>If-Modified-Since 小于 Last-Modified 返回 HTTP/1.1 200 OK, 否则返回 HTTP/1.0 304 Not Modified</para>
 		<para>每次浏览器请求文件会携带  If-Modified-Since 头，将当前时间发送给服务器，与服务器的Last-Modified时间对对比，如果大于Last-Modified时间，返回HTTP/1.0 304 Not Modified不会重新打开文件，否则重新读取文件并返回内容</para>
@@ -356,7 +356,7 @@ Connection: keep-alive
 Last-Modified: Fri, 28 Feb 2014 12:04:18 GMT
 			]]>
 			</screen>
-			<para>虽然测试成功，并且在浏览器端也测试成功 HTTP/1.1 304 Not Modified</para>
+			<para>测试成功，并且在浏览器端也测试成功 HTTP/1.1 304 Not Modified</para>
 			<para>将modified.php伪静态处理 </para>
 			<screen>
     location / {
@@ -386,7 +386,7 @@ Last-Modified: Fri, 28 Feb 2014 10:04:18 GMT
 		</section>
 	</section>
 
-	<section>
+	<section id="etag">
 		<title>ETag / If-None-Match</title>
 		<para>上面的Last-Modified测试中发现ETag虽然不限制，但是暗中还是可用的：）</para>
 		<para>etag on; 开启Nginx etag支持，lighttpd 默认开启</para>
@@ -557,7 +557,7 @@ http://www.example.com/news/100/1000.1.html
 			<para>.1.是版本号，每次修改后+1操作，.1.没有人格意义rewrite操作是会丢弃这个参数，仅仅是为了始终有新的URL对应内容</para>
 		</section>
 	</section>
-	<section>
+	<section id="expires">
 		<title>Expires / Cache-Control</title>
 		<para>前面所讲 Last-Modified 与 Etag 主要用于分辨文件是否修改过， 无法控制页面在浏览器端缓存的时间。Expires / Cache-Control 可以控制缓存的时间段</para>
 		<para>Expires 是 HTTP/1.0标准，Cache-Control是 HTTP/1.1标准。都能正常工作，HTTP/1.1规范中max-age优先级高于Expires,有些浏览器会联动设置，例如你设置了Cache-Control随之自动生成Expires，仅仅为了兼容。</para>
@@ -640,7 +640,7 @@ header("Cache-Control: max-age=$ttl, must-revalidate");
 			<para>这种方法不能实现缓存的目的</para>
 		</section>
 	</section>
-	<section>
+	<section id="fastcgi">
 		<title>FastCGI 缓存相关</title>
 		<para>我们做个尝试将 expires 1d;加到location ~ \.php$中，看看能不能实现缓存的目的。</para>
 		<screen>
@@ -675,7 +675,7 @@ Cache-Control: max-age=86400
 		</screen>
 		<para>虽然推送 Cache-Control: max-age=86400 但是 IE Chrome Firefox 仍不能缓存页面</para>
 	</section>
-	<section>
+	<section id="meta">
 		<title>HTML META 与 Cache</title>
 		<para>创建一个测试文件如下</para>
 		<screen>
@@ -728,7 +728,80 @@ Connection: keep-alive
 		</screen>
 		<para>至少在当年IE是认这些Meta的，进入HTML5时代很多都发生了变化，所以不能一概而论</para>
 	</section>
-	<section>
+	<section id="gzip">
+		<title>gzip</title>
+		<para>defalte 是 Apache httpd 的标准这里只谈gzip</para>
+		<para>首先创建一个 gzip.html</para>
+		<screen>
+# curl -I http://localhost/gzip.html
+HTTP/1.1 200 OK
+Server: nginx/1.4.5
+Date: Mon, 03 Mar 2014 01:49:45 GMT
+Content-Type: text/html
+Content-Length: 19644
+Last-Modified: Mon, 03 Mar 2014 01:49:02 GMT
+Connection: keep-alive
+ETag: "5313df8e-4cbc"
+Accept-Ranges: bytes
+		</screen>
+		<para>开启 gzip on;</para>
+		<screen>
+server {
+    listen       80;
+    server_name  localhost;
+
+    #charset utf-8;
+    #access_log  /var/log/nginx/log/host.access.log  main;
+    #etag on;
+    #ssi on;
+    gzip on;
+		</screen>
+		<para>现在看看效果</para>
+		<screen>
+# curl -I http://localhost/gzip.html
+HTTP/1.1 200 OK
+Server: nginx/1.4.5
+Date: Mon, 03 Mar 2014 01:51:56 GMT
+Content-Type: text/html
+Content-Length: 19644
+Last-Modified: Mon, 03 Mar 2014 01:49:02 GMT
+Connection: keep-alive
+ETag: "5313df8e-4cbc"
+Accept-Ranges: bytes
+		</screen>
+		<para>并没有什么不同，现在增加HTTP头Accept-Encoding:gzip,defalte看看</para>
+		<screen>
+		<![CDATA[
+# curl -H Accept-Encoding:gzip,defalte  http://localhost/gzip.html
+		]]>
+		</screen>
+		<para>如果你能看到非文本内容（俗称乱码）就表示成功了。输入内容就是gzip压缩后二进制数据，我们使用gunzip可以解压缩</para>
+		<screen>
+# curl -H Accept-Encoding:gzip,defalte  http://localhost/gzip.html | gunzip
+		</screen>
+		<para>如果能正常看到html输出，表示压缩无误。</para>
+		<section>
+			<title>gzip 总结</title>
+			<para>gzip on; 开启后默认支持 text/html 不能在 gzip_types 再次定义，否则会提示重复MIME类型</para>
+			<screen>
+Starting nginx: nginx: [warn] duplicate MIME type "text/html" in /etc/nginx/conf.d/localhost.conf:16
+			</screen>
+			<para>高级配置参考</para>
+			<screen>
+    gzip  on;
+    gzip_http_version 1.0;
+    gzip_types        text/plain text/xml text/css application/xml application/xhtml+xml application/rss+xml application/atom_xml application/javascript application/x-javascript application/json;
+    gzip_disable      "MSIE [1-6]\.";
+    gzip_disable      "Mozilla/4";
+    gzip_comp_level   6;
+    gzip_proxied      any;
+    gzip_vary         on;
+    gzip_buffers      4 8k;
+    gzip_min_length   1000;		
+			</screen>
+		</section>
+	</section>
+	<section id="proxy">
 		<title>反向代理与缓存</title>
 		<para>反向代理服务器缓存方式分为：</para>
 		<para>强制缓存，指定文件，扩展名，URL设置缓存时间</para>
@@ -851,8 +924,68 @@ Accept-Ranges: bytes
 /tmp/proxy_temp_dir
 		</screen>
 		<!-- proxy_ignore_headers Cache-Control; -->
+		<section id="proxy.gzip">
+			<title>gzip 处理</title>
+			<para>http://localhost/gzip.html 是支持压缩的，192.168.2.15 proxy_pass http://localhost</para>
+			<screen>
+# curl -H Accept-Encoding:gzip,defalte  http://localhost/gzip.html			
+			</screen>
+			<para>运行后输出乱码</para>
+			<screen>
+# curl -H Accept-Encoding:gzip,defalte  http://192.168.2.15/gzip.html
+			</screen>
+			<para>现在透过反向代理请求试试，你会发现gzip压缩无效，输出的是HTML，这是怎么回事呢？这是因为反向代理不清楚后面的服务器是否支持gzip，所以一律按照正常html请求。现在我们开启 gzip_vary on; 每次返回数据会携带Vary: Accept-Encoding 头。</para>
+			<screen>
+	gzip  on;
+	gzip_vary on;
+			</screen>
+			<para>reload nginx 后查看Vary: Accept-Encoding输出</para>
+			<screen>
+# curl -I http://localhost/gzip.html
+HTTP/1.1 200 OK
+Server: nginx/1.4.5
+Date: Mon, 03 Mar 2014 02:09:16 GMT
+Content-Type: text/html
+Content-Length: 19644
+Last-Modified: Mon, 03 Mar 2014 01:49:02 GMT
+Connection: keep-alive
+Vary: Accept-Encoding
+ETag: "5313df8e-4cbc"
+Accept-Ranges: bytes
+			</screen>
+			<para>有 Vary: Accept-Encoding 头，现在再测试一次</para>
+			<screen>
+			<![CDATA[
+# curl -H "Accept-Encoding: gzip" http://192.168.2.15/gzip.html
+<html>
+<head>
+	<title>Hello</title>
+			]]>
+			</screen>
+			<para>测试失败，并没有出现预期效果，于是到网站找答案，中文与英文资料都看个遍，没有解决.</para>
+			<para>最后只能让反向代理取到数据后再压缩一次，配置开启 gzip on;</para>
+			<screen>
+proxy_temp_path   /tmp/proxy_temp_dir;
+proxy_cache_path  /tmp/proxy_cache_dir  levels=1:2   keys_zone=nginx_cache:200m inactive=3d max_size=30g;
+
+server {
+    listen       80;
+    server_name  192.168.2.15;
+
+	gzip on;
+	
+	location / {
+		proxy_set_header X-Real-IP  $remote_addr;
+		proxy_set_header X-Forwarded-For  $proxy_add_x_forwarded_for; 
+		# proxy_set_header Accept-Encoding "gzip"; 没有任何效果
+		proxy_pass       http://localhost;
+	}
+}
+			</screen>
+			<para>Nginx 反向代理作为代理绰绰有余，如果做缓存服务器，还是使用squid, varnish吧。</para>
+		</section>
 	</section>
-	<section>
+	<section id="summary">
 		<title>总结</title>
 		<para>经过详细的测试我们发现不同的浏览器，不同的Web服务器，甚至每个版本都有所差异。</para>
 		<para>测试总结 Apache HTTPD 最完善 Lighttpd 其次， Nignx仍在快速发展中，Nignx每个版本差异很大，对HTTP协议实现标准也不太严谨，因为Nignx在大陆是趋势，所以下面给出的例子都是nginx</para>
