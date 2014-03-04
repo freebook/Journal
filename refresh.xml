@@ -3,6 +3,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
 	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/journal/"
@@ -11,7 +12,7 @@
 		<title>网站防刷方案</title>
 		<subtitle>网站重复请求解决方案</subtitle>
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>这是讲述如何防止重复请求你的网站， 包括如，爬虫，数据采集，刷排名，批量注册，批量发帖，利用漏洞获取网站数据等等。</para>
 		</abstract>

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"http://www.oasis-open.org/docbook/xml/5.0b5/dtd/docbook.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -10,7 +11,7 @@
 		<title>Python Syslog Server</title>
 
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>本程序用于收集，防火墙，路由器，交换机等日志</para>
 		</abstract>

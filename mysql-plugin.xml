@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.github.io/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -12,6 +13,7 @@
 		&article.author.xml;
 		<pubdate>$Date: 2013-05-16 17:49:20 +0800 (Thu, 16 May 2013) $</pubdate>
 		<releaseinfo>$Id: mysql-plugin.xml 587 2013-05-16 09:49:20Z netkiller $</releaseinfo>
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>你是是不是在开发中常常遇到，删除了数据库记录后，发现该记录对应的图片没有删除，或者删除了图片，数据库中仍有数据存在，你的网站脏数据（图片）成几何数增长，阅读下文这里为你提供了一个完美决方案。 </para>
 			<para>原文出处：<ulink url="http://netkiller.github.io/journal/mysql-plugin.html"/></para>

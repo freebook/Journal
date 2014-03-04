@@ -3,8 +3,9 @@
 <!-- $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -12,7 +13,7 @@
 		<title>启动Shell编写</title>
 
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>.</para>
 		</abstract>

@@ -2,6 +2,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
 	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.github.io/journal/"
@@ -12,6 +13,7 @@
 		&article.author.xml;
 		<pubdate>$Date: 2013-12-16 13:34:20 +0800 (Thu, 16 May 2013) $</pubdate>
 		<releaseinfo>$Id: mysql-plugin.xml 587 2013-12-16 14:00:00Z netkiller $</releaseinfo>
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>你是否想过当数据库中的数据发生变化的时候出发某种操作？但因数据无法与其他进程通信（传递信号）让你放弃，而改用每隔一段时间查询一次数据变化的方法？下面的插件可以解决你的问题。</para>
 			<para>原文出处：<ulink url="http://netkiller.github.io/journal/mysql.plugin.fifo.html"/></para>

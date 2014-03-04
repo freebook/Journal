@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -12,6 +13,7 @@
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
 		<releaseinfo>$Id$</releaseinfo>
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>FreeBSD 10.0 的 pkg 无法安装php-fpm 最终采用 posts 编译安装</para>
 			<para>http://netkiller.github.io/journal/freebsd.php.html</para>

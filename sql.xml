@@ -2,8 +2,9 @@
 <!-- $Id: sql.xml 616 2013-06-14 05:10:30Z netkiller $ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -11,7 +12,7 @@
 		<title>SQL 优化</title>
 		<subtitle></subtitle>
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 
 		</abstract>
@@ -23,7 +24,7 @@
 			<keyword>sql92,sql99</keyword>
 		</keywordset>
 		<pubdate>$Date: 2013-06-14 13:10:30 +0800 (Fri, 14 Jun 2013) $</pubdate>
-		<releasewww>$Id: sql.xml 616 2013-06-14 05:10:30Z netkiller $</releasewww>
+		<releaseinfo>$Id: sql.xml 616 2013-06-14 05:10:30Z netkiller $</releaseinfo>
 	</articleinfo>
 	<section>
 		<title>日期型字段做索引</title>

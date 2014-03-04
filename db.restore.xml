@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -12,6 +13,7 @@
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
 		<releaseinfo>$Id$</releaseinfo>
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>这里所谈的内容是对备份数据的恢复，不是对损坏数据表的恢复，或者说灾难恢复。 </para>
 		</abstract>

@@ -2,8 +2,9 @@
 <!-- $Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -11,7 +12,7 @@
 		<title>CentOS 6.4 + nginx-1.2.5 + php-5.4.15 + MySQL-5.5.31</title>
 		<subtitle>redis-2.4.10</subtitle>
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>在工作中，需要经常为新系统安装软件，重复而简单，但又不得不作，我将过去几年中工作中临时写的脚本这里了一下，能够实现半自动化安装标本，只需要Ctrl+C, Ctrl+V 快速粘贴复制，即可快速完成安装</para>
 		</abstract>
@@ -23,7 +24,7 @@
 			<keyword> </keyword>
 		</keywordset>
 		<pubdate>$Date: 2013-05-31 19:25:25 +0800 (Fri, 31 May 2013) $</pubdate>
-		<releasewww>$Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $</releasewww>
+		<releaseinfo>$Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $</releaseinfo>
 	</articleinfo>
 	<section>
 		<title>CentOS 6.3 64bit Minior 安装后 新机初始化常用软件包安装</title>

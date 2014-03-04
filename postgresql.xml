@@ -3,6 +3,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
 	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/postgresql.html"
@@ -11,6 +12,7 @@
 		<title>Ubuntu 12.04.1 LTS + PostgreSQL 9.1</title>
 		<subtitle></subtitle>
 		&article.author.xml;
+		&book.info.legalnotice.xml;
 <!--
 		<abstract>
 			<para></para>

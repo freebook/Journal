@@ -3,6 +3,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
 	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/"
@@ -11,7 +12,7 @@
 		<title>怎样制作RPM包</title>
 		<subtitle></subtitle>
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para>我在网上找RPM包的制作例子几乎都是C源码编译安装然后生成RPM包， 而我的程序不是C写的很多时候是脚本语言如Python, PHP 甚至是 HTML文件。怎样制作RPM包呢? </para>
 		</abstract>

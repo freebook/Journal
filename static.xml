@@ -2,8 +2,9 @@
 <!-- $Id: static.xml 457 2012-08-24 11:38:17Z netkiller $ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
-	<!ENTITY article.author.xml 	SYSTEM "../common/article.author.xml">
-	<!ENTITY book.info.abstract.xml	SYSTEM "../common/book.info.abstract.xml">
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.sourceforge.net/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
@@ -11,7 +12,7 @@
 		<title>网站静态内容出版解决方案</title>
 
 		&article.author.xml;
-
+		&book.info.legalnotice.xml;
 		<abstract>
 			<para></para>
 		</abstract>
