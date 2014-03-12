@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/thread.php.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>PHP 高级编程之多线程</title>
+		<subtitle>http://netkiller.github.io/journal/thread.php.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	
+	<section>
+		<title>多线程环境安装</title>
+		<section>
+			<title>PHP 5.5.9</title>
+			<para>安装PHP 5.5.9</para>
+			<para>https://github.com/oscm/shell/blob/master/php/5.5.9.sh</para>
+			<screen>
+./configure --prefix=/srv/php-5.5.9 \
+--with-config-file-path=/srv/php-5.5.9/etc \
+--with-config-file-scan-dir=/srv/php-5.5.9/etc/conf.d \
+--enable-fpm \
+--with-fpm-user=www \
+--with-fpm-group=www \
+--with-pear \
+--with-curl \
+--with-gd \
+--with-jpeg-dir \
+--with-png-dir \
+--with-freetype-dir \
+--with-zlib-dir \
+--with-iconv \
+--with-mcrypt \
+--with-mhash \
+--with-pdo-mysql \
+--with-mysql-sock=/var/lib/mysql/mysql.sock \
+--with-openssl \
+--with-xsl \
+--with-recode \
+--enable-sockets \
+--enable-soap \
+--enable-mbstring \
+--enable-gd-native-ttf \
+--enable-zip \
+--enable-xml \
+--enable-bcmath \
+--enable-calendar \
+--enable-shmop \
+--enable-dba \
+--enable-wddx \
+--enable-sysvsem \
+--enable-sysvshm \
+--enable-sysvmsg \
+--enable-opcache \
+--enable-pcntl \
+--enable-maintainer-zts \
+--disable-debug
+			</screen>
+			<para>编译必须启用zts支持否则无法安装 pthreads(--enable-maintainer-zts)</para>
+		</section>
+		<section>
+			<title>安装 pthreads 扩展</title>
+			<para>安装https://github.com/oscm/shell/blob/master/php/pecl/pthreads.sh</para>
+			<screen>
+# curl -s https://raw.github.com/oscm/shell/master/php/pecl/pthreads.sh | bash	
+			</screen>
+			<para>查看pthreads是否已经安装</para>
+			<screen>
+# php -m | grep pthreads
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>Thread</title>
+		<programlisting>
+		<![CDATA[
+<?php
+class HelloWorld extends Thread {
+    public function __construct($world) {
+       $this->world = $world;
+    }
+
+    public function run() {
+        print_r(sprintf("Hello %s\n", $this->world));
+    }
+}
+
+$thread = new HelloWorld("World");
+
+if ($thread->start()) {
+    printf("Thread #%lu says: %s\n", $thread->getThreadId(), $thread->join());
+}
+?>
+		]]>
+		</programlisting>
+	</section>
+	
+	<section>
+		<title>互斥锁</title>
+		<para>什么情况下会用到互斥锁？在你需要控制多个线程同一时刻只能有一个线程工作的情况下可以使用。</para>
+		<para>下面我们举一个例子，一个简单的计数器程序，说明有无互斥锁情况下的不同。</para>
+		<programlisting>
+		<![CDATA[
+<?php
+$counter = 0;
+//$handle=fopen("php://memory", "rw"); 
+//$handle=fopen("php://temp", "rw"); 
+$handle=fopen("/tmp/counter.txt", "w"); 
+fwrite($handle, $counter ); 
+fclose($handle);
+
+class CounterThread extends Thread {
+	public function __construct($mutex = null){
+		$this->mutex = $mutex;
+        $this->handle = fopen("/tmp/counter.txt", "w+");
+    }
+	public function __destruct(){
+		fclose($this->handle);
+	}
+    public function run() {
+		if($this->mutex)
+			$locked=Mutex::lock($this->mutex);
+
+		$counter = intval(fgets($this->handle));
+		$counter++;
+		rewind($this->handle);
+		fputs($this->handle, $counter ); 
+		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
+		
+		if($this->mutex)
+			Mutex::unlock($this->mutex);
+    }
+}
+
+//没有互斥锁
+for ($i=0;$i<50;$i++){
+	$threads[$i] = new CounterThread();
+	$threads[$i]->start();
+
+}
+
+//加入互斥锁
+$mutex = Mutex::create(true);
+for ($i=0;$i<50;$i++){
+	$threads[$i] = new CounterThread($mutex);
+	$threads[$i]->start();
+
+}
+
+Mutex::unlock($mutex);
+for ($i=0;$i<50;$i++){
+	$threads[$i]->join();
+}
+Mutex::destroy($mutex);
+
+?>
+		]]>
+		</programlisting>
+		<para>我们使用文件/tmp/counter.txt保存计数器值，每次打开该文件将数值加一，然后写回文件。当多个线程同时操作一个文件的时候，就会线程运行先后取到的数值不同，写回的数值也不同，最终计数器的数值会混乱。</para>
+		<para>没有加入锁的结果是计数始终被覆盖，最终结果是2</para>
+		<para>而加入互斥锁后，只有其中的一个进程完成加一工作并释放锁，其他线程才能得到解锁信号，最终顺利完成计数器累加操作</para>
+		<para>上面例子也可以通过对文件加锁实现，这里主要讲的是多线程锁，后面会涉及文件锁。</para>
+		<section>
+			<title>多线程与共享内存</title>
+			<para>在共享内存的例子中，没有使用任何锁，仍然可能正常工作，可能工作内存操作本身具备锁的功能。</para>
+			<programlisting>
+			<![CDATA[
+<?php
+$tmp = tempnam(__FILE__, 'PHP');
+$key = ftok($tmp, 'a');
+
+$shmid = shm_attach($key);
+$counter = 0;
+shm_put_var( $shmid, 1, $counter );
+
+class CounterThread extends Thread {
+	public function __construct($shmid){
+        $this->shmid = $shmid;
+    }
+    public function run() {
+
+		$counter = shm_get_var( $this->shmid, 1 ); 
+		$counter++;
+		shm_put_var( $this->shmid, 1, $counter );		
+		
+		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
+    }
+}
+
+for ($i=0;$i<100;$i++){
+	$threads[] = new CounterThread($shmid);
+}
+for ($i=0;$i<100;$i++){
+	$threads[$i]->start();
+
+}
+
+for ($i=0;$i<100;$i++){
+	$threads[$i]->join();
+}
+shm_remove( $shmid );
+shm_detach( $shmid );
+?>
+			]]>
+			</programlisting>
+		</section>
+	</section>
+	<section>
+		<title>线程同步</title>
+		<para>有些场景我们不希望  thread->start() 就开始运行程序，而是希望线程等待我们的命令。</para>
+		<para>$thread->wait();测作用是 thread->start()后线程并不会立即运行，只有收到 $thread->notify(); 发出的信号后才运行 </para>
+		
+		<programlisting>
+		<![CDATA[
+<?php
+$tmp = tempnam(__FILE__, 'PHP');
+$key = ftok($tmp, 'a');
+
+$shmid = shm_attach($key);
+$counter = 0;
+shm_put_var( $shmid, 1, $counter );
+
+class CounterThread extends Thread {
+	public function __construct($shmid){
+        $this->shmid = $shmid;
+    }
+    public function run() {
+
+        $this->synchronized(function($thread){
+            $thread->wait();
+        }, $this);
+
+		$counter = shm_get_var( $this->shmid, 1 ); 
+		$counter++;
+		shm_put_var( $this->shmid, 1, $counter );		
+		
+		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
+    }
+}
+
+for ($i=0;$i<100;$i++){
+	$threads[] = new CounterThread($shmid);
+}
+for ($i=0;$i<100;$i++){
+	$threads[$i]->start();
+
+}
+
+for ($i=0;$i<100;$i++){
+	$threads[$i]->synchronized(function($thread){
+		$thread->notify();
+	}, $threads[$i]);
+}
+
+for ($i=0;$i<100;$i++){
+	$threads[$i]->join();
+}
+shm_remove( $shmid );
+shm_detach( $shmid );
+?>		
+		]]>
+		</programlisting>
+	</section>
+	<section>
+		<title>线程池</title>
+		<para>这种恢复必须按照顺序进行，即可以顺时间轴恢复也可以逆时间轴，但处理上稍有不同.一旦操作错误数据就会损坏，同时也有很多条件。</para>
+		<para>顺时序恢复数据， 只需将 insert 替换为 replace 即可 </para>
+		<programlisting>
+		<![CDATA[
+<?php
+
+class WebWorker extends Worker {
+
+	public function __construct(SafeLog $logger) {
+		$this->logger = $logger;
+	}
+
+	protected $loger;	
+}
+
+class WebWork extends Stackable {
+
+	public function isComplete() {
+		return $this->complete;
+	}
+
+	public function run() {
+		$this->worker
+			->logger
+			->log("%s executing in Thread #%lu",
+				  __CLASS__, $this->worker->getThreadId());
+		$this->complete = true;
+	}
+
+	protected $complete;
+}
+
+class SafeLog extends Stackable {
+
+	protected function log($message, $args = []) {
+		$args = func_get_args();	
+
+		if (($message = array_shift($args))) {
+			echo vsprintf(
+				"{$message}\n", $args);
+		}
+	}
+}
+
+
+$pool = new Pool(8, \WebWorker::class, [new SafeLog()]);
+
+$pool->submit($w=new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->shutdown();
+
+$pool->collect(function($work){
+	return $work->isComplete();
+});
+
+var_dump($pool);		
+		]]>
+		</programlisting>
+	</section>
+	<section>
+		<title>多线程文件安全读写（文件锁）</title>
+		<para>文件所种类。</para>
+		<screen>
+LOCK_SH 取得共享锁定（读取的程序）。
+LOCK_EX 取得独占锁定（写入的程序。
+LOCK_UN 释放锁定（无论共享或独占）。
+LOCK_NB 如果不希望 flock() 在锁定时堵塞
+		</screen>
+		<para>共享锁例子</para>
+		<programlisting>
+		<![CDATA[
+<?php
+
+$fp = fopen("/tmp/lock.txt", "r+");
+
+if (flock($fp, LOCK_EX)) {  // 进行排它型锁定
+    ftruncate($fp, 0);      // truncate file
+    fwrite($fp, "Write something here\n");
+    fflush($fp);            // flush output before releasing the lock
+    flock($fp, LOCK_UN);    // 释放锁定
+} else {
+    echo "Couldn't get the lock!";
+}
+
+fclose($fp);
+
+?>		
+		]]>
+		</programlisting>
+		<para>共享锁例子2</para>
+		<programlisting>
+		<![CDATA[
+<?php
+$fp = fopen('/tmp/lock.txt', 'r+');
+
+/* Activate the LOCK_NB option on an LOCK_EX operation */
+if(!flock($fp, LOCK_EX | LOCK_NB)) {
+    echo 'Unable to obtain lock';
+    exit(-1);
+}
+
+/* ... */
+
+fclose($fp);
+?>		
+		]]>
+		</programlisting>
+		<para></para>
+	</section>
+</article>
