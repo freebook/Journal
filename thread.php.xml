@@ -88,7 +88,7 @@
 	</section>
 	<section>
 		<title>Thread</title>
-		<programlisting>
+		<programlisting language="php" role='PHP'>
 		<![CDATA[
 <?php
 class HelloWorld extends Thread {
