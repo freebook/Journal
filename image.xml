@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>网站图片尺寸优化方案</title>
+		<subtitle>http://netkiller.github.io/journal/image.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>自动缩图</keyword>
+			<keyword>自动修改尺寸修改</keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2014-04-21</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section>
+		<title>背景</title>
+		<para>某天我的前同事给我打电话，说他们的负载很高，经查发现网站首页有20M，原因是首页直接引用高清图片，没有安装分辨率生成缩图。于是我便想出了下面的方案。</para>
+		<orderedlist>
+			<title>我认为方案需求有如下几个要素：</title>
+			<listitem><para>图片压缩</para></listitem>
+			<listitem><para>尺寸修改</para></listitem>
+			<listitem><para>图片缓存</para></listitem>
+			<listitem><para>带宽因素</para></listitem>
+		</orderedlist>
+		<para>例如用户使用手机访问网站，手机屏幕尺寸非常多样化，常见的有QVGA(320×240)、HGVA(480×320)、WVGA(800×480)、QCIF(176×144)、SVGA(640x480)、WXGA(1280×800)。如果一个用户的手机屏幕是320×240，打开网站后显示1027*768图片很不切合实际。同时用户也多出不少带宽开销。</para>
+		<para>我们需要给用户更好的体验，就要多从用户的角度去考虑，如根据用户网速，带宽，分辨率，为用户提供更适合他终端的多媒体资源。</para>
+	</section>
+	<section>
+		<title>实现思路</title>
+		<para>B/S结构应用程序无法获取客户端的分辨率等信息，我们将采用Javascript取出参数，然后告知服务器端。</para>
+		<orderedlist>
+			<title>有下面几种实现方式：</title>
+			<listitem><para>通过cookie</para></listitem>
+			<listitem><para>post传递给服务器，然后存储在session中</para></listitem>
+			<listitem><para>get 传递给服务器，然后存储在session中</para></listitem>
+		</orderedlist>
+		<para>仅举一个例子</para>
+		<screen>
+		<![CDATA[
+<script type="text/javascript">
+$(function(){
+    var width=window.screen.height;
+    var height=window.screen.width;
+    $.post('http://www.example.com/screen/resize.html',{w:width,h:height});
+});
+</script>
+		]]>
+		</screen>
+		<para>HTML页面中的图片的引用路径</para>
+		<screen>
+		<![CDATA[
+<img src="http://img.example.com/sample.jpg" />		
+		]]>
+		</screen>
+		<para>图片服务器rewrite处理</para>
+		<screen>
+		<![CDATA[
+http://img.example.com/sample.jpg => http://img.example.com/index.php/sample.jpg		
+		]]>
+		</screen>
+		<para>index.php会首先载入sample.jpg文件，然后综合网速，带宽，分辨率等因素，重新压缩图片，修改尺寸，发送mime头，输出正文。</para>
+	</section>
+	<section>
+		<title>web或代理服务器插件实现方案</title>
+		<para>首先我们要将分辨率参数放到cookie中，因为web服务器是可以跟踪cookie数据的</para>
+		<para>通过 web 扩展实现，例如我们开发一个apache插件，编译后是".so"文件，配置httpd.conf载入插件，插件具体功能是综合网速，带宽，分辨率等因素，重新压缩图片，修改尺寸，最后展现图片。</para>
+		<para>反向代理与web服务器实现原理相同</para>
+	</section>
+</article>
