@@ -279,8 +279,107 @@ shm_detach( $shmid );
 	</section>
 	<section>
 		<title>线程池</title>
-		<para>这种恢复必须按照顺序进行，即可以顺时间轴恢复也可以逆时间轴，但处理上稍有不同.一旦操作错误数据就会损坏，同时也有很多条件。</para>
-		<para>顺时序恢复数据， 只需将 insert 替换为 replace 即可 </para>
+		<para>自行实现一个Pool</para>
+		<programlisting>
+		<![CDATA[
+<?php
+class Update extends Thread {
+
+    public $running = false;
+    public $row = array();
+    public function __construct($row) {
+
+	$this->row = $row;
+        $this->sql = null;
+    }
+
+    public function run() {
+
+	if(strlen($this->row['bankno']) > 100 ){
+		$bankno = safenet_decrypt($this->row['bankno']);
+	}else{
+		$error = sprintf("%s, %s\r\n",$this->row['id'], $this->row['bankno']);
+		file_put_contents("bankno_error.log", $error, FILE_APPEND);
+	}
+
+	if( strlen($bankno) > 7 ){
+		$sql = sprintf("update members set bankno = '%s' where id = '%s';", $bankno, $this->row['id']);
+	
+		$this->sql = $sql;
+	}
+
+	printf("%s\n",$this->sql);
+    }
+
+}
+
+class Pool {
+	public $pool = array();
+	public function __construct($count) {
+		$this->count = $count;
+	}
+	public function push($row){
+		if(count($this->pool) < $this->count){
+			$this->pool[] = new Update($row);
+			return true;
+		}else{
+			return false;
+		}
+	}
+	public function start(){
+		foreach ( $this->pool as $id => $worker){
+			$this->pool[$id]->start();
+		}
+	}
+	public function join(){
+		foreach ( $this->pool as $id => $worker){
+               $this->pool[$id]->join();
+		}
+	}
+	public function clean(){
+		foreach ( $this->pool as $id => $worker){
+			if(! $worker->isRunning()){
+            	unset($this->pool[$id]);
+            }
+		}
+	}
+}
+
+try {
+	$dbh    = new PDO("mysql:host=" . str_replace(':', ';port=', $dbhost) . ";dbname=$dbname", $dbuser, $dbpw, array(
+		PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+		PDO::MYSQL_ATTR_COMPRESS => true
+		)
+	);
+
+	$sql  = "select id,bankno from members order by id desc";
+	$row = $dbh->query($sql);
+	$pool = new Pool(5);
+	while($member = $row->fetch(PDO::FETCH_ASSOC))
+	{
+
+		while(true){
+			if($pool->push($member)){ //压入任务到池中
+				break;
+			}else{ //如果池已经满，就开始启动线程
+				$pool->start();
+				$pool->join();
+				$pool->clean();
+			}
+		}
+	}
+	$pool->start();
+    $pool->join();
+
+	$dbh = null;
+
+} catch (Exception $e) {
+    echo '[' , date('H:i:s') , ']', '系统错误', $e->getMessage(), "\n";
+}
+?>
+		]]>
+		</programlisting>
+		<para>pthreads 提供的 Pool class 例子</para>
 		<programlisting>
 		<![CDATA[
 <?php
