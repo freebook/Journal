@@ -13,6 +13,8 @@
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
+			<para>2014-03-12 第一版</para>
+			<para>2014-05-15 第二版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -110,7 +112,57 @@ if ($thread->start()) {
 		]]>
 		</programlisting>
 	</section>
-	
+	<section>
+		<title>Worker 与 Stackable</title>
+		<programlisting language="php" role='PHP'>
+		<![CDATA[
+<?php
+class SQLQuery extends Stackable {
+
+        public function __construct($sql) {
+                $this->sql = $sql;
+        }
+
+        public function run() {
+                $dbh  = $this->worker->getConnection();
+                $row = $dbh->query($this->sql);
+                while($member = $row->fetch(PDO::FETCH_ASSOC)){
+                        print_r($member);
+                }
+        }
+
+}
+
+class ExampleWorker extends Worker {
+        public static $dbh;
+        public function __construct($name) {
+        }
+
+        /*
+        * The run method should just prepare the environment for the work that is coming ...
+        */
+        public function run(){
+                self::$dbh = new PDO('mysql:host=192.168.2.1;dbname=example','www','123456');
+        }
+        public function getConnection(){
+                return self::$dbh;
+        }
+}
+
+$worker = new ExampleWorker("My Worker Thread");
+
+$work=new SQLQuery('select * from members order by id desc limit 5');
+$worker->stack($work);
+
+$table1 = new SQLQuery('select * from demousers limit 2');
+$worker->stack($table1);
+
+$worker->start();
+$worker->shutdown();
+?>
+		]]>
+		</programlisting>
+	</section>	
 	<section>
 		<title>互斥锁</title>
 		<para>什么情况下会用到互斥锁？在你需要控制多个线程同一时刻只能有一个线程工作的情况下可以使用。</para>
@@ -279,9 +331,11 @@ shm_detach( $shmid );
 	</section>
 	<section>
 		<title>线程池</title>
-		<para>自行实现一个Pool</para>
-		<programlisting>
-		<![CDATA[
+		<section>
+			<title>线程池</title>
+			<para>自行实现一个Pool类</para>
+			<programlisting>
+			<![CDATA[
 <?php
 class Update extends Thread {
 
@@ -377,11 +431,92 @@ try {
     echo '[' , date('H:i:s') , ']', '系统错误', $e->getMessage(), "\n";
 }
 ?>
-		]]>
-		</programlisting>
-		<para>pthreads 提供的 Pool class 例子</para>
-		<programlisting>
-		<![CDATA[
+			]]>
+			</programlisting>			
+		</section>
+		<section>
+			<title>动态队列线程池</title>
+			<para>上面的例子是当线程池满后执行start统一启动，下面的例子是只要线程池中有空闲便立即创建新线程。</para>
+			<programlisting>
+			<![CDATA[
+<?php
+class Update extends Thread {
+
+    public $running = false;
+    public $row = array();
+    public function __construct($row) {
+
+	$this->row = $row;
+        $this->sql = null;
+	//print_r($this->row);
+    }
+
+    public function run() {
+
+	if(strlen($this->row['bankno']) > 100 ){
+		$bankno = safenet_decrypt($this->row['bankno']);
+	}else{
+		$error = sprintf("%s, %s\r\n",$this->row['id'], $this->row['bankno']);
+		file_put_contents("bankno_error.log", $error, FILE_APPEND);
+	}
+
+	if( strlen($bankno) > 7 ){
+		$sql = sprintf("update members set bankno = '%s' where id = '%s';", $bankno, $this->row['id']);
+	
+		$this->sql = $sql;
+	}
+
+	printf("%s\n",$this->sql);
+    }
+
+}
+
+
+
+try {
+	$dbh    = new PDO("mysql:host=" . str_replace(':', ';port=', $dbhost) . ";dbname=$dbname", $dbuser, $dbpw, array(
+		PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+		PDO::MYSQL_ATTR_COMPRESS => true
+		)
+	);
+
+	$sql     = "select id,bankno from members order by id desc limit 50";
+	
+	$row = $dbh->query($sql);
+	$pool = array();
+	while($member = $row->fetch(PDO::FETCH_ASSOC))
+	{
+		$id 	= $member['id'];
+		while (true){
+			if(count($pool) < 5){
+				$pool[$id] = new Update($member);
+				$pool[$id]->start();
+				break;
+			}else{
+				foreach ( $pool as $name => $worker){
+					if(! $worker->isRunning()){
+						unset($pool[$name]);
+					}
+				}
+			}
+		}
+		
+	}
+
+	$dbh = null;
+
+} catch (Exception $e) {
+    echo '【' , date('H:i:s') , '】', '【系统错误】', $e->getMessage(), "\n";
+}
+?>
+			]]>
+			</programlisting>
+		</section>
+		<section>
+			<title>pthreads Pool类</title>
+<para>pthreads 提供的 Pool class 例子</para>
+			<programlisting>
+			<![CDATA[
 <?php
 
 class WebWorker extends Worker {
@@ -446,8 +581,10 @@ $pool->collect(function($work){
 });
 
 var_dump($pool);		
-		]]>
-		</programlisting>
+			]]>
+			</programlisting>			
+		</section>
+			
 	</section>
 	<section>
 		<title>多线程文件安全读写（文件锁）</title>
@@ -497,6 +634,55 @@ fclose($fp);
 ?>		
 		]]>
 		</programlisting>
-		<para></para>
+		
+	</section>
+	<section>
+		<title>多线程与数据连接</title>
+		<para>pthreads 与 pdo 同时使用是，需要注意一点，需要静态声明public static $dbh;并且通过单例模式访问数据库连接。</para>
+		<programlisting>
+		<![CDATA[
+<?php
+class Work extends Stackable {
+
+        public function __construct() {
+        }
+
+        public function run() {
+                $dbh  = $this->worker->getConnection();
+                $sql     = "select id,name from members order by id desc limit 50";
+                $row = $dbh->query($sql);
+                while($member = $row->fetch(PDO::FETCH_ASSOC)){
+                        print_r($member);
+                }
+        }
+
+}
+
+class ExampleWorker extends Worker {
+        public static $dbh;
+        public function __construct($name) {
+        }
+
+        /*
+        * The run method should just prepare the environment for the work that is coming ...
+        */
+        public function run(){
+                self::$dbh = new PDO('mysql:host=192.168.2.1;dbname=example','www','123456');
+        }
+        public function getConnection(){
+                return self::$dbh;
+        }
+}
+
+$worker = new ExampleWorker("My Worker Thread");
+
+$work=new Work();
+$worker->stack($work);
+
+$worker->start();
+$worker->shutdown();
+?>
+		]]>
+		</programlisting>
 	</section>
 </article>
