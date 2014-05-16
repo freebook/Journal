@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>MySQL 大数据操作注意事项</title>
+		<subtitle>http://netkiller.github.io/journal/mysql.parallel.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2014-05-16</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section>
+		<title>关于 delete</title>
+		<para>delete from mytable 必死无疑，你需要分批删除，尽量缩小每个批次删除的记录数，delete 是可以并行执行的，你可以同时运行多个删除操作</para>
+		<screen>
+		<![CDATA[
+mysql> show processlist;
++--------+-----------------+---------------------+-----------+---------+-------+-----------------------------+--------------------------------------------------------+
+| Id     | User            | Host                | db        | Command | Time  | State                       | Info                                                   |
++--------+-----------------+---------------------+-----------+---------+-------+-----------------------------+--------------------------------------------------------+
+|      1 | event_scheduler | localhost           | NULL      | Daemon  |    52 | Waiting for next activation | NULL                                                   |
+| 115986 | dba             | localhost           | example   | Query   |     0 | NULL                        | show processlist                                       |
+| 117446 | dba             | localhost           | example   | Query   |    20 | updating                    | delete from mytable where OPEN_TIME like '2011.11.28%' |
+| 117525 | dba             | localhost           | example   | Query   |     2 | updating                    | delete from mytable where OPEN_TIME like '2011.12.02%' |
+| 117526 | dba             | localhost           | example   | Query   |    49 | updating                    | delete from mytable where OPEN_TIME like '2011.12.12%' |
+| 117527 | dba             | localhost           | example   | Query   |     6 | updating                    | delete from mytable where OPEN_TIME like '2011.12.21%' |
+| 117528 | dba             | localhost           | example   | Query   |    64 | updating                    | delete from mytable where OPEN_TIME like '2011.12.30%' |
+| 117546 | dba             | localhost           | example   | Query   |    33 | updating                    | delete from mytable where OPEN_TIME like '2011.11.10%' |
++--------+-----------------+---------------------+-----------+---------+-------+-----------------------------+--------------------------------------------------------+
+23 rows in set (0.00 sec)
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>关于 update</title>
+		<para>在电商领域常常遇到一个问题“调价”，经常需要调整一批商品的价格, 程序猿一条预警搞定有没有？</para>
+		<screen>
+update goods set price=price+10 where category_id = xxx
+		</screen>
+		<para>在开发，测试环境是可以通过测试的，一旦部署到生产环境，必死无疑</para>
+	</section>
+	<section>
+		<title>关于创建索引</title>
+		<para>大表创建索引需要很久的时间，通常要经历 manage keys 与  copy to tmp table 的过程</para>
+		<screen>
+mysql> show processlist;
++--------+-----------------+---------------------+----------+---------+-------+-----------------------------+------------------------------------------------------------------+
+| Id     | User            | Host                | db       | Command | Time  | State                       | Info                                                             |
++--------+-----------------+---------------------+----------+---------+-------+-----------------------------+------------------------------------------------------------------+
+|      1 | event_scheduler | localhost           | NULL     | Daemon  |    47 | Waiting for next activation | NULL                                                             |
+| 115986 | dba             | localhost           | example  | Query   |     0 | NULL                        | show processlist                                                 |
+| 118814 | dba             | 192.168.6.20:50459  | example  | Query   |     8 | copy to tmp table           | ALTER TABLE `mytable` ADD INDEX `modifiy_time` (`MODIFY_TIME`)   |
++--------+-----------------+---------------------+----------+---------+-------+-----------------------------+------------------------------------------------------------------+
+17 rows in set (0.00 sec)
+		</screen>
+		<para>删除索引，也需要经理 copy to tmp table 过程，漫长的等待</para>
+		<screen>
+		<![CDATA[
+mysql> show processlist;
++--------+-----------------+---------------------+--------------+---------+-------+-----------------------------+-------------------------------------------------+
+| Id     | User            | Host                | db           | Command | Time  | State                       | Info                                            |
++--------+-----------------+---------------------+--------------+---------+-------+-----------------------------+-------------------------------------------------+
+|      1 | event_scheduler | localhost           | NULL         | Daemon  |    11 | Waiting for next activation | NULL                                            |
+| 115986 | dba             | localhost           | example      | Query   |     0 | NULL                        | show processlist                                |
+| 118814 | dba             | 192.168.6.20:50459  | example      | Query   |     4 | copy to tmp table           | ALTER TABLE `mytable`	DROP INDEX `modifiy_time` |
++--------+-----------------+---------------------+--------------+---------+-------+-----------------------------+-------------------------------------------------+
+17 rows in set (0.00 sec)
+		]]>
+		</screen>
+		<para>所以数据设计要深思熟虑，做到提前未雨绸缪，不要亡羊补牢</para>
+	</section>
+	<section>
+		<title>关于 OPTIMIZE</title>
+		<para>OPTIMIZE 的操作是将当前表复制到临时表操作后再删除当前表，最后将临时表改名</para>
+		<screen>
+		<![CDATA[
+mysql> show processlist;
++--------+-----------------+---------------------+---------------------------+---------+-------+-----------------------------+--------------------------+
+| Id     | User            | Host                | db                        | Command | Time  | State                       | Info                     |
++--------+-----------------+---------------------+---------------------------+---------+-------+-----------------------------+--------------------------+
+|      1 | event_scheduler | localhost           | NULL                      | Daemon  |    14 | Waiting for next activation | NULL                     |
+| 115835 | dba             | 192.168.6.20:49664  | example                   | Query   |     9 | copy to tmp table           | OPTIMIZE TABLE `mytable` |
+| 115986 | dba             | localhost           | example                   | Query   |     0 | NULL                        | show processlist         |
++--------+-----------------+---------------------+---------------------------+---------+-------+-----------------------------+--------------------------+
+17 rows in set (0.00 sec)
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>确保SELECT不被受阻</title>
+		<para>使用各种手段保证select操作不被受阻，只要select一直可以查询网站前端就能提供80%的功能，一旦select受阻一切都是浮云。</para>
+		<para>保证 select 操作优先于其他操作</para>
+		<screen>
+UPDATE [LOW_PRIORITY] [IGNORE] tbl_name  
+SET col_name1=expr1 [, col_name2=expr2 ...]  
+[WHERE where_definition]  
+[ORDER BY ...]  
+[LIMIT row_count]		
+		</screen>
+		<para>update的时候增加 LOW_PRIORITY 参数，可以降低更新语句的优先级。</para>
+		<para>my.cnf</para>
+		<screen>
+[mysqld]		
+low_priority_updates=1
+		</screen>
+		<para>或者启动是添加--low-priority-updates参数</para>
+		<para>全局开启</para>
+		<screen>
+SET @@global.low_priority_updates = 1;		
+		</screen>
+		<para>适用于本次会话连接</para>
+		<screen>
+SET @@session.low_priority_updates = 1;
+		</screen>
+	</section>
+</article>
