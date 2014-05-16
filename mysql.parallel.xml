@@ -103,6 +103,52 @@ mysql> show processlist;
 		</screen>
 	</section>
 	<section>
+		<title>关于切换引擎</title>
+		<para>转换ENGINE从MyISAM到InnoDB会经历creating table然后copy to tmp table在修改表名几个阶段，过程非常缓慢</para>
+		<screen>
+		<![CDATA[
+mysql> show processlist;
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+| Id   | User            | Host                | db      | Command | Time  | State                       | Info                                     |
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+|    1 | event_scheduler | localhost           | NULL    | Daemon  |    10 | Waiting for next activation | NULL                                     |
+| 3167 | dba             | 192.168.6.20:56723  | example | Query   |     2 | creating table              | ALTER TABLE `mytable`	ENGINE=InnoDB   |
+| 3172 | dba             | localhost           | example | Query   |     0 | NULL                        | show processlist                         |
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+18 rows in set (0.00 sec)
+		]]>
+		</screen>
+		<para>copy to tmp table 过程</para>
+		<screen>
+		<![CDATA[
+mysql> show processlist;
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+| Id   | User            | Host                | db      | Command | Time  | State                       | Info                                     |
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+|    1 | event_scheduler | localhost           | NULL    | Daemon  |    21 | Waiting for next activation | NULL                                     |
+| 3167 | dba             | 192.168.6.20:56723  | example | Query   |    13 | copy to tmp table           | ALTER TABLE `mytable`	ENGINE=InnoDB   |
+| 3172 | dba             | localhost           | example | Query   |     0 | NULL                        | show processlist                         |
++------+-----------------+---------------------+---------+---------+-------+-----------------------------+------------------------------------------+
+18 rows in set (0.00 sec)
+		]]>
+		</screen>
+		<para>此时我们查看mysql data目录会看到临时表文件</para>
+		<screen>
+# ll /var/lib/mysql/hx9999_real_history/
+		
+-rw-rw---- 1 mysql mysql      9522 May 16 17:17 #sql-c2f_c5f.frm
+-rw-rw---- 1 mysql mysql        48 May 16 17:17 #sql-c2f_c5f.par
+-rw-rw---- 1 mysql mysql 637534208 May 16 17:29 #sql-c2f_c5f#P#p0.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p1.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p2.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p3.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p4.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p5.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p6.ibd
+-rw-rw---- 1 mysql mysql    180224 May 16 17:17 #sql-c2f_c5f#P#p7.ibd		
+		</screen>
+	</section>
+	<section>
 		<title>确保SELECT不被受阻</title>
 		<para>使用各种手段保证select操作不被受阻，只要select一直可以查询网站前端就能提供80%的功能，一旦select受阻一切都是浮云。</para>
 		<para>保证 select 操作优先于其他操作</para>
