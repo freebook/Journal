@@ -9,6 +9,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>Tomcat 安全配置与性能优化</title>
+		<subtitle>http://netkiller.github.io/journal/tomcat.html</subtitle>
 
 		&article.author.xml;
 		&book.info.legalnotice.xml;
@@ -178,7 +179,7 @@ adduser --home /www -c "Web Application" www
 		<screen>
 /www/example.com/www.example.com
 		</screen>
-		<para>每次升级将压错包解压到 /www/example.com/目录下，www.example.com是负号连接，连接到刚刚解压的目录。</para>
+		<para>每次升级将压错包解压到 /www/example.com/目录下，www.example.com 是符号连接，连接到刚刚解压的目录。</para>
 		<para>这个可以实现通过符号连接在多个版本之间快速切换。</para>
 	</section>
 </article>
