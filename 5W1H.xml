@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>5W1H</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section>
+		<title>what-做什么</title>
+	</section>
+	<section>
+		<title>why-为什么做</title>
+	</section>
+	<section>
+		<title>when-何时做</title>
+	</section>
+	<section>
+		<title>where-何地做</title>
+	</section>
+	<section>
+		<title>who-谁去做</title>
+	</section>
+	<section>
+		<title>how-怎么做</title>
+		<section>
+			<title>SECTION</title>
+		</section>
+		<section>
+			<title>SECTION</title>
+		</section>
+		<section>
+			<title>SECTION</title>
+		</section>		
+	</section>
+
+</article>
