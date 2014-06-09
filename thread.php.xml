@@ -15,6 +15,7 @@
 		<abstract>
 			<para>2014-03-12 第一版</para>
 			<para>2014-05-15 第二版</para>
+			<para>2014-06-09 第三版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -639,8 +640,10 @@ fclose($fp);
 	<section>
 		<title>多线程与数据连接</title>
 		<para>pthreads 与 pdo 同时使用是，需要注意一点，需要静态声明public static $dbh;并且通过单例模式访问数据库连接。</para>
-		<programlisting>
-		<![CDATA[
+		<section>
+			<title>Worker 与 PDO</title>
+			<programlisting>
+			<![CDATA[
 <?php
 class Work extends Stackable {
 
@@ -682,7 +685,124 @@ $worker->stack($work);
 $worker->start();
 $worker->shutdown();
 ?>
-		]]>
-		</programlisting>
+			]]>
+			</programlisting>
+		</section>
+		<section>
+			<title>Pool 与 PDO</title>
+			<para>总的来说 pthreads 仍然处在发展中，仍有一些不足的地方，我们也可以看到pthreads的git在不断改进这个项目，在线程池中，我遇到一个小问题无法解决 $this->worker->getConnection();</para>
+			<programlisting>
+			<![CDATA[
+# cat pool.php 
+<?php
+class ExampleWorker extends Worker {
+ 
+	public function __construct(Logging $logger) {
+		$this->logger = $logger;
+	}
+ 
+	protected $logger;	
+}
+ 
+/* the collectable class implements machinery for Pool::collect */
+class Work extends Stackable {
+	public function __construct($number) {
+		$this->number = $number;
+	}
+	public function run() {
+                $dbhost = 'db.example.com';               // 数据库服务器
+                $dbuser = 'example.com';                 // 数据库用户名
+                $dbpw = 'password';                               // 数据库密码
+                $dbname = 'example_real'; 
+		$dbh  = new PDO("mysql:host=$dbhost;port=3306;dbname=$dbname", $dbuser, $dbpw, array(
+                        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+                        PDO::MYSQL_ATTR_COMPRESS => true,
+			PDO::ATTR_PERSISTENT => true
+                        )
+                );
+		$sql = "select OPEN_TIME, `COMMENT` from MT4_TRADES where LOGIN='".$this->number['name']."' and CMD='6' and `COMMENT` = '".$this->number['order'].":DEPOSIT'";
+		#echo $sql;
+		$row = $dbh->query($sql);
+		$mt4_trades  = $row->fetch(PDO::FETCH_ASSOC);
+		if($mt4_trades){
+
+			$row = null;
+
+			$sql = "UPDATE db_example.accounts SET paystatus='成功', deposit_time='".$mt4_trades['OPEN_TIME']."' where `order` = '".$this->number['order']."';";
+			$dbh->query($sql);
+			#printf("%s\n",$sql);
+		}
+		$dbh = null;
+		printf("runtime: %s, %s, %s\n", date('Y-m-d H:i:s'), $this->worker->getThreadId() ,$this->number['order']);
+
+	}
+}
+ 
+class Logging extends Stackable {
+	protected  static $dbh;
+	public function __construct() {
+		$dbhost = 'db.example.com';			// 数据库服务器
+	        $dbuser = 'example.com';                 // 数据库用户名
+        	$dbpw = 'password';                               // 数据库密码
+		$dbname = 'example_real';			// 数据库名
+
+		self::$dbh  = new PDO("mysql:host=$dbhost;port=3306;dbname=$dbname", $dbuser, $dbpw, array(
+			PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+			PDO::MYSQL_ATTR_COMPRESS => true
+			)
+		);
+
+	} 
+	protected function log($message, $args = []) {
+		$args = func_get_args();	
+ 
+		if (($message = array_shift($args))) {
+			echo vsprintf("{$message}\n", $args);
+		}
+	}
+
+	protected function getConnection(){
+                return self::$dbh;
+        }
+}
+ 
+$pool = new Pool(200, \ExampleWorker::class, [new Logging()]);
+ 
+$dbhost = 'db.example.com';                      // 数据库服务器
+$dbuser = 'example.com';                 // 数据库用户名
+$dbpw = 'password';                               // 数据库密码
+$dbname = 'db_example';
+$dbh    = new PDO("mysql:host=$dbhost;port=3306;dbname=$dbname", $dbuser, $dbpw, array(
+                        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+                        PDO::MYSQL_ATTR_COMPRESS => true
+                        )
+                );
+$sql = "select `order`,name from accounts where deposit_time is null order by id desc";
+
+$row = $dbh->query($sql);
+while($account = $row->fetch(PDO::FETCH_ASSOC))
+{
+        $pool->submit(new Work($account));
+}
+
+$pool->shutdown();
+ 
+?>
+			]]>
+			</programlisting>
+		</section>
+		<section>
+			<title>多线程中操作数据库总结</title>
+			<para>数据库持久链接很重要，否则每个线程都会开启一次数据库连接，然后关闭，会导致很多链接超时。</para>
+			<programlisting>
+			<![CDATA[
+<?php
+$dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass, array(
+    PDO::ATTR_PERSISTENT => true
+));
+?>
+			]]>
+			</programlisting>
+		</section>
 	</section>
 </article>
