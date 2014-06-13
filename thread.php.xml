@@ -15,7 +15,7 @@
 		<abstract>
 			<para>2014-03-12 第一版</para>
 			<para>2014-05-15 第二版</para>
-			<para>2014-06-09 第三版</para>
+			<para>2014-06-13 第三版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -27,7 +27,7 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-	
+
 	<section>
 		<title>多线程环境安装</title>
 		<section>
@@ -81,7 +81,7 @@
 			<title>安装 pthreads 扩展</title>
 			<para>安装https://github.com/oscm/shell/blob/master/php/pecl/pthreads.sh</para>
 			<screen>
-# curl -s https://raw.github.com/oscm/shell/master/php/pecl/pthreads.sh | bash	
+# curl -s https://raw.github.com/oscm/shell/master/php/pecl/pthreads.sh | bash
 			</screen>
 			<para>查看pthreads是否已经安装</para>
 			<screen>
@@ -163,7 +163,7 @@ $worker->shutdown();
 ?>
 		]]>
 		</programlisting>
-	</section>	
+	</section>
 	<section>
 		<title>互斥锁</title>
 		<para>什么情况下会用到互斥锁？在你需要控制多个线程同一时刻只能有一个线程工作的情况下可以使用。</para>
@@ -172,10 +172,10 @@ $worker->shutdown();
 		<![CDATA[
 <?php
 $counter = 0;
-//$handle=fopen("php://memory", "rw"); 
-//$handle=fopen("php://temp", "rw"); 
-$handle=fopen("/tmp/counter.txt", "w"); 
-fwrite($handle, $counter ); 
+//$handle=fopen("php://memory", "rw");
+//$handle=fopen("php://temp", "rw");
+$handle=fopen("/tmp/counter.txt", "w");
+fwrite($handle, $counter );
 fclose($handle);
 
 class CounterThread extends Thread {
@@ -193,9 +193,9 @@ class CounterThread extends Thread {
 		$counter = intval(fgets($this->handle));
 		$counter++;
 		rewind($this->handle);
-		fputs($this->handle, $counter ); 
+		fputs($this->handle, $counter );
 		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
-		
+
 		if($this->mutex)
 			Mutex::unlock($this->mutex);
     }
@@ -248,10 +248,10 @@ class CounterThread extends Thread {
     }
     public function run() {
 
-		$counter = shm_get_var( $this->shmid, 1 ); 
+		$counter = shm_get_var( $this->shmid, 1 );
 		$counter++;
-		shm_put_var( $this->shmid, 1, $counter );		
-		
+		shm_put_var( $this->shmid, 1, $counter );
+
 		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
     }
 }
@@ -278,7 +278,7 @@ shm_detach( $shmid );
 		<title>线程同步</title>
 		<para>有些场景我们不希望  thread->start() 就开始运行程序，而是希望线程等待我们的命令。</para>
 		<para>$thread->wait();测作用是 thread->start()后线程并不会立即运行，只有收到 $thread->notify(); 发出的信号后才运行 </para>
-		
+
 		<programlisting>
 		<![CDATA[
 <?php
@@ -299,10 +299,10 @@ class CounterThread extends Thread {
             $thread->wait();
         }, $this);
 
-		$counter = shm_get_var( $this->shmid, 1 ); 
+		$counter = shm_get_var( $this->shmid, 1 );
 		$counter++;
-		shm_put_var( $this->shmid, 1, $counter );		
-		
+		shm_put_var( $this->shmid, 1, $counter );
+
 		printf("Thread #%lu says: %s\n", $this->getThreadId(),$counter);
     }
 }
@@ -326,7 +326,7 @@ for ($i=0;$i<100;$i++){
 }
 shm_remove( $shmid );
 shm_detach( $shmid );
-?>		
+?>
 		]]>
 		</programlisting>
 	</section>
@@ -359,7 +359,7 @@ class Update extends Thread {
 
 	if( strlen($bankno) > 7 ){
 		$sql = sprintf("update members set bankno = '%s' where id = '%s';", $bankno, $this->row['id']);
-	
+
 		$this->sql = $sql;
 	}
 
@@ -433,7 +433,7 @@ try {
 }
 ?>
 			]]>
-			</programlisting>			
+			</programlisting>
 		</section>
 		<section>
 			<title>动态队列线程池</title>
@@ -463,7 +463,7 @@ class Update extends Thread {
 
 	if( strlen($bankno) > 7 ){
 		$sql = sprintf("update members set bankno = '%s' where id = '%s';", $bankno, $this->row['id']);
-	
+
 		$this->sql = $sql;
 	}
 
@@ -482,7 +482,7 @@ try {
 	);
 
 	$sql     = "select id,bankno from members order by id desc limit 50";
-	
+
 	$row = $dbh->query($sql);
 	$pool = array();
 	while($member = $row->fetch(PDO::FETCH_ASSOC))
@@ -501,7 +501,7 @@ try {
 				}
 			}
 		}
-		
+
 	}
 
 	$dbh = null;
@@ -526,7 +526,7 @@ class WebWorker extends Worker {
 		$this->logger = $logger;
 	}
 
-	protected $loger;	
+	protected $loger;
 }
 
 class WebWork extends Stackable {
@@ -549,7 +549,7 @@ class WebWork extends Stackable {
 class SafeLog extends Stackable {
 
 	protected function log($message, $args = []) {
-		$args = func_get_args();	
+		$args = func_get_args();
 
 		if (($message = array_shift($args))) {
 			echo vsprintf(
@@ -581,11 +581,11 @@ $pool->collect(function($work){
 	return $work->isComplete();
 });
 
-var_dump($pool);		
+var_dump($pool);
 			]]>
-			</programlisting>			
+			</programlisting>
 		</section>
-			
+
 	</section>
 	<section>
 		<title>多线程文件安全读写（文件锁）</title>
@@ -614,7 +614,7 @@ if (flock($fp, LOCK_EX)) {  // 进行排它型锁定
 
 fclose($fp);
 
-?>		
+?>
 		]]>
 		</programlisting>
 		<para>共享锁例子2</para>
@@ -632,10 +632,10 @@ if(!flock($fp, LOCK_EX | LOCK_NB)) {
 /* ... */
 
 fclose($fp);
-?>		
+?>
 		]]>
 		</programlisting>
-		
+
 	</section>
 	<section>
 		<title>多线程与数据连接</title>
@@ -690,20 +690,20 @@ $worker->shutdown();
 		</section>
 		<section>
 			<title>Pool 与 PDO</title>
-			<para>总的来说 pthreads 仍然处在发展中，仍有一些不足的地方，我们也可以看到pthreads的git在不断改进这个项目，在线程池中，我遇到一个小问题无法解决 $this->worker->getConnection();</para>
+			<para>在线程池中链接数据库</para>
 			<programlisting>
 			<![CDATA[
-# cat pool.php 
+# cat pool.php
 <?php
 class ExampleWorker extends Worker {
- 
+
 	public function __construct(Logging $logger) {
 		$this->logger = $logger;
 	}
- 
-	protected $logger;	
+
+	protected $logger;
 }
- 
+
 /* the collectable class implements machinery for Pool::collect */
 class Work extends Stackable {
 	public function __construct($number) {
@@ -713,7 +713,7 @@ class Work extends Stackable {
                 $dbhost = 'db.example.com';               // 数据库服务器
                 $dbuser = 'example.com';                 // 数据库用户名
                 $dbpw = 'password';                               // 数据库密码
-                $dbname = 'example_real'; 
+                $dbname = 'example_real';
 		$dbh  = new PDO("mysql:host=$dbhost;port=3306;dbname=$dbname", $dbuser, $dbpw, array(
                         PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
                         PDO::MYSQL_ATTR_COMPRESS => true,
@@ -737,7 +737,7 @@ class Work extends Stackable {
 
 	}
 }
- 
+
 class Logging extends Stackable {
 	protected  static $dbh;
 	public function __construct() {
@@ -752,10 +752,10 @@ class Logging extends Stackable {
 			)
 		);
 
-	} 
+	}
 	protected function log($message, $args = []) {
-		$args = func_get_args();	
- 
+		$args = func_get_args();
+
 		if (($message = array_shift($args))) {
 			echo vsprintf("{$message}\n", $args);
 		}
@@ -765,9 +765,9 @@ class Logging extends Stackable {
                 return self::$dbh;
         }
 }
- 
+
 $pool = new Pool(200, \ExampleWorker::class, [new Logging()]);
- 
+
 $dbhost = 'db.example.com';                      // 数据库服务器
 $dbuser = 'example.com';                 // 数据库用户名
 $dbpw = 'password';                               // 数据库密码
@@ -786,13 +786,144 @@ while($account = $row->fetch(PDO::FETCH_ASSOC))
 }
 
 $pool->shutdown();
- 
+
 ?>
+			]]>
+			</programlisting>
+			<para>进一步改进上面程序，我们使用单例模式 $this->worker->getInstance(); 全局仅仅做一次数据库连接，线程使用共享的数据库连接</para>
+			<programlisting>
+			<![CDATA[
+<?php
+class ExampleWorker extends Worker {
+
+	#public function __construct(Logging $logger) {
+	#	$this->logger = $logger;
+	#}
+
+	#protected $logger;
+	protected  static $dbh;
+	public function __construct() {
+
+	}
+	public function run(){
+		$dbhost = 'db.example.com';			// 数据库服务器
+	    $dbuser = 'example.com';        	// 数据库用户名
+        $dbpw = 'password';             	// 数据库密码
+		$dbname = 'example';				// 数据库名
+
+		self::$dbh  = new PDO("mysql:host=$dbhost;port=3306;dbname=$dbname", $dbuser, $dbpw, array(
+			PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+			PDO::MYSQL_ATTR_COMPRESS => true,
+			PDO::ATTR_PERSISTENT => true
+			)
+		);
+
+	}
+	protected function getInstance(){
+        return self::$dbh;
+    }
+
+}
+
+/* the collectable class implements machinery for Pool::collect */
+class Work extends Stackable {
+	public function __construct($data) {
+		$this->data = $data;
+		#print_r($data);
+	}
+
+	public function run() {
+		#$this->worker->logger->log("%s executing in Thread #%lu", __CLASS__, $this->worker->getThreadId() );
+
+		try {
+			$dbh  = $this->worker->getInstance();
+			#print_r($dbh);
+               		$id = $this->data['id'];
+			$mobile = safenet_decrypt($this->data['mobile']);
+			#printf("%d, %s \n", $id, $mobile);
+			if(strlen($mobile) > 11){
+				$mobile = substr($mobile, -11);
+			}
+			if($mobile == 'null'){
+			#	$sql = "UPDATE members_digest SET mobile = '".$mobile."' where id = '".$id."'";
+			#	printf("%s\n",$sql);
+			#	$dbh->query($sql);
+				$mobile = '';
+				$sql = "UPDATE members_digest SET mobile = :mobile where id = :id";
+			}else{
+				$sql = "UPDATE members_digest SET mobile = md5(:mobile) where id = :id";
+			}
+			$sth = $dbh->prepare($sql);
+			$sth->bindValue(':mobile', $mobile);
+			$sth->bindValue(':id', $id);
+			$sth->execute();
+			#echo $sth->debugDumpParams();
+		}
+		catch(PDOException $e) {
+			$error = sprintf("%s,%s\n", $mobile, $id );
+			file_put_contents("mobile_error.log", $error, FILE_APPEND);
+		}
+
+		#$dbh = null;
+		printf("runtime: %s, %s, %s, %s\n", date('Y-m-d H:i:s'), $this->worker->getThreadId() ,$mobile, $id);
+		#printf("runtime: %s, %s\n", date('Y-m-d H:i:s'), $this->number);
+	}
+}
+
+$pool = new Pool(100, \ExampleWorker::class, []);
+
+#foreach (range(0, 100) as $number) {
+#	$pool->submit(new Work($number));
+#}
+
+$dbhost = 'db.example.com';                     // 数据库服务器
+$dbuser = 'example.com';                 		// 数据库用户名
+$dbpw = 'password';                             // 数据库密码
+$dbname = 'example';
+$dbh    = new PDO("mysql:host=$dbhost;port=3307;dbname=$dbname", $dbuser, $dbpw, array(
+                        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+                        PDO::MYSQL_ATTR_COMPRESS => true
+                        )
+                );
+#print_r($dbh);
+
+#$sql = "select id, mobile from members where id < :id";
+#$sth = $dbh->prepare($sql);
+#$sth->bindValue(':id',300);
+#$sth->execute();
+#$result = $sth->fetchAll();
+#print_r($result);
+#
+#$sql = "UPDATE members_digest SET mobile = :mobile where id = :id";
+#$sth = $dbh->prepare($sql);
+#$sth->bindValue(':mobile', 'aa');
+#$sth->bindValue(':id','272');
+#echo $sth->execute();
+#echo $sth->queryString;
+#echo $sth->debugDumpParams();
+
+
+$sql = "select id, mobile from members order by id asc"; // limit 1000";
+$row = $dbh->query($sql);
+while($members = $row->fetch(PDO::FETCH_ASSOC))
+{
+        #$order =  $account['order'];
+        #printf("%s\n",$order);
+        //print_r($members);
+        $pool->submit(new Work($members));
+		#unset($account['order']);
+}
+
+$pool->shutdown();
+
+?>
+
 			]]>
 			</programlisting>
 		</section>
 		<section>
 			<title>多线程中操作数据库总结</title>
+			<para>总的来说 pthreads 仍然处在发展中，仍有一些不足的地方，我们也可以看到pthreads的git在不断改进这个项目</para>
 			<para>数据库持久链接很重要，否则每个线程都会开启一次数据库连接，然后关闭，会导致很多链接超时。</para>
 			<programlisting>
 			<![CDATA[
