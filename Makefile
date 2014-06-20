@@ -1,8 +1,5 @@
 DSSSL=../docbook-xsl/article.xsl
-XSLTPROC=xsltproc --stringparam html.stylesheet journal.css \
-        --stringparam toc.section.depth 5 \
-        --stringparam section.autolabel 1 \
-        --stringparam css.decoration 1
+XSLTPROC=xsltproc
 
 PUBLIC_HTML=~/public_html
 PREFIX=$(PUBLIC_HTML)/journal

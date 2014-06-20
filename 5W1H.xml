@@ -25,22 +25,22 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-	<section>
+	<section id="what">
 		<title>what-做什么</title>
 	</section>
-	<section>
+	<section id="why">
 		<title>why-为什么做</title>
 	</section>
-	<section>
+	<section id="when">
 		<title>when-何时做</title>
 	</section>
-	<section>
+	<section id="where">
 		<title>where-何地做</title>
 	</section>
-	<section>
+	<section id="who">
 		<title>who-谁去做</title>
 	</section>
-	<section>
+	<section id="how">
 		<title>how-怎么做</title>
 		<section>
 			<title>SECTION</title>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Meta Trades 数据库优化</title>
+		<subtitle>http://netkiller.github.io/journal/metatrades.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2014-06-20</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+<!-- 	
+	<section>
+		<title>what-做什么</title>
+	</section>
+	<section>
+		<title>why-为什么做</title>
+	</section>
+	<section>
+		<title>when-何时做</title>
+		<para>当数据不断膨胀，影响到你的查询性能是，你需要对交易数据库做优化。</para>
+	</section>
+	<section>
+		<title>where-何地做</title>
+	</section>
+	<section>
+		<title>who-谁去做</title>
+	</section>
+ -->	
+	<section>
+		<title>怎样优化Meta Trades 数据库</title>
+		<section>
+			<title>MT4_TRADES 表的优化方案</title>
+			<para>我将TICKET主键去除，然后对MT4_TRADES表进行分区处理，因为我们所有的查询都会涉及LOGIN字段，所以我使用LOGIN字段分区，是之每次查询都能精准地定位到该分区，同时将数据库存储引擎改为InnoDB。</para>
+			<screen>
+CREATE TABLE IF NOT EXISTS `MT4_TRADES` (
+  `TICKET` int(11) NOT NULL,
+  `LOGIN` int(11) NOT NULL,
+  `SYMBOL` char(16) NOT NULL,
+  `DIGITS` int(11) NOT NULL,
+  `CMD` int(11) NOT NULL,
+  `VOLUME` int(11) NOT NULL,
+  `OPEN_TIME` datetime NOT NULL,
+  `OPEN_PRICE` double NOT NULL,
+  `SL` double NOT NULL,
+  `TP` double NOT NULL,
+  `CLOSE_TIME` datetime NOT NULL,
+  `EXPIRATION` datetime NOT NULL,
+  `CONV_RATE1` double NOT NULL,
+  `CONV_RATE2` double NOT NULL,
+  `COMMISSION` double NOT NULL,
+  `COMMISSION_AGENT` double NOT NULL,
+  `SWAPS` double NOT NULL,
+  `CLOSE_PRICE` double NOT NULL,
+  `PROFIT` double NOT NULL,
+  `TAXES` double NOT NULL,
+  `COMMENT` char(32) NOT NULL,
+  `INTERNAL_ID` int(11) NOT NULL,
+  `MARGIN_RATE` double NOT NULL,
+  `TIMESTAMP` int(11) NOT NULL,
+  `MODIFY_TIME` datetime NOT NULL,
+  KEY `INDEX_LOGIN` (`LOGIN`),
+  KEY `INDEX_CMD` (`CMD`),
+  KEY `INDEX_OPENTIME` (`OPEN_TIME`),
+  KEY `INDEX_CLOSETIME` (`CLOSE_TIME`),
+  KEY `COMMENT` (`LOGIN`,`COMMENT`),
+  KEY `TICKET` (`TICKET`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+/*!50100 PARTITION BY HASH (LOGIN)
+PARTITIONS 16 */;
+			</screen>
+			<para>存款时间的相关问题，我们使用网络支付，成功后写入数据库，但这个时间并不是MT4的存款时间，与客户端查看到的时候有误差，我们通过订单号反向查找，通过触发器实时将存款时间写会我们的资金账号表。</para>
+			<screen>
+
+DELIMITER //
+CREATE DEFINER=`dba`@`192.168.6.20` PROCEDURE `MT4_TRADES_COMMENT`(IN `opentime` DATETIME, IN `comment` VARCHAR(32))
+    COMMENT '比对MT4订单好于Account订单号'
+BEGIN
+	DECLARE orderNumber VARCHAR(25) DEFAULT NULL;
+	DECLARE orderType VARCHAR(7) DEFAULT NULL;
+	
+	SELECT right(`comment`, 7) into orderType;
+	SELECT SUBSTRING_INDEX(`comment`, ':', 1) into orderNumber;
+
+	IF orderType = 'DEPOSIT' THEN
+		UPDATE hx9999.accounts SET paystatus = '成功', deposit_time = opentime, mtime = now() where `order` = orderNumber;
+	END IF;
+	UPDATE hx9999.withdrawing SET deposit_time = opentime, mtime = now() where `order` = orderNumber; -- operator = 'TRIGGER', `status` = 'Completed'
+END//
+DELIMITER ;
+
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
+DELIMITER //
+CREATE TRIGGER `MT4_TRADES_AFTER_INSERT` AFTER INSERT ON `MT4_TRADES` FOR EACH ROW BEGIN
+	call MT4_TRADES_COMMENT(NEW.OPEN_TIME, NEW.COMMENT);
+END//
+DELIMITER ;
+SET SQL_MODE=@OLDTMP_SQL_MODE;			
+			</screen>
+		</section>
+		<section>
+			<title>MT4_PRICES 表</title>
+			<para>MT4_PRICES 表结构</para>
+			<screen>
+CREATE TABLE `MT4_PRICES` (
+	`SYMBOL` CHAR(16) NOT NULL,
+	`TIME` DATETIME NOT NULL,
+	`BID` DOUBLE NOT NULL,
+	`ASK` DOUBLE NOT NULL,
+	`LOW` DOUBLE NOT NULL,
+	`HIGH` DOUBLE NOT NULL,
+	`DIRECTION` INT(11) NOT NULL,
+	`DIGITS` INT(11) NOT NULL,
+	`SPREAD` INT(11) NOT NULL,
+	`MODIFY_TIME` DATETIME NOT NULL,
+	PRIMARY KEY (`SYMBOL`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB;
+			
+			</screen>
+			<para>记录价格波动，用于绘制行情图，我们使用触发器记录每次价格的变化。</para>
+			<screen>
+CREATE TABLE IF NOT EXISTS `MT4_PRICES_GOLD_HISTORY` (
+  `SYMBOL` char(16) NOT NULL,
+  `TIME` datetime NOT NULL,
+  `BID` double NOT NULL,
+  `ASK` double NOT NULL,
+  `LOW` double NOT NULL,
+  `HIGH` double NOT NULL,
+  `DIRECTION` int(11) NOT NULL,
+  `DIGITS` int(11) NOT NULL,
+  `SPREAD` int(11) NOT NULL,
+  `MODIFY_TIME` datetime NOT NULL,
+  UNIQUE KEY `TIME` (`TIME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `MT4_PRICES_SILVER_HISTORY` (
+  `SYMBOL` char(16) NOT NULL,
+  `TIME` datetime NOT NULL,
+  `BID` double NOT NULL,
+  `ASK` double NOT NULL,
+  `LOW` double NOT NULL,
+  `HIGH` double NOT NULL,
+  `DIRECTION` int(11) NOT NULL,
+  `DIGITS` int(11) NOT NULL,
+  `SPREAD` int(11) NOT NULL,
+  `MODIFY_TIME` datetime NOT NULL,
+  UNIQUE KEY `TIME` (`TIME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='';
+DELIMITER //
+CREATE TRIGGER `t_AfterUpdate_on_MT4_PRICES` AFTER UPDATE ON `MT4_PRICES` FOR EACH ROW BEGIN 
+     if NEW.SYMBOL='GOLD' AND NEW.TIME > '1970-01-01 00:00:00' then
+       insert into MT4_PRICES_GOLD_HISTORY select * from MT4_PRICES where SYMBOL='GOLD';
+     
+     elseif NEW.SYMBOL='SILVER' AND NEW.TIME > '1970-01-01 00:00:00' then
+       insert into MT4_PRICES_SILVER_HISTORY select * from MT4_PRICES where SYMBOL='SILVER';
+     end if;
+
+END//
+DELIMITER ;
+SET SQL_MODE=@OLDTMP_SQL_MODE;
+			</screen>
+			<para>上面是黄金与白银数据，下面是外汇的例子</para>
+			<screen>
+DROP TRIGGER IF EXISTS `t_After_Update_on_MT4PRICES`;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='';
+DELIMITER //
+CREATE TRIGGER `t_After_Update_on_MT4PRICES` AFTER UPDATE ON `MT4_PRICES` FOR EACH ROW BEGIN     
+     if NEW.SYMBOL='AUDJPY' then
+       insert into MT4_PRICES_AUDJPY_HISTORY select * from MT4_PRICES where SYMBOL='AUDJPY';
+     elseif NEW.SYMBOL='AUDUSD' then
+       insert into MT4_PRICES_AUDUSD_HISTORY select * from MT4_PRICES where SYMBOL='AUDUSD';
+     elseif NEW.SYMBOL='CHFJPY' then
+       insert into MT4_PRICES_CHFJPY_HISTORY select * from MT4_PRICES where SYMBOL='CHFJPY';
+     elseif NEW.SYMBOL='EURAUD' then
+       insert into MT4_PRICES_EURAUD_HISTORY select * from MT4_PRICES where SYMBOL='EURAUD';
+     elseif NEW.SYMBOL='EURCHF' then
+       insert into MT4_PRICES_EURCHF_HISTORY select * from MT4_PRICES where SYMBOL='EURCHF';
+     elseif NEW.SYMBOL='EURGBP' then
+       insert into MT4_PRICES_EURGBP_HISTORY select * from MT4_PRICES where SYMBOL='EURGBP';       
+     elseif NEW.SYMBOL='EURJPY' then
+       insert into MT4_PRICES_EURJPY_HISTORY select * from MT4_PRICES where SYMBOL='EURJPY';
+     elseif NEW.SYMBOL='EURUSD' then
+       insert into MT4_PRICES_EURUSD_HISTORY select * from MT4_PRICES where SYMBOL='EURUSD';
+     elseif NEW.SYMBOL='GBPCHF' then
+       insert into MT4_PRICES_GBPCHF_HISTORY select * from MT4_PRICES where SYMBOL='GBPCHF';       
+     elseif NEW.SYMBOL='GBPJPY' then
+       insert into MT4_PRICES_GBPJPY_HISTORY select * from MT4_PRICES where SYMBOL='GBPJPY';
+     elseif NEW.SYMBOL='GBPUSD' then
+       insert into MT4_PRICES_GBPUSD_HISTORY select * from MT4_PRICES where SYMBOL='GBPUSD';
+     elseif NEW.SYMBOL='NZDJPY' then
+       insert into MT4_PRICES_NZDJPY_HISTORY select * from MT4_PRICES where SYMBOL='NZDJPY';       
+     elseif NEW.SYMBOL='NZDUSD' then
+       insert into MT4_PRICES_NZDUSD_HISTORY select * from MT4_PRICES where SYMBOL='NZDUSD';         
+     elseif NEW.SYMBOL='USDCAD' then
+       insert into MT4_PRICES_USDCAD_HISTORY select * from MT4_PRICES where SYMBOL='USDCAD';        
+     elseif NEW.SYMBOL='USDCHF' then
+       insert into MT4_PRICES_USDCHF_HISTORY select * from MT4_PRICES where SYMBOL='USDCHF'; 
+     elseif NEW.SYMBOL='USDJPY' then
+       insert into MT4_PRICES_USDJPY_HISTORY select * from MT4_PRICES where SYMBOL='USDJPY'; 
+     end if;
+
+END//
+DELIMITER ;
+SET SQL_MODE=@OLD_SQL_MODE;
+/*!40014 SET FOREIGN_KEY_CHECKS=1 */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;			
+			</screen>
+		</section>
+		<section>
+			<title>MT4_DAILY 表实现月结单</title>
+			<para>MT4_DAILY 表存储日结单数据，我们可以随时查询他们，但是当数据量达到一定程度。运算量就会影响到查询性能，我们需要实现月结单功能，已避免每次查询都运算一次。</para>
+		</section>		
+	</section>
+
+</article>
