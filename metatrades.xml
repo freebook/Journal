@@ -46,6 +46,31 @@
 	<section>
 		<title>怎样优化Meta Trades 数据库</title>
 		<section>
+			<title>MT4_USERS 表</title>
+			<para>监控MT4用户变化，随时将状态与我们的用户表同步，下面是当交易账号被删除后，会将我们用户数据库的记录状态改为已删除状态</para>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.6.20` TRIGGER `MT4_USERS_AFTER_DELETE` AFTER DELETE ON `MT4_USERS` FOR EACH ROW BEGIN
+	UPDATE `yourdb`.members SET `status` = 'Deleted' WHERE username = OLD.LOGIN;
+END			
+			</screen>
+			<para>交易账号状态监控</para>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.6.20` TRIGGER `MT4_USERS_AFTER_UPDATE` AFTER UPDATE ON `MT4_USERS` FOR EACH ROW BEGIN
+	IF OLD.ENABLE = '0' THEN
+		UPDATE `yourdb`.members SET `status` = 'Disabled' WHERE username = OLD.LOGIN;
+	ELSE
+		UPDATE `yourdb`.members SET `status` = 'Enabled' WHERE username = OLD.LOGIN;
+	END IF;
+END
+			</screen>
+			<para>你也可以监控MT4的开户</para>
+			<screen>
+CREATE TRIGGER `MT4_USERS_AFTER_INSERT` AFTER INSERT ON `MT4_USERS` FOR EACH ROW BEGIN
+	/*这里写入你的INSERT语句即可*/
+END
+			</screen>
+		</section>
+		<section>
 			<title>MT4_TRADES 表的优化方案</title>
 			<para>我将TICKET主键去除，然后对MT4_TRADES表进行分区处理，因为我们所有的查询都会涉及LOGIN字段，所以我使用LOGIN字段分区，是之每次查询都能精准地定位到该分区，同时将数据库存储引擎改为InnoDB。</para>
 			<screen>
@@ -99,9 +124,9 @@ BEGIN
 	SELECT SUBSTRING_INDEX(`comment`, ':', 1) into orderNumber;
 
 	IF orderType = 'DEPOSIT' THEN
-		UPDATE hx9999.accounts SET paystatus = '成功', deposit_time = opentime, mtime = now() where `order` = orderNumber;
+		UPDATE yourdb.accounts SET paystatus = '成功', deposit_time = opentime, mtime = now() where `order` = orderNumber;
 	END IF;
-	UPDATE hx9999.withdrawing SET deposit_time = opentime, mtime = now() where `order` = orderNumber; -- operator = 'TRIGGER', `status` = 'Completed'
+	UPDATE yourdb.withdrawing SET deposit_time = opentime, mtime = now() where `order` = orderNumber; -- operator = 'TRIGGER', `status` = 'Completed'
 END//
 DELIMITER ;
 
@@ -232,5 +257,4 @@ SET SQL_MODE=@OLD_SQL_MODE;
 			<para>MT4_DAILY 表存储日结单数据，我们可以随时查询他们，但是当数据量达到一定程度。运算量就会影响到查询性能，我们需要实现月结单功能，已避免每次查询都运算一次。</para>
 		</section>		
 	</section>
-
 </article>
