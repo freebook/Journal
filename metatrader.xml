@@ -8,8 +8,8 @@
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>Meta Trades 数据库优化</title>
-		<subtitle>http://netkiller.github.io/journal/metatrades.html</subtitle>
+		<title>Meta Trader 数据库优化</title>
+		<subtitle>http://netkiller.github.io/journal/metatrader.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
@@ -17,8 +17,8 @@
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
-			<keyword></keyword>
-			<keyword></keyword>
+			<keyword>Meta Trader, MT4, MT5, MT4 Report</keyword>
+			<keyword>MT4_USERS, MT4_TRADES, MT4_PRICES, MT4_DAILY</keyword>
 			<keyword></keyword>
 			<keyword></keyword>
 		</keywordset>
