@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Linux Token 一次性密码认证</title>
+		<subtitle>http://netkiller.github.io/journal/token.html</subtitle>
+		
+		
+		<authorgroup>
+			&article.author.xml;
+			
+			<author>
+				<personname>
+					<honorific>Mr</honorific>
+					<firstname>曾</firstname>
+					<othername></othername>
+					<surname>祥建</surname>
+					<lineage>Android 手机端开发</lineage>
+					<contrib>written by </contrib>
+				</personname>
+		
+				<affiliation>
+					<address>
+						<country>中国</country><state>广东省</state><city>深圳市</city><street>南山区</street>
+<!--															
+						<postcode>518131</postcode>
+						<fax>+86 755 29812080</fax>
+-->						
+						<phone>+86 18665871161</phone>
+						
+						<email>zeng_xiang_jian@foxmail.com</email>
+					</address>
+<!--		
+					<shortaffil></shortaffil>
+					<jobtitle></jobtitle>
+					<orgname></orgname>
+					<orgdiv></orgdiv>
+		 -->
+				</affiliation>
+			</author>
+
+		</authorgroup>
+
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>
+				
+		&book.info.legalnotice.xml;
+
+
+		<abstract>
+			<para>服务器端脚本：</para>
+			<para>https://github.com/oscm/devops/blob/master/bin/chpasswd.sh</para>
+			<para>手机应用：</para>
+			<para>https://github.com/oscm/Token</para>
+		</abstract>
+
+
+		
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2014-08-01</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>什么是Token</title>
+		<para>Token(令牌)是一个身份认证标识，token还有一个特点，那就是存在过期时间的。也就是令牌不是长久有效的。</para>
+	</section>
+	<section id="why">
+		<title>为什么使用令牌</title>
+		<para>我们通常需要临时或者一次性使用的身份认证</para>
+	</section>
+	<section id="when">
+		<title>什么时候能用到令牌技术</title>
+		<para>例如我们去餐厅就餐，向前台获取Wifi密码，然后可以享受30分钟的上网服务。30分钟过后密码将失效。</para>
+		<para>我们公司有很多服务器，密码的管理非常麻烦，有时还会有人事变动，一旦人员发生变动，所有的服务器密码都需要修改一次，非常麻烦，偶尔会有漏改情况，使用堡垒机可以更好的管理密码，但成本非常昂贵。</para>
+		<para>于是我便想起了Token技术，但购买Token硬件成本也要花费不少钱。Token的原理我很清楚，通过对称算法算出相同对等密钥，我们可以不购买硬件设备，自己开发，手机设备随身携带，所以开发移动版Token最好不过。</para>
+	</section>
+	<section id="where">
+		<title>本文的Token应用在什么地方</title>
+		<para>我采用Token技术实现Linux指定用户的密码周期变化，以时间为基准，手机同步算出服务器上的密码。为了防止密码被穷举，我增加了4个干扰字符。</para>
+		<para>如果对密码算法强度感到不安全，你可以自行修改复杂度。</para>
+		<para>你还可以远程修改密码，不多讲。</para>
+	</section>
+	<section id="who">
+		<title>谁来部署</title>
+		<para>首先由管理员部署密码修改程序 chpasswd.sh 然后加入到crontab 中定时运行。</para>
+		<para>由于考虑到读者的水平参差不齐，所以我使用shell完成，这样绝大多数读者都能看懂。</para>
+		<screen>
+# cat chpasswd.sh 
+		
+#!/bin/bash
+datetime=`date +%Y-%m-%d" "%H":"%M`
+email="neo.chan@live.com"
+#password=$(cat /dev/urandom | tr -cd [:alnum:] | fold -w30 | head -n 1)
+string=$(date -u "+%Y$1%m$2%d$3%H$4%M")
+password=$(echo $string | md5sum | cut -c 2-9 | base64 | tr -d "=" | cut -c 1-32)
+echo $password > ~/.lastpasswd
+echo $password | passwd www --stdin > /dev/null
+		</screen>
+		<para>~/.lastpasswd 中保存最后一次密码</para>
+		<para>crontab 设置，每分钟修改一次密码。</para>
+		<screen>
+# crontab -l
+*/1 * * * * /root/chpasswd.sh a b c d
+		</screen>
+		<para>a b c d 自行设定，设定与手机端相同即可</para>
+		<para>至此服务器端配置完成</para>
+	</section>
+	<section id="how">
+		<title>手机端配置</title>
+		<para>安装Token.apk文件到你的手机 </para>
+		<para><ulink url="https://github.com/oscm/Token">https://github.com/oscm/Token</ulink></para>
+		<graphic  format="png" fileref="images/token/Token.jpg" width="300" srccredit="neo" />
+		<section>
+			<title>设置密码</title>
+			<graphic  format="png" fileref="images/token/Token-Password.jpg" width="300" srccredit="neo" />
+			<para>确认密码</para>
+			<graphic  format="png" fileref="images/token/Token-Password1.jpg" width="300" srccredit="neo" />
+			<para>选择环境</para>
+			<graphic  format="png" fileref="images/token/Token-Env.jpg" width="300" srccredit="neo" />
+			<para>设置干扰码</para>
+			<graphic  format="png" fileref="images/token/Token-Salt.jpg" width="300" srccredit="neo" />
+		</section>
+		<section>
+			<title>查看服务器密码</title>
+			<graphic  format="png" fileref="images/token/Token-Auth.jpg" width="300" srccredit="neo" />
+		</section>
+		<section>
+			<title>设置刷新时间</title>
+			<para>默认1分钟刷新一次，可能没有来得及输入完密码就会更新密码</para>
+			<para>如果修改此项，服务器端crontab中的设置同步更改即可。</para>
+			<graphic  format="png" fileref="images/token/Token-Refresh.jpg" width="300" srccredit="neo" />
+		</section>		
+	</section>
+
+</article>

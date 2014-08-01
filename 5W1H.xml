@@ -11,6 +11,12 @@
 		<title>5W1H</title>
 		<subtitle></subtitle>
 		&article.author.xml;
+		
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>		
+		
 		&book.info.legalnotice.xml;
 		<abstract>
 
