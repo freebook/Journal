@@ -8,7 +8,7 @@
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>Linux Token 一次性密码认证</title>
+		<title>Linux Token Auth 一次性密码认证</title>
 		<subtitle>http://netkiller.github.io/journal/token.html</subtitle>
 		
 		
@@ -54,15 +54,12 @@
 				
 		&book.info.legalnotice.xml;
 
-
 		<abstract>
 			<para>服务器端脚本：</para>
 			<para>https://github.com/oscm/devops/blob/master/bin/chpasswd.sh</para>
 			<para>手机应用：</para>
 			<para>https://github.com/oscm/Token</para>
 		</abstract>
-
-
 		
 		&book.info.abstract.xml;
 		<keywordset>
