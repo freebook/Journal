@@ -68,6 +68,14 @@ END
 		</section>
 		<section>
 			<title>限制修改</title>
+			<para>禁止所有修改操作</para>
+			<screen>
+DELIMITER $$
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `logging_before_update` BEFORE UPDATE ON `logging` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END			
+			</screen>
+			<para>限制部分子段修改，其他子段扔允许修改</para>
 			<screen>
 CREATE DEFINER=`dba`@`192.168.%` TRIGGER `members_before_update` BEFORE UPDATE ON `members` FOR EACH ROW BEGIN
 	SET NEW.`id` = OLD.id;
