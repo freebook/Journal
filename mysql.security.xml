@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>数据库记录安全解决方案</title>
+		<subtitle>http://netkiller.github.io/journal/mysql.security.html</subtitle>
+		&article.author.xml;
+		
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>		
+		
+		&book.info.legalnotice.xml;
+		<abstract>
+			<para>防删除，放撰改,灵活性解决方案</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>什么是防删除，防撰改</title>
+		<para>禁止数据删除，数据一旦增加不允许数据被任何人删除</para>
+		<para>禁止数据修改，数据一旦建立不允许对数据做修改操作</para>
+	</section>
+	<section id="why">
+		<title>为什么要做防删除，防撰改限制</title>
+		<para>很多时候我们的数据是只增加，不会删除数据。有些敏感子段一旦数据家里是不允许再修改的，例如银行账户表中的资金子段。</para>
+		<para>另一个原因是我们防止误操作</para>
+	</section>
+	<section id="when">
+		<title>何时做防删除，防撰改限制</title>
+		<para>我认为在数据库设计时就应该考虑倒这些问题，如果发现数据被删除或者被撰改，亡羊补牢也不晚，我们不能允许再次发生。</para>
+		<para>你可以取消用户的 DELETE 权限，使之只能做查询操作，但修改（UPDATE）呢？你就无能为力！如果取消UPDATE程序将不能正常运行。</para>
+	</section>
+	<section id="where">
+		<title>在哪里做防删除，防撰改限制</title>
+		<para>程序设计之初你就应该想到这些问题，如果没有考虑倒，你只能修改现有逻辑。通常的做法是所有表增加一个删除状态子段，删除操作即是更新状态。这种方式也有弊端就是垃圾数据会不停地膨胀。</para>
+		<!-- 但国内的软件开发不好说，很多公司会设立产品部，你会发现产品不都是一些年轻人，他们对UI非常熟悉 -->
+	</section>
+	<section id="who">
+		<title>谁去做防删除，防撰改限制</title>
+		<para>我认为可以分为两种人，一种是DBA,一种是开发者。这里主要将数据库部分。</para>
+	</section>
+	<section id="how">
+		<title>how-怎么做</title>
+		<section>
+			<title>限制删除</title>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `account_before_delete` BEFORE DELETE ON `account` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END
+			</screen>
+			<para>对account表中的记录做删除操作，数据库抛出异常 Permission denied</para>
+		</section>
+		<section>
+			<title>限制修改</title>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `members_before_update` BEFORE UPDATE ON `members` FOR EACH ROW BEGIN
+	SET NEW.`id` = OLD.id;
+	SET NEW.`name` = OLD.name;
+	SET NEW.`chinese_name` = OLD.chinese_name;
+	SET NEW.`english_name` = OLD.english_name;
+	SET NEW.`sex` = OLD.sex;
+	SET NEW.`address` = OLD.address;
+	SET NEW.`zipcode` = OLD.zipcode;
+	SET NEW.`country_code` = OLD.country_code;
+	SET NEW.`mobile` = OLD.mobile;
+	SET NEW.`email` = OLD.email;
+	SET NEW.`qq` = OLD.qq;
+	SET NEW.`question` = OLD.question;
+	SET NEW.`answer` = OLD.answer;
+	SET NEW.`ctime` = OLD.ctime;
+END
+			</screen>
+			<para>在数据库修改前我们覆盖掉修改的数据，使之更新后数据保持不变。</para>
+		</section>
+		<section>
+			<title>版本控制</title>
+			<para>主表</para>
+			<screen>
+CREATE TABLE `article` (
+	`article_id` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`cat_id` SMALLINT(5) NOT NULL DEFAULT '0',
+	`title` VARCHAR(150) NOT NULL DEFAULT '',
+	`content` LONGTEXT NOT NULL,
+	`author` VARCHAR(30) NOT NULL DEFAULT '',
+	`keywords` VARCHAR(255) NOT NULL DEFAULT '',
+	PRIMARY KEY (`article_id`),
+	INDEX `cat_id` (`cat_id`)
+)
+ENGINE=MyISAM
+ROW_FORMAT=DEFAULT
+AUTO_INCREMENT=1			
+			</screen>
+			<para>本版控制表，用于记录每次变动</para>
+			<screen>
+CREATE TABLE `article_history` (
+	`id` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`article_id` MEDIUMINT(8) UNSIGNED NOT NULL,
+	`cat_id` SMALLINT(5) NOT NULL DEFAULT '0',
+	`title` VARCHAR(150) NOT NULL DEFAULT '',
+	`content` LONGTEXT NOT NULL,
+	`author` VARCHAR(30) NOT NULL DEFAULT '',
+	`keywords` VARCHAR(255) NOT NULL DEFAULT '',
+	PRIMARY KEY (`id`),
+	INDEX `article_id` (`article_id`)
+)
+ENGINE=MyISAM
+ROW_FORMAT=DEFAULT
+AUTO_INCREMENT=1
+			</screen>
+			<para>版本控制触发器</para>
+			<screen>
+DROP TRIGGER article_history;
+
+DELIMITER //
+CREATE TRIGGER article_history BEFORE update ON article FOR EACH ROW
+BEGIN
+	INSERT INTO article_history SELECT * FROM article WHERE article_id = OLD.article_id;
+END; //
+DELIMITER;					
+			</screen>
+			<para>任何数据的变化都会复制一份到历史表，我们可以随时比较两个版本数据的变化，我还为此开发了一个类似diff的工具，可以逐行比较，通过色彩变化现实数据的不同。</para>
+		</section>		
+	</section>
+
+</article>
