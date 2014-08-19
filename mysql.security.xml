@@ -28,7 +28,7 @@
 			<keyword></keyword>
 			<keyword></keyword>
 		</keywordset>
-		<pubdate>$Date$</pubdate>
+		<pubdate>2014-08-19</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
@@ -56,7 +56,7 @@
 		<para>我认为可以分为两种人，一种是DBA,一种是开发者。这里主要将数据库部分。</para>
 	</section>
 	<section id="how">
-		<title>how-怎么做</title>
+		<title>怎么做防删除，防撰改限制</title>
 		<section>
 			<title>限制删除</title>
 			<screen>
