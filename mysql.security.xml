@@ -20,13 +20,14 @@
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>防删除，放撰改,灵活性解决方案</para>
+			<pubdate>2014-08-28 第二版</pubdate>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
-			<keyword></keyword>
-			<keyword></keyword>
-			<keyword></keyword>
-			<keyword></keyword>
+			<keyword>mysql安全问题</keyword>
+			<keyword>mysql数据库防护</keyword>
+			<keyword>mysql安全策略</keyword>
+			<keyword>mysql安全配置</keyword>
 		</keywordset>
 		<pubdate>2014-08-19</pubdate>
 		<release>$Id$</release>
@@ -56,7 +57,7 @@
 		<para>我认为可以分为两种人，一种是DBA,一种是开发者。这里主要将数据库部分。</para>
 	</section>
 	<section id="how">
-		<title>怎么做防删除，防撰改限制</title>
+		<title>怎样实现防删除，防撰改限制</title>
 		<section>
 			<title>限制删除</title>
 			<screen>
@@ -143,7 +144,57 @@ END; //
 DELIMITER;					
 			</screen>
 			<para>任何数据的变化都会复制一份到历史表，我们可以随时比较两个版本数据的变化，我还为此开发了一个类似diff的工具，可以逐行比较，通过色彩变化现实数据的不同。</para>
-		</section>		
+		</section>
+		<section>
+			<title>为数据安全而分库</title>
+			<para>我们通常使用一个数据库开发，该数据库包含了前后台所有的功能，我建议将前后台等等功能进行分库然后对应各种平台分配用户权限，例如</para>
+			<para>我们创建三个数据库cms,frontend,backend 同时对应创建三个用户 cms,frontend,backend 三个用户只能分别访问自己的数据库，注意在系统的设计之初你要考虑好这样的划分随之系统需要做相应的调整。</para>
+			<programlisting>
+CREATE DATABASE `cms` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `frontend` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `backend` /*!40100 COLLATE 'utf8_general_ci' */;
+			</programlisting>
+			<para>backend 负责后台，权限最高</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'backend'@'localhost';
++--------------------------------------------------------------------------------------+
+| Grants for backend@localhost                                                         |
++--------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'backend'@'localhost'                                          |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'backend'@'localhost'             |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `frontend`.* TO 'backend'@'localhost'        |
+| GRANT SELECT, INSERT, UPDATE, DELETE, CREATE ON `backend`.* TO 'backend'@'localhost' |
++--------------------------------------------------------------------------------------+
+4 rows in set (0.04 sec)		
+			</programlisting>
+			<para>frontend 是前台权限，主要是用户用户中心，用户注册，登录，用户信息资料编辑，查看新闻等等</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'frontend'@'localhost';
++------------------------------------------------------------------------+
+| Grants for frontend@localhost                                          |
++------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'frontend'@'localhost'                           |
+| GRANT SELECT, INSERT, UPDATE ON `frontend`.* TO 'frontend'@'localhost' |
+| GRANT SELECT ON `cms`.`news` TO 'frontend'@'localhost'                 |
++------------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>cms 用户是网站内容管理，主要负责内容更新，但登陆CMS后台需要`backend`.`Employees`表用户认证，所以他需要读取权限，但不允许修改其中的数据。</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'cms'@'localhost';
++----------------------------------------------------------------------+
+| Grants for cms@localhost                                             |
++----------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'cms'@'localhost'                              |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'cms'@'localhost' |
+| GRANT SELECT ON `backend`.`Employees` TO 'cms'@'localhost'           |
++----------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>cms与backend 通常我们会限制IP地址来源，安全相对好控制。</para>
+			<para>frontend 主要对外提供服务，我们假设一旦被骇客入侵，所波及的范围被限制在frontend权限下，至少`backend`.`Employees`不会被撰改，CMS内容也得到了保护。</para>
+			<para>想100%解决数据的安全是非常空难的，但我们至少保护了一部份数据的安全。使其安全不会进一步扩散影响。</para>
+		</section>
 	</section>
 
 </article>
