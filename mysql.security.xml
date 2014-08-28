@@ -19,7 +19,7 @@
 		
 		&book.info.legalnotice.xml;
 		<abstract>
-			<para>防删除，放撰改,灵活性解决方案</para>
+			<para>数据库记录防删除，放撰改，撰改留痕，灵活性解决方案</para>
 			<pubdate>2014-08-28 第二版</pubdate>
 		</abstract>
 		&book.info.abstract.xml;
@@ -97,6 +97,60 @@ END
 			</screen>
 			<para>在数据库修改前我们覆盖掉修改的数据，使之更新后数据保持不变。</para>
 		</section>
+<section>
+			<title>为数据安全而分库</title>
+			<para>我们通常使用一个数据库开发，该数据库包含了前后台所有的功能，我建议将前后台等等功能进行分库然后对应各种平台分配用户权限，例如</para>
+			<para>我们创建三个数据库cms,frontend,backend 同时对应创建三个用户 cms,frontend,backend 三个用户只能分别访问自己的数据库，注意在系统的设计之初你要考虑好这样的划分随之系统需要做相应的调整。</para>
+			<programlisting>
+CREATE DATABASE `cms` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `frontend` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `backend` /*!40100 COLLATE 'utf8_general_ci' */;
+			</programlisting>
+			<para>backend 负责后台，权限最高</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'backend'@'localhost';
++--------------------------------------------------------------------------------------+
+| Grants for backend@localhost                                                         |
++--------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'backend'@'localhost'                                          |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'backend'@'localhost'             |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `frontend`.* TO 'backend'@'localhost'        |
+| GRANT SELECT, INSERT, UPDATE, DELETE, CREATE ON `backend`.* TO 'backend'@'localhost' |
++--------------------------------------------------------------------------------------+
+4 rows in set (0.04 sec)		
+			</programlisting>
+			<para>frontend 是前台权限，主要是用户用户中心，用户注册，登录，用户信息资料编辑，查看新闻等等</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'frontend'@'localhost';
++------------------------------------------------------------------------+
+| Grants for frontend@localhost                                          |
++------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'frontend'@'localhost'                           |
+| GRANT SELECT, INSERT, UPDATE ON `frontend`.* TO 'frontend'@'localhost' |
+| GRANT SELECT ON `cms`.`news` TO 'frontend'@'localhost'                 |
++------------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>cms 用户是网站内容管理，主要负责内容更新，但登陆CMS后台需要`backend`.`Employees`表用户认证，所以他需要读取权限，但不允许修改其中的数据。</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'cms'@'localhost';
++----------------------------------------------------------------------+
+| Grants for cms@localhost                                             |
++----------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'cms'@'localhost'                              |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'cms'@'localhost' |
+| GRANT SELECT ON `backend`.`Employees` TO 'cms'@'localhost'           |
++----------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>cms与backend 通常我们会限制IP地址来源，安全相对好控制。</para>
+			<para>frontend 主要对外提供服务，我们假设一旦被骇客入侵，所波及的范围被限制在frontend权限下，至少`backend`.`Employees`不会被撰改，CMS内容也得到了保护。</para>
+			<para>想100%解决数据的安全是非常空难的，但我们至少保护了一部份数据的安全。使其安全不会进一步扩散影响。</para>
+		</section>		
+	</section>
+	<section id="traces">
+		<title>怎样实现数据修改留痕</title>
+		<para>数据记录每一次修改我们都需要保留之前的数据，这样可以随时调出历史数据，用户审计等等。</para>
 		<section>
 			<title>版本控制</title>
 			<para>主表</para>
@@ -146,55 +200,64 @@ DELIMITER;
 			<para>任何数据的变化都会复制一份到历史表，我们可以随时比较两个版本数据的变化，我还为此开发了一个类似diff的工具，可以逐行比较，通过色彩变化现实数据的不同。</para>
 		</section>
 		<section>
-			<title>为数据安全而分库</title>
-			<para>我们通常使用一个数据库开发，该数据库包含了前后台所有的功能，我建议将前后台等等功能进行分库然后对应各种平台分配用户权限，例如</para>
-			<para>我们创建三个数据库cms,frontend,backend 同时对应创建三个用户 cms,frontend,backend 三个用户只能分别访问自己的数据库，注意在系统的设计之初你要考虑好这样的划分随之系统需要做相应的调整。</para>
-			<programlisting>
-CREATE DATABASE `cms` /*!40100 COLLATE 'utf8_general_ci' */;
-CREATE DATABASE `frontend` /*!40100 COLLATE 'utf8_general_ci' */;
-CREATE DATABASE `backend` /*!40100 COLLATE 'utf8_general_ci' */;
-			</programlisting>
-			<para>backend 负责后台，权限最高</para>
-			<programlisting>
-mysql> SHOW GRANTS FOR 'backend'@'localhost';
-+--------------------------------------------------------------------------------------+
-| Grants for backend@localhost                                                         |
-+--------------------------------------------------------------------------------------+
-| GRANT USAGE ON *.* TO 'backend'@'localhost'                                          |
-| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'backend'@'localhost'             |
-| GRANT SELECT, INSERT, UPDATE, DELETE ON `frontend`.* TO 'backend'@'localhost'        |
-| GRANT SELECT, INSERT, UPDATE, DELETE, CREATE ON `backend`.* TO 'backend'@'localhost' |
-+--------------------------------------------------------------------------------------+
-4 rows in set (0.04 sec)		
-			</programlisting>
-			<para>frontend 是前台权限，主要是用户用户中心，用户注册，登录，用户信息资料编辑，查看新闻等等</para>
-			<programlisting>
-mysql> SHOW GRANTS FOR 'frontend'@'localhost';
-+------------------------------------------------------------------------+
-| Grants for frontend@localhost                                          |
-+------------------------------------------------------------------------+
-| GRANT USAGE ON *.* TO 'frontend'@'localhost'                           |
-| GRANT SELECT, INSERT, UPDATE ON `frontend`.* TO 'frontend'@'localhost' |
-| GRANT SELECT ON `cms`.`news` TO 'frontend'@'localhost'                 |
-+------------------------------------------------------------------------+
-3 rows in set (0.00 sec)		
-			</programlisting>
-			<para>cms 用户是网站内容管理，主要负责内容更新，但登陆CMS后台需要`backend`.`Employees`表用户认证，所以他需要读取权限，但不允许修改其中的数据。</para>
-			<programlisting>
-mysql> SHOW GRANTS FOR 'cms'@'localhost';
-+----------------------------------------------------------------------+
-| Grants for cms@localhost                                             |
-+----------------------------------------------------------------------+
-| GRANT USAGE ON *.* TO 'cms'@'localhost'                              |
-| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'cms'@'localhost' |
-| GRANT SELECT ON `backend`.`Employees` TO 'cms'@'localhost'           |
-+----------------------------------------------------------------------+
-3 rows in set (0.00 sec)		
-			</programlisting>
-			<para>cms与backend 通常我们会限制IP地址来源，安全相对好控制。</para>
-			<para>frontend 主要对外提供服务，我们假设一旦被骇客入侵，所波及的范围被限制在frontend权限下，至少`backend`.`Employees`不会被撰改，CMS内容也得到了保护。</para>
-			<para>想100%解决数据的安全是非常空难的，但我们至少保护了一部份数据的安全。使其安全不会进一步扩散影响。</para>
+			<title>一张表实现历史日志记录</title>
+			<para>我有一个表，里面只有固定行数的行记录，这些数据就是配置参数，我们将配置文件保存在数据库中，因为需要做负载均衡而不能使用文件配置文件。</para>
+			<para>有这样一个需求，这个记录每次修改都要保存历史记录，用于审计等等。我是这样设计该表的</para>
+			<screen>
+CREATE TABLE `config_fee` (
+	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`level` INT(11) NULL DEFAULT NULL COMMENT '层级',
+	`type` ENUM('Deposit','Withdrawing') NOT NULL DEFAULT 'Withdrawing' COMMENT '类型，存款，取款',
+	`min_fee` FLOAT(10,2) NOT NULL COMMENT '最低手续费',
+	`max_fee` FLOAT(10,2) NOT NULL COMMENT '最高手续费',
+	`ratio` FLOAT(10,2) NOT NULL COMMENT '手续费比例',
+	`operator` VARCHAR(10) NOT NULL COMMENT '操作者',
+	`status` ENUM('Current','Trash') NOT NULL DEFAULT 'Current',
+	`ctime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`mtime` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+)
+COMMENT='手续费管理'
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB;			
+			</screen>
+			<para>数据记录的形态</para>
+			<screen>
+mysql> select type,operator,status,ctime,mtime from config_mtf_fee;
++---------+----------+---------+---------------------+---------------------+
+| type    | operator | status  | ctime               | mtime               |
++---------+----------+---------+---------------------+---------------------+
+| Deposit | jam      | Trash   | 2014-07-20 11:10:17 | 2014-07-20 11:10:57 |
+| Deposit | lucy     | Trash   | 2014-08-24 11:10:17 | 2014-08-24 11:10:57 |
+| Deposit | lily     | Trash   | 2014-08-25 11:10:17 | 2014-08-25 11:10:57 |
+| Deposit | kitty    | Trash   | 2014-08-27 11:10:17 | 2014-08-27 11:10:57 |
+| Deposit | neo      | Current | 2014-08-28 11:10:54 | 2014-08-28 11:10:59 |
++---------+----------+---------+---------------------+---------------------+
+2 rows in set (0.00 sec)			
+			</screen>
+			<para>如上图所示，状态 Current 是当前记录，而Trash是废弃的历史记录。</para>
+			<para>每次修改数据，首先将Current改为Trash，然后插入一条新数据状态为Current，我们只会使用最后一条状态为current的数据。</para>
+			<para>我们使用更新触发器控制除了status,mtime意外的字段修改</para>
+			<screen>
+CREATE DEFINER=`root`@`%` TRIGGER `config_fee_before_update` BEFORE UPDATE ON `config_fee` FOR EACH ROW BEGIN
+	SET NEW.`id` = OLD.id;
+	SET NEW.`level` = OLD.level;
+	SET NEW.`type` = OLD.type;
+	SET NEW.`min_amount` = OLD.min_amount;
+	SET NEW.`min_fee` = OLD.min_fee;
+	SET NEW.`max_fee` = OLD.max_fee;
+	SET NEW.`ratio` = OLD.ratio;
+	SET NEW.`operator` = OLD.operator;
+	SET NEW.`ctime` = OLD.ctime;
+END;			
+			</screen>
+			<para>限制删除的触发器</para>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `config_fee_before_delete` BEFORE DELETE ON `config_fee` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END			
+			</screen>
 		</section>
-	</section>
 
+	</section>
 </article>
