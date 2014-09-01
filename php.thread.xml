@@ -9,7 +9,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>PHP 高级编程之多线程</title>
-		<subtitle>http://netkiller.github.io/journal/thread.php.html</subtitle>
+		<subtitle>http://netkiller.github.io/journal/php.thread.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
