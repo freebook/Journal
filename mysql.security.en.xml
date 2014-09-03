@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Security solutions for records of database </title>
+		<subtitle>http://netkiller.github.io/journal/mysql.security.html</subtitle>
+		&article.author.xml;
+		
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>		
+		
+		&book.info.legalnotice.xml;
+		<abstract>
+			<para>This is a security solutions for records of database that anti delete, change and traces.</para>
+			<pubdate>2014-08-28 last</pubdate>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>mysql security</keyword>
+			<keyword>mysql anti</keyword>
+			<keyword>mysql strategy</keyword>
+			<keyword>mysql security config</keyword>
+		</keywordset>
+		<pubdate>2014-08-19</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>What is anti delete and change.</title>
+		<para>Once the data was inserted, the data does not allow to be deleted  anyone</para>
+		<para>And do not allow for data modification operations.</para>
+	</section>
+	<section id="why">
+		<title>Why do anti-delete, anti-change</title>
+		<para>sometimes, Our data is only inserted, does not delete it. and some of fields does not allow changed.</para>
+		<para>For example deposit datas, a fields money in table account.</para>
+		<para>Another reason is that we prevent misuse.</para>
+	</section>
+	<!-- 
+	<section id="when">
+		<title>When done anti-delete, anti-change</title>
+		<para>我认为在数据库设计时就应该考虑倒这些问题，如果发现数据被删除或者被撰改，亡羊补牢也不晚，我们不能允许再次发生。</para>
+		<para>你可以取消用户的 DELETE 权限，使之只能做查询操作，但修改（UPDATE）呢？你就无能为力！如果取消UPDATE程序将不能正常运行。</para>
+	</section>
+	<section id="where">
+		<title>在哪里做防删除，防撰改限制</title>
+		<para>程序设计之初你就应该想到这些问题，如果没有考虑倒，你只能修改现有逻辑。通常的做法是所有表增加一个删除状态子段，删除操作即是更新状态。这种方式也有弊端就是垃圾数据会不停地膨胀。</para>
+		!-- 但国内的软件开发不好说，很多公司会设立产品部，你会发现产品不都是一些年轻人，他们对UI非常熟悉 --
+	</section>
+	 -->
+	<section id="who">
+		<title>Who do anti-delete, anti-change</title>
+		<para>I think it can be divided into two kinds of role, one is DBA, another one is the developer. the following is part of the database. </para>
+	</section>
+	<section id="how">
+		<title>How to do anti-delete, anti-change</title>
+		<section>
+			<title>To deny delete</title>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `account_before_delete` BEFORE DELETE ON `account` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END
+			</screen>
+			<para>if you want to delete any recodes，the database will be throw an exception "Permission denied"</para>
+		</section>
+		<section>
+			<title>To deny update</title>
+			<para>To deny update all of fields.</para>
+			<screen>
+DELIMITER $$
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `logging_before_update` BEFORE UPDATE ON `logging` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END			
+			</screen>
+			<para>deny some of fields, but you can exclude others.</para>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `members_before_update` BEFORE UPDATE ON `members` FOR EACH ROW BEGIN
+	SET NEW.`id` = OLD.id;
+	SET NEW.`name` = OLD.name;
+	SET NEW.`chinese_name` = OLD.chinese_name;
+	SET NEW.`english_name` = OLD.english_name;
+	SET NEW.`sex` = OLD.sex;
+	SET NEW.`address` = OLD.address;
+	SET NEW.`zipcode` = OLD.zipcode;
+	SET NEW.`country_code` = OLD.country_code;
+	SET NEW.`mobile` = OLD.mobile;
+	SET NEW.`email` = OLD.email;
+	SET NEW.`qq` = OLD.qq;
+	SET NEW.`question` = OLD.question;
+	SET NEW.`answer` = OLD.answer;
+	SET NEW.`ctime` = OLD.ctime;
+END
+			</screen>
+			<para>Some fields is changed, the others do not, because NEW.xxx = OLD.xxx.</para>
+		</section>
+<section>
+			<title>Split database for data security</title>
+			<para>Usually, We were use a database for development. The database contains all of features such as frontend and backend. 
+I propose to divide the frontend and backend，Then create user and assign permissions to schema/database.</para>
+			<para>We created three databases cms, frontend and backend, and then correspond to create three user cms, frontend and backend. next  assign permissions to schema/database and only able to access their databases.</para>
+			<programlisting>
+CREATE DATABASE `cms` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `frontend` /*!40100 COLLATE 'utf8_general_ci' */;
+CREATE DATABASE `backend` /*!40100 COLLATE 'utf8_general_ci' */;
+			</programlisting>
+			<para>backend user is highest permissions </para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'backend'@'localhost';
++--------------------------------------------------------------------------------------+
+| Grants for backend@localhost                                                         |
++--------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'backend'@'localhost'                                          |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'backend'@'localhost'             |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `frontend`.* TO 'backend'@'localhost'        |
+| GRANT SELECT, INSERT, UPDATE, DELETE, CREATE ON `backend`.* TO 'backend'@'localhost' |
++--------------------------------------------------------------------------------------+
+4 rows in set (0.04 sec)		
+			</programlisting>
+			<para>frontend user is cover login, logout, edit profile, view news and so on.</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'frontend'@'localhost';
++------------------------------------------------------------------------+
+| Grants for frontend@localhost                                          |
++------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'frontend'@'localhost'                           |
+| GRANT SELECT, INSERT, UPDATE ON `frontend`.* TO 'frontend'@'localhost' |
+| GRANT SELECT ON `cms`.`news` TO 'frontend'@'localhost'                 |
++------------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>cms is user of Content Management System, it cover create news, edit content, login to cms as admin. the admin user in the table `backend`.`Employees` but only read it, do not change anything.</para>
+			<programlisting>
+mysql> SHOW GRANTS FOR 'cms'@'localhost';
++----------------------------------------------------------------------+
+| Grants for cms@localhost                                             |
++----------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'cms'@'localhost'                              |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `cms`.* TO 'cms'@'localhost' |
+| GRANT SELECT ON `backend`.`Employees` TO 'cms'@'localhost'           |
++----------------------------------------------------------------------+
+3 rows in set (0.00 sec)		
+			</programlisting>
+			<para>Usually, cms and backend users  we will allow source IP address and deny others</para>
+			<!-- 
+			<para>frontend 主要对外提供服务，我们假设一旦被骇客入侵，所波及的范围被限制在frontend权限下，至少`backend`.`Employees`不会被撰改，CMS内容也得到了保护。</para>
+			<para>想100%解决数据的安全是非常空难的，但我们至少保护了一部份数据的安全。使其安全不会进一步扩散影响。</para>
+			 -->
+		</section>		
+	</section>
+	<section id="traces">
+		<title>How to achieve the traces of data modification</title>
+		<para>we need to archive all of data before change, we can called up it for audit and so on anytime.</para>
+		<section>
+			<title>Version control</title>
+			<para>table</para>
+			<screen>
+CREATE TABLE `article` (
+	`article_id` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`cat_id` SMALLINT(5) NOT NULL DEFAULT '0',
+	`title` VARCHAR(150) NOT NULL DEFAULT '',
+	`content` LONGTEXT NOT NULL,
+	`author` VARCHAR(30) NOT NULL DEFAULT '',
+	`keywords` VARCHAR(255) NOT NULL DEFAULT '',
+	PRIMARY KEY (`article_id`),
+	INDEX `cat_id` (`cat_id`)
+)
+ENGINE=MyISAM
+ROW_FORMAT=DEFAULT
+AUTO_INCREMENT=1			
+			</screen>
+			<para>version control table, Used to record every change.</para>
+			<screen>
+CREATE TABLE `article_history` (
+	`id` MEDIUMINT(8) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`article_id` MEDIUMINT(8) UNSIGNED NOT NULL,
+	`cat_id` SMALLINT(5) NOT NULL DEFAULT '0',
+	`title` VARCHAR(150) NOT NULL DEFAULT '',
+	`content` LONGTEXT NOT NULL,
+	`author` VARCHAR(30) NOT NULL DEFAULT '',
+	`keywords` VARCHAR(255) NOT NULL DEFAULT '',
+	PRIMARY KEY (`id`),
+	INDEX `article_id` (`article_id`)
+)
+ENGINE=MyISAM
+ROW_FORMAT=DEFAULT
+AUTO_INCREMENT=1
+			</screen>
+			<para>version control trigger</para>
+			<screen>
+DROP TRIGGER article_history;
+
+DELIMITER //
+CREATE TRIGGER article_history BEFORE update ON article FOR EACH ROW
+BEGIN
+	INSERT INTO article_history SELECT * FROM article WHERE article_id = OLD.article_id;
+END; //
+DELIMITER;					
+			</screen>
+			<para>Any change will copy the data to the history table, we can always compare two versions of the data changes, I also do this to develop a similar diff tool that can compare progressive changes in the reality of data through different colors.</para>
+		</section>
+		<section>
+			<title>the history records in the itself</title>
+			<!-- 
+			<para>我有一个表，里面只有固定行数的行记录，这些数据就是配置参数，我们将配置文件保存在数据库中，因为需要做负载均衡而不能使用文件配置文件。</para>
+			<para>有这样一个需求，这个记录每次修改都要保存历史记录，用于审计等等。我是这样设计该表的</para>
+			 -->
+			<screen>
+CREATE TABLE `config_fee` (
+	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`level` INT(11) NULL DEFAULT NULL COMMENT '层级',
+	`type` ENUM('Deposit','Withdrawing') NOT NULL DEFAULT 'Withdrawing' COMMENT '类型，存款，取款',
+	`min_fee` FLOAT(10,2) NOT NULL COMMENT '最低手续费',
+	`max_fee` FLOAT(10,2) NOT NULL COMMENT '最高手续费',
+	`ratio` FLOAT(10,2) NOT NULL COMMENT '手续费比例',
+	`operator` VARCHAR(10) NOT NULL COMMENT '操作者',
+	`status` ENUM('Current','Trash') NOT NULL DEFAULT 'Current',
+	`ctime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`mtime` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+)
+COMMENT='手续费管理'
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB;			
+			</screen>
+			<para>show me the screenshot</para>
+			<screen>
+mysql> select type,operator,status,ctime,mtime from config_mtf_fee;
++---------+----------+---------+---------------------+---------------------+
+| type    | operator | status  | ctime               | mtime               |
++---------+----------+---------+---------------------+---------------------+
+| Deposit | jam      | Trash   | 2014-07-20 11:10:17 | 2014-07-20 11:10:57 |
+| Deposit | lucy     | Trash   | 2014-08-24 11:10:17 | 2014-08-24 11:10:57 |
+| Deposit | lily     | Trash   | 2014-08-25 11:10:17 | 2014-08-25 11:10:57 |
+| Deposit | kitty    | Trash   | 2014-08-27 11:10:17 | 2014-08-27 11:10:57 |
+| Deposit | neo      | Current | 2014-08-28 11:10:54 | 2014-08-28 11:10:59 |
++---------+----------+---------+---------------------+---------------------+
+2 rows in set (0.00 sec)			
+			</screen>
+			<para>Above screenshot, you need last record and status is 'Current', 'Trash' is history datas.</para>
+			<para>When you update data, first to update status from 'Current' to 'Trash', and then insert data into table and status is 'Current'. we need last record and status is 'Current'.</para>
+			<para>Update trigger will be update all of the datas except status and mtime.</para>
+			<screen>
+CREATE DEFINER=`root`@`%` TRIGGER `config_fee_before_update` BEFORE UPDATE ON `config_fee` FOR EACH ROW BEGIN
+	SET NEW.`id` = OLD.id;
+	SET NEW.`level` = OLD.level;
+	SET NEW.`type` = OLD.type;
+	SET NEW.`min_amount` = OLD.min_amount;
+	SET NEW.`min_fee` = OLD.min_fee;
+	SET NEW.`max_fee` = OLD.max_fee;
+	SET NEW.`ratio` = OLD.ratio;
+	SET NEW.`operator` = OLD.operator;
+	SET NEW.`ctime` = OLD.ctime;
+END;			
+			</screen>
+			<para>The trigger can be refuse to remove</para>
+			<screen>
+CREATE DEFINER=`dba`@`192.168.%` TRIGGER `config_fee_before_delete` BEFORE DELETE ON `config_fee` FOR EACH ROW BEGIN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Permission denied', MYSQL_ERRNO = 1001;
+END			
+			</screen>
+		</section>
+
+	</section>
+</article>
