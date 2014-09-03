@@ -6,10 +6,10 @@
 	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
 <article xml:base="http://netkiller.github.io/journal/"
-	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	xmlns="http://docbook.org/ns/docbook" xml:lang="en-us">
 	<articleinfo>
 		<title>Security solutions for records of database </title>
-		<subtitle>http://netkiller.github.io/journal/mysql.security.html</subtitle>
+		<subtitle>http://netkiller.github.io/journal/mysql.security.en.html</subtitle>
 		&article.author.xml;
 		
 		<copyright>
