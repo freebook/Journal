@@ -1,2 +1,112 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>MySQL性能调整</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section>
+		<title>thread_handling</title>
+		<screen>
+		<![CDATA[
+mysql> show variables like '%thread_handling%';
++-----------------+---------------------------+
+| Variable_name   | Value                     |
++-----------------+---------------------------+
+| thread_handling | one-thread-per-connection |
++-----------------+---------------------------+
+1 row in set (0.01 sec)
+
+
+mysql> show status like 'thread%';
++-------------------+-------+
+| Variable_name     | Value |
++-------------------+-------+
+| Threads_cached    | 16    |
+| Threads_connected | 8     |
+| Threads_created   | 24    |
+| Threads_running   | 2     |
++-------------------+-------+
+4 rows in set (0.00 sec)
+
+
+
+开启 pool-of-threads 模式
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>Query Cache</title>
+		<para>查看缓存设置</para>
+		<screen>
+		<![CDATA[
+mysql> show variables like '%query_cache%';
++------------------------------+----------+
+| Variable_name                | Value    |
++------------------------------+----------+
+| have_query_cache             | YES      |
+| query_cache_limit            | 1048576  |
+| query_cache_min_res_unit     | 4096     |
+| query_cache_size             | 16777216 |
+| query_cache_type             | OFF      |
+| query_cache_wlock_invalidate | OFF      |
++------------------------------+----------+
+6 rows in set (0.01 sec)
+		]]>
+		</screen>
+		<para>查看缓存状态</para>
+		<screen>
+		<![CDATA[
+mysql> show status like '%Qcache%';
++-------------------------+----------+
+| Variable_name           | Value    |
++-------------------------+----------+
+| Qcache_free_blocks      | 1        |
+| Qcache_free_memory      | 16759680 |
+| Qcache_hits             | 0        |
+| Qcache_inserts          | 0        |
+| Qcache_lowmem_prunes    | 0        |
+| Qcache_not_cached       | 192      |
+| Qcache_queries_in_cache | 0        |
+| Qcache_total_blocks     | 1        |
++-------------------------+----------+
+8 rows in set (0.00 sec)
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>SECTION</title>
+		
+	</section>
+	<section>
+		<title>SECTION</title>
+		<screen>
+		<![CDATA[
+		
+		]]>
+		</screen>
+	</section>
+</article>
+
+
 
