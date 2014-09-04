@@ -25,8 +25,49 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
+
 	<section>
-		<title>thread_handling</title>
+		<title>系统部分</title>
+		<para>max_connections</para>
+		<screen>
+		<![CDATA[
+mysql>  show variables like '%connections%';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| max_connections      | 4096  |
+| max_user_connections | 0     |
++----------------------+-------+
+2 rows in set (0.00 sec)
+		]]>
+		</screen>
+		<para>connect_timeout</para>
+		<screen>
+		<![CDATA[
+mysql>  show variables like '%timeout%';
++-----------------------------+----------+
+| Variable_name               | Value    |
++-----------------------------+----------+
+| connect_timeout             | 10       |
+| delayed_insert_timeout      | 300      |
+| innodb_flush_log_at_timeout | 1        |
+| innodb_lock_wait_timeout    | 50       |
+| innodb_rollback_on_timeout  | OFF      |
+| interactive_timeout         | 30       |
+| lock_wait_timeout           | 31536000 |
+| net_read_timeout            | 30       |
+| net_write_timeout           | 60       |
+| rpl_stop_slave_timeout      | 31536000 |
+| slave_net_timeout           | 3600     |
+| wait_timeout                | 30       |
++-----------------------------+----------+
+12 rows in set (0.00 sec)
+		]]>
+		</screen>
+		
+	</section>
+	<section>
+		<title>线程部分</title>
 		<screen>
 		<![CDATA[
 mysql> show variables like '%thread_handling%';
@@ -49,14 +90,24 @@ mysql> show status like 'thread%';
 +-------------------+-------+
 4 rows in set (0.00 sec)
 
-
+thread_cache_hit=(connections-thread_created)/connections*100%
 
 开启 pool-of-threads 模式
 		]]>
 		</screen>
+		<screen>
+		<![CDATA[
+		
+		]]>
+		</screen>		
+		<screen>
+		<![CDATA[
+		
+		]]>
+		</screen>		
 	</section>
 	<section>
-		<title>Query Cache</title>
+		<title>查询缓存部分</title>
 		<para>查看缓存设置</para>
 		<screen>
 		<![CDATA[
@@ -93,11 +144,93 @@ mysql> show status like '%Qcache%';
 8 rows in set (0.00 sec)
 		]]>
 		</screen>
-	</section>
-	<section>
-		<title>SECTION</title>
+		
+		
+		
 		
 	</section>
+	
+	<section>
+		<title>缓冲区部分</title>
+		<screen>
+		<![CDATA[
+mysql> show variables like '%sort_buffer_size%';
++-------------------------+---------+
+| Variable_name           | Value   |
++-------------------------+---------+
+| innodb_sort_buffer_size | 1048576 |
+| myisam_sort_buffer_size | 8388608 |
+| sort_buffer_size        | 262144  |
++-------------------------+---------+
+3 rows in set (0.00 sec)
+		]]>
+		</screen>		
+	</section>
+	
+	<section>
+		<title>部分</title>
+		<screen>
+		<![CDATA[
+mysql> show variables like '%low_priority_updates%';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| low_priority_updates | OFF   |
++----------------------+-------+
+1 row in set (0.00 sec)
+
+
+mysql> show variables like 'low_priority_updates';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| low_priority_updates | OFF   |
++----------------------+-------+
+1 row in set (0.01 sec)
+
+mysql> set global low_priority_updates=ON;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> exit
+		]]>
+		</screen>
+		<para>global变量需要退出重新进入才能生效。</para>
+		<screen>
+		<![CDATA[
+mysql> show variables like 'low_priority_updates';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| low_priority_updates | ON    |
++----------------------+-------+
+1 row in set (0.01 sec)		
+		]]>
+		</screen>
+		<para>SESSION 会立即生效</para>
+		<screen>
+		<![CDATA[
+mysql> set session low_priority_updates=ON;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> show variables like 'low_priority_updates';
++----------------------+-------+
+| Variable_name        | Value |
++----------------------+-------+
+| low_priority_updates | ON    |
++----------------------+-------+
+1 row in set (0.00 sec)		
+		]]>
+		</screen>		
+	</section>	
+	<section>
+		<title>默认编码设置</title>
+		<screen>
+		<![CDATA[
+character-set-server=utf8
+collation_server=utf8_general_ci		
+		]]>
+		</screen>
+	</section>	
 	<section>
 		<title>SECTION</title>
 		<screen>
