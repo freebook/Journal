@@ -162,11 +162,7 @@ iptables -t nat -L
 		<section>
 			<title>应用程序安全</title>
 			<para>关闭war自动部署 unpackWARs="false" autoDeploy="false"。防止被植入木马等恶意程序</para>
-			<para>应用程序部署与tomcat启动,不能使用同一个用户。</para>
-			<para>我的tomcat 安装在 /srv目录下，Tomcat启动用户为daemon; 应用程序放在/www目录下www所有者是www用户。这样的目的是一旦tomcat被植入web shell程序，它将不能创建或编辑/www目录下面的任何内容。</para>
-			<screen>
-adduser --home /www -c "Web Application" www
-			</screen>
+			<para>关闭 reloadable="false" 也用于防止被植入木马</para>
 		</section>
 		<section>
 			<title>JSESSIONID</title>
@@ -175,6 +171,11 @@ adduser --home /www -c "Web Application" www
 	</section>
 	<section>
 		<title>如何部署应用程序</title>
+		<para>应用程序部署与tomcat启动,不能使用同一个用户。</para>
+		<para>我的tomcat 安装在 /srv目录下，Tomcat启动用户为daemon; 应用程序放在/www目录下www所有者是www用户。这样的目的是一旦tomcat被植入web shell程序，它将不能创建或编辑/www目录下面的任何内容。</para>
+		<screen>
+adduser --home /www -c "Web Application" www
+		</screen>
 		<para>我的Tomcat安装在/srv目录下，但应用程序放在/www目录下，一般是这样的结构。</para>
 		<screen>
 /www/example.com/www.example.com
