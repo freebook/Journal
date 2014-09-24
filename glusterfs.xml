@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Glusterfs</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>gluster, glusterfs, glusterfs-server</keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2014-09-23</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section>
+		<title>Host</title>
+		<screen>
+# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+192.168.6.12	client1.example.com client1
+192.168.6.13	server.example.com server
+
+192.168.6.1	brick1.example.com brick1
+192.168.2.1	brick2.example.com brick2
+		</screen>
+	</section>	
+	<section>
+		<title>Storage bricks</title>
+		<para>brick1, brick2</para>
+		<screen>
+wget http://download.gluster.org/pub/gluster/glusterfs/3.5/3.5.2/CentOS/glusterfs-epel.repo -P /etc/yum.repos.d/
+yum install -y glusterfs-server
+chkconfig glusterd on
+service glusterd start
+service iptables stop
+		</screen>
+		<para></para>
+		<screen>
+mkdir /opt/export		
+		</screen>
+	</section>
+	<section>
+		<title>Server</title>
+		<screen>
+wget http://download.gluster.org/pub/gluster/glusterfs/3.5/3.5.2/CentOS/glusterfs-epel.repo -P /etc/yum.repos.d/
+yum install -y glusterfs-server
+chkconfig glusterd on
+service glusterd start
+		</screen>
+		<para></para>
+		<screen>
+# gluster peer probe brick1.example.com
+peer probe: success. 
+# gluster peer probe brick2.example.com
+peer probe: success. 
+		</screen>
+		<para></para>
+		<screen>
+# gluster peer status
+Number of Peers: 2
+
+Hostname: brick1.example.com
+Uuid: c8acab33-ed6a-4aa5-8b77-5be84695ffce
+State: Peer in Cluster (Connected)
+
+Hostname: brick2.example.com
+Uuid: bf309355-7444-48e4-a7ea-25223c771160
+State: Peer in Cluster (Connected)
+		</screen>
+		<para></para>
+		<screen>
+# gluster volume create testvol replica 2 transport tcp brick1.example.com:/opt/export brick2.example.com:/opt/export
+volume create: testvol: success: please start the volume to access data
+		</screen>
+		<para></para>
+		<screen>
+# gluster volume start testvol
+volume start: testvol: success		
+		</screen>
+		<para></para>
+		<screen>
+# gluster volume info
+ 
+Volume Name: testvol
+Type: Replicate
+Volume ID: cd4cdf2f-178b-4160-9ee9-c579266753de
+Status: Started
+Number of Bricks: 1 x 2 = 2
+Transport-type: tcp
+Bricks:
+Brick1: brick1.example.com:/opt/export
+Brick2: brick2.example.com:/opt/export		
+		</screen>
+		<para></para>
+		<screen>
+# gluster volume set testvol auth.allow client.example.com
+volume set: success
+		</screen>
+		<para></para>
+		<screen>
+# gluster volume info
+ 
+Volume Name: testvol
+Type: Replicate
+Volume ID: cd4cdf2f-178b-4160-9ee9-c579266753de
+Status: Started
+Number of Bricks: 1 x 2 = 2
+Transport-type: tcp
+Bricks:
+Brick1: brick1.example.com:/opt/export
+Brick2: brick2.example.com:/opt/export
+Options Reconfigured:
+auth.allow: client.example.com		
+		</screen>
+	</section>
+	<section>
+		<title>Check brick</title>
+		<para>netstat -tap | grep glusterfsd</para>
+		<screen>
+# netstat -tap | grep glusterfsd
+tcp        0      0 *:49152                     *:*                         LISTEN      13841/glusterfsd    
+tcp        0      0 brick1.example.com:49152     brick1.example.com:1014      ESTABLISHED 13841/glusterfsd    
+tcp        0      0 brick1.example.com:exp1      brick1.example.com:24007     ESTABLISHED 13841/glusterfsd    
+tcp        0      0 brick1.example.com:49152     brick2.example.com:1011      ESTABLISHED 13841/glusterfsd    
+tcp        0      0 brick1.example.com:49152     brick2.example.com:1012      ESTABLISHED 13841/glusterfsd    
+tcp        0      0 brick1.example.com:49152     server.example.com:1017     ESTABLISHED 13841/glusterfsd    
+tcp        0      0 brick1.example.com:49152     brick1.example.com:1020      ESTABLISHED 13841/glusterfsd   
+		</screen>
+	</section>
+	<section>
+		<title>Client</title>
+		<screen>
+wget http://download.gluster.org/pub/gluster/glusterfs/3.5/3.5.2/CentOS/glusterfs-epel.repo -P /etc/yum.repos.d/
+yum install -y glusterfs-client
+		</screen>
+		<para></para>
+		<screen>
+mkdir /mnt/glusterfs
+mount.glusterfs server.example.com:/testvol /mnt/glusterfs		
+		</screen>
+		<para></para>
+		<screen>
+# mount
+/dev/vda1 on / type ext4 (rw)
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+devpts on /dev/pts type devpts (rw,gid=5,mode=620)
+tmpfs on /dev/shm type tmpfs (rw)
+none on /proc/sys/fs/binfmt_misc type binfmt_misc (rw)
+server.example.com:/testvol on /mnt/glusterfs type fuse.glusterfs (rw,default_permissions,allow_other,max_read=131072)		
+
+# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/vda1              38G  2.3G   34G   7% /
+tmpfs                 939M     0  939M   0% /dev/shm
+server.example.com:/testvol
+                      477G  359G  101G  79% /mnt/glusterfs
+		</screen>
+		<para></para>
+		<screen>
+# touch /mnt/glusterfs/hello
+# ll /mnt/glusterfs/
+total 0
+-rw-r--r-- 1 root root 0 Sep 23 14:31 hello
+		</screen>
+		<para>brick1</para>
+		<screen>
+# ll /opt/export/
+total 0
+-rw-r--r-- 2 root root 0 Sep 23 14:31 hello
+		</screen>
+		<para>brick2</para>
+		<screen>
+# ll /opt/export/
+total 0
+-rw-r--r-- 2 root root 0 Sep 23 14:31 hello
+		</screen>		
+	</section>
+	<section>
+		<title>/etc/fstab</title>
+		<screen>
+server1.example.com:/testvol /mnt/glusterfs glusterfs defaults,_netdev 0 0
+		</screen>
+	</section>	
+	<section>
+		<title>Other</title>
+		<para>stop volume</para>
+		<screen>
+# gluster volume stop testvol
+Stopping volume will make its data inaccessible. Do you want to continue? (y/n) y
+volume stop: testvol: success
+		</screen>
+		<para>delete volume</para>
+		<screen>
+# gluster volume delete testvol
+Deleting volume will erase all information about the volume. Do you want to continue? (y/n) y
+volume delete: testvol: success		
+		</screen>
+		<screen>
+# gluster peer datach brick1.example.com
+		</screen>
+		<screen>
+# gluster volume remove-brick testvol brick1.example.com:/export/u01		
+		</screen>
+	</section>	
+</article>
