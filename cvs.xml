@@ -91,7 +91,7 @@
 ),
 'backend' => array(
     'backend/Keyloggers'         =>array('SelectSignupKeyloggers','updateSignupKeyloggers','SelectSignupKeyloggersAll'),
-    'backend/Members'=> array('selectPasswordLog','downPasswordLog','selectCgseLog','downCgseLog'),
+    'backend/Members'=> array('selectPasswordLog','downPasswordLog'),
     'backend/Balance_report'=>array('getdayreport','getmonthreport','getshow'),
 ),
 'anonymous' => array(
@@ -102,11 +102,7 @@
           'Members'=> array('getAllByUsernameAndMobile','getAllByLimit',''),
           'Exchange'=> array('getOne','',''),
           'Soaplog'=> array('info','debug','warning','error'),
-),
-'info' => array(
-          'Exchange'=> array('getOne','',''),
-          'Soaplog'=> array('info','debug','warning','error'),
-),
+)
 			</screen>
 		</section>
 		<section>
