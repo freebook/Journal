@@ -11,6 +11,7 @@ all: $(HTML)
 %.html: %.xml
 	@rm -rf $(PREFIX)/$@
 	@$(XSLTPROC) $(DSSSL) $< >  $(PREFIX)/$@
+	@$(shell test -d images && rsync -au --exclude=.svn images $(PREFIX)/)
 
 clean:
 	@rm -rf $(PREFIX)/*.html
