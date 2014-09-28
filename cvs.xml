@@ -37,7 +37,7 @@
 		<para>View 视图层不用多说</para>
 		<para>Controller 控制器层，负责用户业务逻辑</para>
 		<para>Service 服务层，服务端业务逻辑与数据存取操作</para>
-		<para>我提出的CVS其实是MVC去掉Mode其他保持不变, 将Mode替换为Service, 同时将以部门Controller逻辑放入 Service 实现业务逻辑共享。</para>
+		<para>我提出的CVS其实是MVC去掉Mode其他保持不变, 将Mode替换为Service, 同时将以部分Controller逻辑放入 Service 实现业务逻辑共享。</para>
 	</section>
 	<section id="why">
 		<title>为什么采用CVS模式开应用程序</title>
@@ -125,5 +125,19 @@
 		<para>我们分开部署SSL与WEB服务器，不要让SSL加密与解密过程影响到Service的工作，这种做法通常叫SSL卸载。可以将SSL放在F5等负载均衡设备之上，也可以使用廉价的服务器。</para>
 		<graphic  format="png" fileref="images/cvs/ssl.png" width="" srccredit="neo" />
 		<para>服务器的负载均衡这里也不多说。</para>
+		<screen>
+                               +------------------------+
+               .-------------> | JS, CSS, Javascript    |                  
+              /                +------------------------+
+             /                  
+          +------+             +------+      +----------+
+User ---> | HTML | ----------> | View | ---> | Template |
+          +------+             +------+      +----------+	
+             \                    ^
+              \                   |
+               \               +------------+            +---------+      +---------+      +----------+
+                `--- Ajax ---> | Controller | ---------> | Service | ---> | Cache   | ---> | Database |
+                               +------------+            +---------+      +---------+      +----------+
+		</screen>
 	</section>
 </article>
