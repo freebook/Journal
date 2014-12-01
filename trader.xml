@@ -162,6 +162,62 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 	</section>
 	
 	<section>
+		<title>软件篇</title>
+		<para>软件的设计都要围绕着灾备进行，不能分布式运行，就不合格。</para>
+		<section>
+			<title>交易软件分布式交易</title>
+			<para>交易软件通常使用TCP私有协议，与我们常见的HTTP协议不同，HTTP是无状态，即用户请求-处理数据-渲染HTML页面-销毁并释放内存，我们很容易开发基于负载均衡的横向水平扩展的应用程序。
+			而交易软件采用的是持久TCP连接，实时传输用户请求，并将结果会送给用户，中间过程不允许中款，且用户状态数据存储在该交易服务器的内存中，如果我们采用常规手段做负载均衡，就会出现用户被分配到另一台服务器上，而无法继续交易。</para>
+			<para>我们首先要做的就是将用户状态持久化，有点类似我们在HTTP应用中将Session持久化方法，将这些数据存储到公共的共享服务器上。同时该服务器也需要做高可用等等，保证无单点故障。</para>
+			<para>第二步，我们解决分布式交易，分布式交易是指可以在交易服务器上任意一个节点上均可交易。方法有很多，复杂程度也不同。</para>
+			<para>通常解决分布式运行的方法，无非是同步|互斥排他锁|共享存储等等，其实就是两多线程的很多技术扩展到了互联网上。使用节点同步解决共享内存访问问题，使用远程锁解决解决多节点访问问题等等。</para>
+			<section>
+				<title>分布式交易解决方案一</title>
+				<para>解决挂单问题，通常交易是即时完成的，较难处理的就是挂单。</para>
+				<para>下面的方案是最简单的，开发难度最低。</para>
+				<para>数据库表中增加一个字段例如</para>
+				<screen>
+-----------------------------------------
+Id  | node | status | xxxxx 
+-----------------------------------------
+1 | trader1 | N | xxxxx
+2 | trader2 | Y | xxxxx
+-----------------------------------------
+				</screen>
+				<para>trader1 表示该记录产生在trader1 必须在Trader 1上完成成交</para>
+				<para>trader2 表示该记录产生在trader2 必须在Trader 2上完成成交</para>
+				<orderedlist>
+					<title>测试用例</title>
+					<listitem>Trader1 上登陆，下单，然后退出</listitem>
+					<listitem>在Trader2 上登陆如果1 | trader1 | xxxxx 没有成交，将node 改为 trader2 同时将挂单数据载入到Trader2服务器的内存中。</listitem>
+					<listitem>Trader1 的中的挂单将失效</listitem>
+					<listitem>如果登陆Trader2前1 | trader1 | xxxxx 已经成交，就放弃载入内存。</listitem>
+				</orderedlist>
+				<tip>更新记录状态必须增加node条件</tip>
+				<screen>
+				<![CDATA[
+Update tab set status=Y where id=1 and node =<my node> …
+				]]>				
+				</screen>
+			</section>
+			<section>
+				<title>分布式交易解决方案一</title>
+				<para>双向通知</para>
+				<para></para>
+			</section>
+			<section>
+				<title>分布式交易解决方案一</title>
+				<para>消息对列</para>
+				<para></para>
+			</section>
+		</section>
+		<section>
+			<title>大数据的问题</title>
+			<para>我们这个行业不是门户网站，所以数据两不会非常大，但我们要为雨愁莫，我们在设计阶段就将这些问题考虑进去，使将来不会困扰我们。</para>
+		</section>
+	</section>	
+	
+	<section>
 		<title>灾备培训和演练</title>
 		<section>
 			<title>培训对象</title>
@@ -360,10 +416,7 @@ viii. 每月做一次灾备切换预演，确保备份系统能正常工作
 			</screen>
 		</section>
 	</section>
-	
-	<section>
-		<title>交易软件篇</title>
-	</section>
+
 	<section>
 		<title>运维篇</title>
 	</section>
