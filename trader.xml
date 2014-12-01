@@ -9,7 +9,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>贵金属交易系统异地灾备方案</title>
-		<subtitle></subtitle>
+		<subtitle>http://netkiller.github.io/journal/trader.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
@@ -135,6 +135,29 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 				<listitem><para>Admin：网站后台</para></listitem>
 				<listitem><para>HA：负载均衡软件或设备</para></listitem>
 			</orderedlist>
+			<para>与门户网站不同，我们的网站访问量并不大，性能瓶颈基本不存在，更多是考虑高可用。</para>
+			<para>静态页面以及CDN部门这里就不谈了，非常简单，有兴趣可能到<ulink url="http://netkiller.github.io/" />找相关资料。</para>
+		</section>
+		<section>
+			<title>数据源</title>
+			<para>在交易过程中出现报盘中断是大忌，我们必须尽一切努力，让交易系统能源源不断的接收价格数据。为此我需要重点考虑数据源的灾备。</para>
+			<figure><title>数据源灾备解决方案</title>
+				<graphic srccredit="Neo Chen, 2014" fileref="images/trader/server/datafeed.png"/>
+			</figure>
+			<para>我们设计了一个DataFeed程序，能够多方接收数据，因为每个数据源提供的产品不同。我们在这里可以合并，筛选，过滤等等。这个应用可以实现水平扩展，我们可以放在2个以上的机房当中。</para>
+			<para>接下来在交易服务器中，设置多个数据源分别指向Data Feed 1,2~n。与Trader相同机房的DataFeed的优先级总是最高。</para>
+		</section>
+		<section>
+			<title>数据库</title>
+			<para>数据的部署要考虑几个问题，我一直不建议主备方案，而是采用双活方案。所以我们要考虑两个机房或者三个机房他们数据复制问题，性能瓶颈问题，数据安全问题等等</para>
+			<figure><title>数据库灾备解决方案</title>
+				<graphic srccredit="Neo Chen, 2014" fileref="images/trader/server/database.png"/>
+			</figure>
+			<para>上图我的方案中采用了Master-Master双活方案，同时每个Master都会有一个Slave。Master 主要用于主要的业务，Slave主要用户数据分析，报表查询等等非实时，且长时间允许等等查询服务</para>
+			<para>数据库访问需要经过SLB服务器，为数据库提供负载均衡，故障转移，水平扩展等等功能。</para>
+			<para>所有的数据操作只能通过API完成，不能直接连接数据库并通过SQL存取，上面已经提到过，这里不再多讲。</para>
+			<tip>如果是三个以上机房，将采用环形复制，大致原理Master A向Master B复制，Master B向 Master C复制，Master C在向Master A 复制，形成一个环路。</tip>
+			<para>如果数据库查询如果出现瓶颈，增加Slave即可。</para>
 		</section>
 	</section>
 	
