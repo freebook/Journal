@@ -115,7 +115,7 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 			<para>三机房的数据库采用环形复制</para>
 		</section>
 	</section>
-	
+
 	<section>
 		<title>数据中心服务器篇</title>
 		<para>一旦数据中心网络部分完成，下一步就是部署各种服务器，同时服务器的部署必须满足灾备的要求，否则无法实现灾备切换与故障转移。</para>
@@ -160,7 +160,7 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 			<para>如果数据库查询如果出现瓶颈，增加Slave即可。</para>
 		</section>
 	</section>
-	
+
 	<section>
 		<title>软件篇</title>
 		<para>软件的设计都要围绕着灾备进行，不能分布式运行，就不合格。</para>
@@ -178,7 +178,7 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 				<para>数据库表中增加一个字段例如</para>
 				<screen>
 -----------------------------------------
-Id  | node | status | xxxxx 
+Id  | node | status | xxxxx
 -----------------------------------------
 1 | trader1 | N | xxxxx
 2 | trader2 | Y | xxxxx
@@ -197,7 +197,7 @@ Id  | node | status | xxxxx
 				<screen>
 				<![CDATA[
 Update tab set status=Y where id=1 and node =<my node> …
-				]]>				
+				]]>
 				</screen>
 			</section>
 			<section>
@@ -221,13 +221,33 @@ Update tab set status=Y where id=1 and node =<my node> …
 		</section>
 		<section>
 			<title>交易终端</title>
+			<section>
+				<title>用户分流</title>
+				<para>用户分流是指，不同用户登录到不同的服务器上进行交易。因为我们的交易系统是可以水平扩展的，可以有很多台交易服务器并且都是Active状态，任意一台服务器都能登陆交易，我们可以使用哈希算法基于用户ID，将用户分流到指定服务器。</para>
+				<para>用户分流还可以使用智能DNS技术，将用户分流到距离自己最近的交易服务器上。</para>
+				<para>还可以根据路由TTL值与Ping值进行优先级分配。</para>
+			</section>
+			<section>
+				<title>会话保持</title>
+				<para>交易终端与交易服务器一旦连接，出现超时中断，人为退出，下一次连接还应该上一次连接的那台交易服务器。</para>
+				<para>如果是交易服务器无法连接将会重新分配一台，并记录配置</para>
+				<para>如果交易服务器采用的是双向通知，或者消息队列技术，可不必记录登陆服务器，可能按照最小连连接数算法分配服务器。</para>
+			</section>
+		</section>
+		<section>
+			<title>API 应用程序接口</title>
+			<para>上文反复提到了API，关于API请参考我的另一边文章<ulink url="http://netkiller.github.io/journal/cvs.html">CVS开发框架</ulink>，这里不再引用。</para>
+			<figure><title>CVS开发框架</title>
+				<graphic srccredit="Neo Chen, 2014" fileref="http://netkiller.github.io/journal/images/cvs/cvs.png"/>
+			</figure>
+			<para>框架讲述的设计思路，你可以使用你最熟悉语言技术重新实现。</para>
 		</section>
 		<section>
 			<title>大数据的问题</title>
 			<para>我们这个行业不是门户网站，所以数据两不会非常大，但我们要为雨愁莫，我们在设计阶段就将这些问题考虑进去，使将来不会困扰我们。</para>
 		</section>
-	</section>	
-	
+	</section>
+
 	<section>
 		<title>灾备培训和演练</title>
 		<section>
