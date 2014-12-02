@@ -202,14 +202,25 @@ Update tab set status=Y where id=1 and node =<my node> …
 			</section>
 			<section>
 				<title>分布式交易解决方案一</title>
-				<para>双向通知</para>
-				<para></para>
+				<para>双向通知的含义是Trader 1状态发生改变会通知Trader 2， 反之Trader 2状态发生改变会通知 Trader 1。</para>
+				<figure><title>双向通知解决方案</title>
+					<graphic srccredit="Neo Chen, 2014" fileref="images/trader/trader/notification.png"/>
+				</figure>
+				<para>上图可以看出通知与数据库持久关系图，在交易周期内实时接收通知，一旦收到通知，便根据通知中的指令做出反应，改变当前交易服务器的状态。</para>
+				<para>这种设计可以采用日志复制，然后重做日志的方式，非常累西数据库同步技术，缺点是可能有延迟。设计需要考虑进去。如果超过三个节点就要采用环形复制</para>
+				<para>我曾经想过通过IP组播，广播技术实现通知发布，这样就可以不设置目的地地址，同时增加了部署的灵活性，而且对于广播节点数量没有限制。比较适合三个以上的机房部署。</para>
 			</section>
 			<section>
 				<title>分布式交易解决方案一</title>
-				<para>消息对列</para>
-				<para></para>
+				<para>消息对列，即将所有交易服务器接入到消息队列中，所有通知均推送进入消息队列，由消息队列服务器统一管理通知消息，同时消息具备持久化。</para>
+				<figure><title>消息对列解决方案</title>
+					<graphic srccredit="Neo Chen, 2014" fileref="images/trader/trader/msgqueue.png"/>
+				</figure>
+				<para>这种方法将消息交换MQ去处理，免去了自行开发消息中间件，目前MQ技术也比较成熟。</para>
 			</section>
+		</section>
+		<section>
+			<title>交易终端</title>
 		</section>
 		<section>
 			<title>大数据的问题</title>
