@@ -13,7 +13,8 @@
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-
+			<para>本文从灾备角度出发，并不限于灾备，而是从多维度让你看到完成灾备需要做哪些工作，解决那些问题。</para>
+			<para>灾备不仅仅是运维的工作，一个完善的灾备系统需要多个部门的努力，软件方面需要配合灾备做特别的开发，软件才能满足灾备的需求，最终实现真正的7*24*365灾备，并且尽量做到无人值守故障转移。</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -79,7 +80,33 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 		</section>
 	</section>
 	<section>
-		<title>数据中心网络篇</title>
+		<title>灾备整体解决方案</title>
+		<para>双机设备已经推出历史舞台，基于主备的数据中心方案也显得过时，我只推荐双活的备份方案。</para>
+		<section>
+			<title>双活互备方案</title>
+			<para>双活互备不分主次机房，两个机房同时对外提供服务，当一方出现故障时才会将用户自动切换到另一个机房。</para>
+			<orderedlist>
+				<title>双活互备方案的优点</title>
+				<listitem>切换成功率高：灾备系统的核心部件基本处于运行状态，不存在灾备切换时起不来的情况。</listitem>
+				<listitem>切换时间快：由于切换的时候，省去了灾备系统启动各服务性程序，与交易所数据同步等操作，可以进一步缩短切换的时间。 </listitem>
+				<listitem>数据实时性高：数据的实时性可以与主系统达到同步。  </listitem>
+				<listitem>数据丢失率低：可以保证主系统中只要已经报入交易所的委托，灾备系统都可以获取到。</listitem>
+			</orderedlist>
+			<orderedlist>
+				<title>双活互备方案的缺点</title>
+				<listitem>Active-Active 可以会出现数据不同步，两机交易服务器数据出现差异</listitem>
+				<listitem>实时同步对网络环境要求比较高，这个不用过于担心，目前ＩＤＣ的网络环境越来越好。</listitem>
+			</orderedlist>
+			<tip>另外需要注意的是当双活启动时，平均分配用户到两套交易系统上，如果一个交易系统出现故障，可能会增加另一个交易系统访问压力，所以要注意监控两个交易系统服务器的使用情况。</tip>
+		</section>
+		<section>
+			<title>三机房互备方案</title>
+			<para>在双活互备方案基础上，我们还可以进一步扩展，做到三地互备，甚至更多的备份，但考虑到成本一般不会超过三个机房。</para>
+			<para>两机房也好，三机房也罢，接入线路一定要选择不同供应商。</para>
+		</section>
+	</section>
+	<section>
+		<title>数据中心网络</title>
 		<para>满足灾备前提是网络畅通无阻，同时网络拓扑设计能够支持灾备。</para>
 		<orderedlist>
 			<title>数据中心要求</title>
@@ -92,10 +119,10 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 		</orderedlist>
 		<section>
 			<title>单机房高可用双活互备解决方案</title>
+			<para>单机房最大的优势是网络连接比较方便，很多公司购买的机柜相邻，可能从机柜上方走线。</para>
 			<figure><title>单机房高可用双活互备解决方案</title>
 				<graphic srccredit="Neo Chen, 2014" fileref="images/trader/network/trader_double_AA_system.png"/>
 			</figure>
-			<para>但机房最大的优势是网络连接比较方便，很多公司购买的机柜相邻，可能从机柜上方走线。</para>
 			<para>双机热备这种我认为是过时的技术，常常主系统出现故障时，你会发现备用系统无法工作。所以我设计的系统都是AA(Active-Active)所有节点都对外提供服务，能够更早的发现问题。</para>
 		</section>
 		<section>
@@ -117,7 +144,7 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 	</section>
 
 	<section>
-		<title>数据中心服务器篇</title>
+		<title>服务器</title>
 		<para>一旦数据中心网络部分完成，下一步就是部署各种服务器，同时服务器的部署必须满足灾备的要求，否则无法实现灾备切换与故障转移。</para>
 		<para>服务器与交换机连接，按照服务器重要程度或者是否具备故障转移，有两种方案，如具备分布式部署的服务器可能只连接一条网线，有些服务器无法分布式部署，我们是两个网卡分别连接两条网线到两台交换机，同时网卡绑定为一个适配器。</para>
 		<section>
@@ -162,7 +189,7 @@ iii. 基于应用的容灾----应用指向2个同时运作的数据中心，在�
 	</section>
 
 	<section>
-		<title>软件篇</title>
+		<title>软件开发</title>
 		<para>软件的设计都要围绕着灾备进行，不能分布式运行，就不合格。</para>
 		<section>
 			<title>交易软件分布式交易</title>
@@ -236,15 +263,50 @@ Update tab set status=Y where id=1 and node =<my node> …
 		</section>
 		<section>
 			<title>API 应用程序接口</title>
-			<para>上文反复提到了API，关于API请参考我的另一边文章<ulink url="http://netkiller.github.io/journal/cvs.html">CVS开发框架</ulink>，这里不再引用。</para>
+			<para>上文反复提到了API，关于API请参考我的另一边文章<ulink url="http://netkiller.github.io/journal/cvs.html">《CVS开发框架》</ulink>，这里不再引用。</para>
 			<figure><title>CVS开发框架</title>
+				<ulink url="http://netkiller.github.io/journal/cvs.html">
 				<graphic srccredit="Neo Chen, 2014" fileref="http://netkiller.github.io/journal/images/cvs/cvs.png"/>
+				</ulink>
 			</figure>
 			<para>框架讲述的设计思路，你可以使用你最熟悉语言技术重新实现。</para>
 		</section>
 		<section>
 			<title>大数据的问题</title>
 			<para>我们这个行业不是门户网站，所以数据两不会非常大，但我们要为雨愁莫，我们在设计阶段就将这些问题考虑进去，使将来不会困扰我们。</para>
+			<para>数据量最大的当属交易数据，贵金属双向交易，交易时间长，所以交易数据的累积相当可观。</para>
+			<para>虽然你可以定时删除，但我不建议。我认为需要永久保留，为什么？ 当数据积累到一定数据级，就可以从多角度数据挖掘，为决策提供数据支持。</para>
+			<section>
+				<title>第一个阶分区表</title>
+				<para>第一个阶段数据分区存储，实施规划是五年之内。五年之内你可以使用分区这种技术存储数据。分许能够保持索引的连续，方便复杂的数据库查询。</para>
+			</section>
+			<section>
+				<title>第二个阶分库分表</title>
+				<para>当数据庞大到无论怎么优化都无法提高查询性能是，这时你就要考虑数据库拆分了。</para>
+				<para>数据库拆分需要遵循几个原则，不仅仅是按照年份或月份分库分表。</para>
+				<orderedlist>
+					<title>数据库拆分</title>
+					<listitem>基于用户拆分，要能保证查询某个用户的数据不需要跨库，也不需要联合多表查询，这样会降低查询效率。</listitem>
+					<listitem>基于业务拆分，某些业务所用到的表，集中放在一台服务器上，保证数据查询不需要跨库，或者联合多表查询。</listitem>
+				</orderedlist>
+				<figure><title>传统的分表方案</title>
+					<graphic srccredit="Neo Chen, 2014" fileref="images/trader/db/sharding_tradition.png"/>
+				</figure>
+				<para>传统方法，将数据日期切分，这回带来索引的不连续问题，且查询时必须加带日期，以便定位到指定的表中。如果需要做数据挖掘，需要统计四年的数据，必须查询四次，效率大打折扣。 </para>
+				<figure><title>推荐的分表方案</title>
+					<graphic srccredit="Neo Chen, 2014" fileref="images/trader/db/sharding_recommend.png"/>
+				</figure>
+				<para>新的拆分方案，通过哈西算法均匀的将用户分配到指定数据库中或表中。这样所有针对该用户的操作都能在同一个数据库中完成。</para>
+				<figure><title>基于功能分表方案</title>
+					<graphic srccredit="Neo Chen, 2014" fileref="images/trader/db/sharding_function.png"/>
+				</figure>
+				<para>根据不同的功能拆分数据库或表，也是一种非常不错选择。</para>
+			</section>
+		</section>
+		<section>
+			<title>数据校对</title>
+			<para>由于网络传输丢包和延迟等客观情况，当交易数据量比较大且并发请求过多时，可能导致数据无法同步成功或丢失，造成两个交易系统数据不一致。
+			两个交易数据库的数据不对等，为了解决该问题，可采开发一个数据校对工具，对数据进行比对和修复。确保数据一致性和完整性。</para>
 		</section>
 	</section>
 
@@ -287,6 +349,32 @@ Update tab set status=Y where id=1 and node =<my node> …
 			</orderedlist>
 			<para>模拟灾难: 在演练开始时间，关闭主交易中心的所有的应用，模拟灾难发生。此时，公司应完全按照“公司操作流程”和“灾备系统切换流程”来切换灾备系统。</para>
 			<para>演练过程: 见“切换操作”和“公司操作流程”</para>
+		</section>
+		<section>
+			<title>演练级别</title>
+			<orderedlist>
+				<title>演练级别定义</title>
+				<listitem>接入线路故障</listitem>
+				<listitem>网络设备故障</listitem>
+				<listitem>服务器故障</listitem>
+			</orderedlist>
+		</section>
+		<section>
+			<title>演练重点</title>
+			<orderedlist>
+				<title>数据中心故障</title>
+				<listitem><para>模拟机房停电，将另一侧灾备机房关机</para></listitem>
+				<listitem><para>接入链路故障</para></listitem>
+				<listitem><para>防火墙设备故障</para></listitem>
+				<listitem><para>交换机故障设备故障</para></listitem>
+			</orderedlist>
+			<orderedlist>
+				<title>服务器故障</title>
+				<listitem>网站故障</listitem>
+				<listitem>数据源故障</listitem>
+				<listitem>交易服务器故障</listitem>
+				<listitem>数据库故障</listitem>
+			</orderedlist>
 		</section>
 		<section>
 			<title>开始演练</title>
@@ -427,6 +515,10 @@ ii) 另外，由于交易信息是从直接报盘机获取的，如下信息，�
 分功能建议关闭：
  客户开户  客户销户  客户状态变更  客户资料修改  客户密码修改  客户权限、费率，  交易编码设置
 				</screen>
+				<orderedlist>
+					<title></title>
+					<listitem></listitem>
+				</orderedlist>
 			</section>
 		</section>
 		<section>
@@ -435,20 +527,13 @@ ii) 另外，由于交易信息是从直接报盘机获取的，如下信息，�
 		</section>
 		<section>
 			<title>系统运营维护</title>
-			<screen>
-i. 每日数据备份传输恢复
-ii. 每日实时数据采集监控
-iii.每日关键部位数据校对
-iv. 每日无人值守把备份文件传输到备机上
-v. 确保app和drtp工作状态正常
-vi. 保证灾备中心和主交易系统具备相同版本升级
-vii. 确保报盘机配置正确且能正常工作
-viii. 每月做一次灾备切换预演，确保备份系统能正常工作
-			</screen>
+			<orderedlist>
+				<title>应用系统服务状态检查</title>
+				<listitem>每日实时监控</listitem>
+				<listitem>每日无人值守备份文件传输到备机上</listitem>
+				<listitem>保证交易系统升级版本相同</listitem>
+				<listitem>每月做一次灾备切换预演，确保备份系统能正常工作</listitem>
+			</orderedlist>
 		</section>
-	</section>
-
-	<section>
-		<title>运维篇</title>
 	</section>
 </article>
