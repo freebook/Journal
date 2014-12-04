@@ -13,8 +13,8 @@
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-			<para>本文从灾备角度出发，并不限于灾备，而是从多维度让你看到完成灾备需要做哪些工作，解决那些问题。</para>
-			<para>灾备不仅仅是运维的工作，一个完善的灾备系统需要多个部门的努力，软件方面需要配合灾备做特别的开发，软件才能满足灾备的需求，最终实现真正的7*24*365灾备，并且尽量做到无人值守故障转移。</para>
+			<para>本文从灾备角度出发，并不局限于灾备，而是从多维度让你看到完成灾备需要做哪些工作，解决哪些问题。</para>
+			<para>灾备不仅仅是运维的工作，一个完善的灾备系统需要多个部门的努力，网络拓扑需要做特别的调整，服务器需要特别的部署，软件方面需要配合灾备做特别的开发，才能满足灾备的需求，最终实现真正的7*24*365灾备，并且尽量做到无人值守故障转移。</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -113,7 +113,7 @@
 			<listitem><para>空调要求：通常从地面送风的机房比较好</para></listitem>
 			<listitem><para>室内气体监控：数据中心应该具备气体监控，室内粉尘，湿度监控</para></listitem>
 			<listitem><para>消防：二氧化碳灭火器</para></listitem>
-			<listitem><para>机柜：机会有很多规格，虽然都能放入机架服务器，但有些比较小，没有提供电源线与网路槽。220V电源与网线混在一起可能造成一定的数据丢包。</para></listitem>
+			<listitem><para>机柜：机柜有很多规格，虽然都能放入机架服务器，但有些比较小，没有提供电源线与网路槽。220V电源与网线混在一起可能造成一定的数据丢包。</para></listitem>
 			<listitem><para>网络设备：我常常考察一个机房会看他们的核心出口设备（是否有顶级的Cisio设备）</para></listitem>
 		</orderedlist>
 		<section>
@@ -143,7 +143,7 @@
 	</section>
 
 	<section>
-		<title>服务器</title>
+		<title>服务器部署</title>
 		<para>一旦数据中心网络部分完成，下一步就是部署各种服务器，同时服务器的部署必须满足灾备的要求，否则无法实现灾备切换与故障转移。</para>
 		<para>服务器与交换机连接，按照服务器重要程度或者是否具备故障转移，有两种方案，如具备分布式部署的服务器可能只连接一条网线，有些服务器无法分布式部署，我们是两个网卡分别连接两条网线到两台交换机，同时网卡绑定为一个适配器。</para>
 		<section>
@@ -308,7 +308,20 @@ Update tab set status=Y where id=1 and node =<my node> …
 			两个交易数据库的数据不对等，为了解决该问题，可采开发一个数据校对工具，对数据进行比对和修复。确保数据一致性和完整性。</para>
 		</section>
 	</section>
-
+	<section>
+		<title>自动化运维</title>
+		<para>自动化运维保障服务器快速部署，改善灾备的响应速度。尤其是需要重建某些服务器的时候。</para>
+		<orderedlist>
+			<title>自动化运维应具备</title>
+			<listitem>自动化安装</listitem>
+			<listitem>自动化配置</listitem>
+			<listitem>自动化运行</listitem>
+			<listitem>自动化备份</listitem>
+			<listitem>自动化诊断</listitem>
+			<listitem>自动化监控</listitem>
+		</orderedlist>
+		<para>自动化运维可以降低人为因素产生的故障，如误删除。</para>
+	</section>
 	<section>
 		<title>灾备培训和演练</title>
 		<para>演练的主要目的是，验证两个交易系统能够互备，相互做对方的备份，我们将当前登录的系统称为主系统，另一次叫做灾备系统（仅仅是观看的角度）。</para>
