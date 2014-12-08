@@ -519,12 +519,32 @@ Update tab set status=Y where id=1 and node =<my node> …
 		</section>
 	</section>
 	<section>
-		<title>实现双活最大的障碍是什么？</title>
-		<para>实现双活最大的障碍是人，不是技术。你是否有足够的权限起到很大的作用。</para>
-		<para>很多企业动不动将流程，跨部门沟通十分困难，甚至设置了很多部门防火墙（无形的墙），部门领导平级更是问题。</para>
-		<para>另外很多企业管理层不懂技术，无法做决策，有些领导更是怕担责任。</para>
-		<para>开发人员都会抵触你方案，因为在现有的稳定系统上增加改动且他并不理解的工作，后续的测试，验收都受到影响。</para>
-		<para>运维也很不情愿，只要是生产环境任何调整都存在一定的风险。</para>
-		<para>如果你的企业向上面一样，企业已经在走下坡路了，不做事就不出事，拒绝创新.....</para>
+		<title>FAQ</title>
+		<section>
+			<title>实现双活最大的障碍是什么？</title>
+			<para>实现双活最大的障碍是人，不是技术。你是否有足够的权限起到很大的作用。</para>
+			<para>很多企业动不动讲流程，跨部门沟通十分困难，甚至设置了很多部门防火墙（无形的墙），部门领导平级更是问题，这样会无休止争论下去，无法决策。</para>
+			<para>另外很多企业管理层不懂技术，无法做决策，有些领导更是怕担责任。</para>
+			<para>开发人员都会抵触你方案，因为在现有的稳定系统上增加改动且他并不理解的工作，后续的测试，验收都受到影响。</para>
+			<para>运维也很不情愿，只要是生产环境任何调整都存在一定的风险。</para>
+			<para>如果你的企业向上面一样，企业已经在走下坡路了，不做事就不出事，拒绝创新.....</para>
+			<para>总之，装B的人不在少数。</para>
+			<para>Many people think they are full of niubility and like to play zhuangbility, which only reflect their shability and erbility.</para>
+		</section>
+		<section>
+			<title>双活怎么解决数据冲突问题</title>
+			<para>此文章已发布，收到很多读者的提问，双活就是双写那麽怎么解决同时写入时的数据冲突问题。</para>
+			<para>如有下面两个服务器，每个服务器有各自的ID，它们产生的数据类似下面</para>
+			<screen>
+A服务器: 1, 3, 5, 7
+B服务器: 2, 4, 6, 8
+			</screen>
+			<para>如果是三地数据中心，将产生类似如下的数据</para>
+			<screen>
+A服务器: 1, 4, 7, 10
+B服务器: 2, 5, 8, 11
+C服务器: 3, 6, 9, 12
+			</screen>
+		</section>
 	</section>
 </article>
