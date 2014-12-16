@@ -10,11 +10,21 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>日志归档与数据挖掘</title>
-		<subtitle></subtitle>
+		<subtitle>http://netkiller.github.io/journal/log.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
+
+		<copyright>
+			<year>2013</year>
+			<year>2014</year>
+			<holder>Netkiller. All rights reserved.</holder>
+		</copyright>
+
+  		<pubdate>$Date$</pubdate>
+
 		<abstract>
-			<para>D语言写了一个程序将 WEB日志正则分解然后通过管道传递给数据库处理程序 </para>
+			<para>2013-03-19 第一版</para>
+			<para>2014-12-16 第二版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -24,12 +34,50 @@
 		</keywordset>
 	</articleinfo>
 
-	<section>
-		<title>mysql</title>
-		<para>将WEB服务器日志通过管道处理然后写入数据库</para>
-		<para>处理程序源码</para>
-		<screen>
-		<![CDATA[
+	<section id="what">
+		<title>什么日志归档</title>
+		<para>归档，是指将日志整理完毕且有保存价值的文件，经系统整理交日志服务器保存的过程。</para>
+	</section>
+	<section id="why">
+		<title>为什么要做日志归档</title>
+		<itemizedlist>
+			<listitem>随时调出历史日志查询。</listitem>
+			<listitem>通过日志做数据挖掘，挖掘有价值的数据。</listitem>
+			<listitem>查看应用程序的工作状态</listitem>
+		</itemizedlist>
+	</section>
+	<section id="when">
+		<title>何时做日志归档</title>
+		<para>日志归档应该是企业规定的一项制度(“归档制度”)，系统建设之初就应该考虑到日志归档问题。如果你的企业没有这项工作或制度，在看完本文后建议你立即实施。</para>
+	</section>
+	<section id="where">
+		<title>归档日志放在哪里</title>
+		<para>简单的可以采用单节点服务器加备份方案。</para>
+		<para>随着日志规模扩大，未来必须采用分布式文件系统，甚至涉及到远程异地容灾。</para>
+	</section>
+	<section id="who">
+		<title>谁去做日志归档</title>
+		<para>我的答案是日志归档自动化，人工检查或抽检。</para>
+	</section>
+	<section id="how">
+		<title>怎样做日志归档</title>
+		<para>将所有服务器的日志都汇总到一处，有几种方法</para>
+		<itemizedlist>
+			<title>日志归档常用方法：</title>
+			<listitem>ftp 定是下载， 这种做法适合小文件且日志量不大，定是下载到指定服务器，缺点是重复传输，实时性差。</listitem>
+			<listitem>rsyslog 一类的程序，比较通用，但扩展不便。</listitem>
+			<listitem>rsync 定是同步，适合打文件同步，好于FTP，实时性差。</listitem>
+		</itemizedlist>
+		<section>
+			<title>日志格式转换</title>
+			<para>首先我来介绍一种简单的方案</para>
+			<para>我用D语言写了一个程序将 WEB 日志正则分解然后通过管道传递给数据库处理程序 </para>
+			<section>
+				<title>将日志放入数据库</title>
+				<para>将WEB服务器日志通过管道处理然后写入数据库</para>
+				<para>处理程序源码</para>
+				<screen>
+				<![CDATA[
 $ vim match.d
 import std.regex;
 import std.stdio;
@@ -58,40 +106,40 @@ void main()
 		}
 	}
 }
-		]]>
-		</screen>
-		<para>编译</para>
-		<screen>
+				]]>
+				</screen>
+				<para>编译</para>
+				<screen>
 $ dmd match.d
 $ strip match
 
 $ ls
 match  match.d  match.o
-		</screen>
-		<para>简单用法</para>
-		<screen>
+				</screen>
+				<para>简单用法</para>
+				<screen>
 $ cat access.log | ./match
-		</screen>
-		<para>高级用法</para>
-		<screen>
-		<![CDATA[
+				</screen>
+				<para>高级用法</para>
+				<screen>
+				<![CDATA[
 $ cat access.log | match | mysql -hlocalhost -ulog -p123456 logging
-		]]>
-		</screen>
-		<para>实时处理日志，首先创建一个管道，寻该日志文件写入管道中。</para>
-		<screen>
+				]]>
+				</screen>
+				<para>实时处理日志，首先创建一个管道，寻该日志文件写入管道中。</para>
+				<screen>
 cat  管道名 | match | mysql -hlocalhost -ulog -p123456 logging
-		</screen>
-		<para>这样就可以实现实时日志插入。</para>
-		<tip>
-			<para>上面程序稍加修改即可实现Hbase, Hypertable 本版</para>
-		</tip>
-	</section>
-	<section>
-		<title>Apache Pipe</title>
-		<para>Apache 日志管道过滤 CustomLog "| /srv/match >> /tmp/access.log" combined</para>
-		<screen>
-		<![CDATA[
+				</screen>
+				<para>这样就可以实现实时日志插入。</para>
+				<tip>
+					<para>上面程序稍加修改即可实现Hbase, Hypertable 本版</para>
+				</tip>
+			</section>
+			<section>
+				<title>Apache Pipe</title>
+				<para>Apache 日志管道过滤 CustomLog "| /srv/match >> /tmp/access.log" combined</para>
+				<screen>
+				<![CDATA[
 <VirtualHost *:80>
         ServerAdmin webmaster@localhost
 
@@ -136,57 +184,58 @@ cat  管道名 | match | mysql -hlocalhost -ulog -p123456 logging
     </Directory>
 
 </VirtualHost>
-		]]>
-		</screen>
-		<para>经过管道转换过的日志效果</para>
-		<screen>
-		<![CDATA[
+				]]>
+				</screen>
+				<para>经过管道转换过的日志效果</para>
+				<screen>
+				<![CDATA[
 $ tail /tmp/access.log
 insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET / HTTP/1.1","304","208","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
 insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET /favicon.ico HTTP/1.1","404","501","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
 insert into log(remote_addr,unknow,remote_user,time_local,request,status,body_bytes_sent,http_referer,http_user_agent,http_x_forwarded_for) value("192.168.6.30","-","-","21/Mar/2013:16:11:00 +0800","GET / HTTP/1.1","304","208","-","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22");
-		]]>
-		</screen>
-	</section>
-	<section>
-		<title>Log format</title>
-		<para>通过定义LogFormat可以直接输出SQL形式的日志</para>
-		<para>Apache</para>
-		<screen>
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>Log format</title>
+				<para>通过定义LogFormat可以直接输出SQL形式的日志</para>
+				<para>Apache</para>
+				<screen>
 LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
 LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
 LogFormat "%h %l %u %t \"%r\" %>s %O" common
 LogFormat "%{Referer}i -> %U" referer
 LogFormat "%{User-agent}i" agent
-		</screen>
-		<para>Nginx</para>
-		<screen>
+				</screen>
+				<para>Nginx</para>
+				<screen>
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
-		</screen>
-		<para>但对于系统管理员使用grep,awk,sed,sort,uniq分析时造成一定的麻烦。所以我建议仍然采用正则分解</para>
-		<para>产生有规则日志格式，Apache：</para>
-		<screen>
+				</screen>
+				<para>但对于系统管理员使用grep,awk,sed,sort,uniq分析时造成一定的麻烦。所以我建议仍然采用正则分解</para>
+				<para>产生有规则日志格式，Apache：</para>
+				<screen>
 LogFormat \
         "\"%h\",%{%Y%m%d%H%M%S}t,%>s,\"%b\",\"%{Content-Type}o\",  \
         \"%U\",\"%{Referer}i\",\"%{User-Agent}i\""
-		</screen>
-		<para>将access.log文件导入到mysql中</para>
-		<screen>
+				</screen>
+				<para>将access.log文件导入到mysql中</para>
+				<screen>
 LOAD DATA INFILE '/local/access_log' INTO TABLE tbl_name
-FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\'		
-		</screen>
-	</section>
-	<section>
-		<title>日志导入到 MongoDB</title>
-		<screen>
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '\\'
+				</screen>
+			</section>
+
+			<section>
+				<title>日志导入到 MongoDB</title>
+				<screen>
 # rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 # yum install mongodb
-		</screen>
-		<para>D语言日志处理程序</para>
-		<screen>
-		<![CDATA[
+				</screen>
+				<para>D语言日志处理程序</para>
+				<screen>
+				<![CDATA[
 import std.regex;
 //import std.range;
 import std.stdio;
@@ -234,23 +283,168 @@ void main()
 	}
 
 }
-		]]>
-		</screen>
-		<para>编译日志处理程序</para>
-		<screen>
+				]]>
+				</screen>
+				<para>编译日志处理程序</para>
+				<screen>
 dmd mlog.d
-		</screen>
-		<para>用法</para>
-		<screen>
+				</screen>
+				<para>用法</para>
+				<screen>
 cat /var/log/nginx/access.log | mlog | mongo 192.169.0.5/logging -uxxx -pxxx
-		</screen>
-		<para>处理压错过的日志</para>
-		<screen>
+				</screen>
+				<para>处理压错过的日志</para>
+				<screen>
 # zcat /var/log/nginx/*.access.log-*.gz | /srv/mlog | mongo 192.168.6.1/logging -uneo -pchen
-		</screen>
-		<para>实时采集日志</para>
-		<screen>
+				</screen>
+				<para>实时采集日志</para>
+				<screen>
 tail -f /var/log/nginx/access.log | mlog | mongo 192.169.0.5/logging -uxxx -pxxx
-		</screen>
+				</screen>
+			</section>
+
+		</section>
+
+		<section>
+			<title>日志中心方案</title>
+			<para>上面的方案虽然简单，但太依赖系统管理员，需要配置很多服务器，每种应用软件产生的日志都不同，所以很复杂。如果中途出现故障，将会丢失一部日志。</para>
+			<para>于是我又回到了起点，所有日志存放在自己的服务器上，定时将他们同步到日志服务器，这样解决了日志归档。远程收集日志，通过UDP协议推送汇总到日志中心，这样解决了日志实时监控、抓取等等对实时性要求较高的需求。</para>
+			<para>为此我用了两三天写了一个软件，下载地址：https://github.com/netkiller/logging</para>
+			<para>这种方案并不是最佳的，只是比较适合我的场景，而且我仅用了两三天就完成了软件的开发。后面我会进一步扩展，增加消息队列传送日志的功能。</para>
+			<section>
+				<title>软件安装</title>
+				<screen>
+$ git clone https://github.com/netkiller/logging.git
+$ cd logging
+$ python3 setup.py sdist
+$ python3 setup.py install
+				</screen>
+			</section>
+			<section>
+				<title>节点推送端</title>
+				<para>安装启动脚本</para>
+				<para>CentOS</para>
+				<screen>
+# cp logging/init.d/ulog /etc/init.d			
+				</screen>
+				<para>Ubuntu</para>
+				<screen>
+$ sudo cp init.d/ulog /etc/init.d/	
+
+$ service ulog 
+Usage: /etc/init.d/ulog {start|stop|status|restart}			
+				</screen>
+				<para>配置脚本，打开 /etc/init.d/ulog 文件</para>
+				<para>配置日志中心的IP地址</para>
+				<screen>
+HOST=xxx.xxx.xxx.xxx
+				</screen>
+				<para>然后配置端口与采集那些日志</para>
+				<screen>
+				<![CDATA[
+	done << EOF
+1213 /var/log/nginx/access.log
+1214 /tmp/test.log
+1215 /tmp/$(date +"%Y-%m-%d.%H:%M:%S").log
+EOF
+				]]>
+				</screen>
+				<para>格式为</para>
+				<screen>
+Port | Logfile
+------------------------------
+1213 /var/log/nginx/access.log
+1214 /tmp/test.log
+1215 /tmp/$(date +"%Y-%m-%d.%H:%M:%S").log
+				</screen>
+				<para>1213 目的端口号（日志中心端口）后面是你需要监控的日志，如果日志每日产生一个文件写法类似 /tmp/$(date +"%Y-%m-%d.%H:%M:%S").log</para>
+				<tip>每日产生一个新日志文件需要定时重启 ulog 方法是 /etc/init.d/ulog restart</tip>
+				<para>配置完成后启动推送程序</para>
+				<screen>
+# service ulog start
+				</screen>
+				<para>查看状态</para>
+				<screen>
+$ service ulog status
+13865 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/rlog -d -H 127.0.0.1 -p 1213 /var/log/nginx/access.log				
+				</screen>
+				<para>停止推送</para>
+				<screen>
+# service ulog stop				
+				</screen>
+			</section>
+			<section>
+				<title>日志收集端</title>
+				<screen>
+# cp logging/init.d/ucollection /etc/init.d
+
+# /etc/init.d/ucollection 
+Usage: /etc/init.d/ucollection {start|stop|status|restart}
+				</screen>
+				<para>配置接收端口与保存文件，打开 /etc/init.d/ucollection 文件，看到下面段落</para>
+				<screen>
+				<![CDATA[
+done << EOF
+1213 /tmp/nginx/access.log
+1214 /tmp/test/test.log
+1215 /tmp/app/$(date +"%Y-%m-%d.%H:%M:%S").log
+1216 /tmp/db/$(date +"%Y-%m-%d")/mysql.log
+1217 /tmp/cache/$(date +"%Y")/$(date +"%m")/$(date +"%d")/cache.log
+EOF
+				]]>
+				</screen>
+				<para>格式如下，表示接收来自1213端口的数据，并保存到/tmp/nginx/access.log文件中。</para>
+				<screen>
+Port | Logfile
+1213 /tmp/nginx/access.log
+				</screen>
+				<para>如果需要分割日志配置如下</para>
+				<screen>
+1217 /tmp/cache/$(date +"%Y")/$(date +"%m")/$(date +"%d")/cache.log
+				</screen>
+				<para>上面配置日志文件将会产生在下面的目录中</para>
+				<screen>
+$ find /tmp/cache/
+/tmp/cache/
+/tmp/cache/2014
+/tmp/cache/2014/12
+/tmp/cache/2014/12/16
+/tmp/cache/2014/12/16/cache.log
+				</screen>
+				<tip>同样，如果分割日志需要重启收集端程序。</tip>
+				<para>启动收集端</para>
+				<screen>
+# service ulog start	
+				</screen>
+				<para>停止程序</para>
+				<screen>
+# service ulog stop			
+				</screen>
+				<para>查看状态</para>
+				<screen>
+$ init.d/ucollection status
+12429 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/collection -d -p 1213 -l /tmp/nginx/access.log
+12432 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/collection -d -p 1214 -l /tmp/test/test.log
+12435 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/collection -d -p 1215 -l /tmp/app/2014-12-16.09:55:15.log
+12438 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/collection -d -p 1216 -l /tmp/db/2014-12-16/mysql.log
+12441 pts/16   S      0:00 /usr/bin/python3 /usr/local/bin/collection -d -p 1217 -l /tmp/cache/2014/12/16/cache.log
+				</screen>
+			</section>
+			<section>
+				<title>日志监控</title>
+				<para>监控来自1217宽口的数据</para>
+				<screen>
+$ collection -p 1213
+
+192.168.6.20 - - [16/Dec/2014:15:06:23 +0800] "GET /journal/log.html HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+192.168.6.20 - - [16/Dec/2014:15:06:23 +0800] "GET /journal/docbook.css HTTP/1.1" 304 0 "http://192.168.6.2/journal/log.html" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+192.168.6.20 - - [16/Dec/2014:15:06:23 +0800] "GET /journal/journal.css HTTP/1.1" 304 0 "http://192.168.6.2/journal/log.html" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+192.168.6.20 - - [16/Dec/2014:15:06:23 +0800] "GET /images/by-nc-sa.png HTTP/1.1" 304 0 "http://192.168.6.2/journal/log.html" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+192.168.6.20 - - [16/Dec/2014:15:06:23 +0800] "GET /js/q.js HTTP/1.1" 304 0 "http://192.168.6.2/journal/log.html" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+				</screen>
+				<para>启动后实时将最新日志传送过来</para>
+			</section>
+		</section>
 	</section>
+
 </article>
