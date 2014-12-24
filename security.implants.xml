@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>植入式攻击入侵检测解决方案</title>
+		<subtitle>http://netkiller.github.io/journal/security.implants.html</subtitle>
+		&article.author.xml;
+		
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>		
+		
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>什么是植入式攻击？</title>
+		<para>什么是植入式攻击，通俗的说就是挂马，通过各种手段将木马上传到你的系统，修改原有程序，或者伪装程序是你很难发现，常住系统等等。</para>		
+	</section>
+	<section id="why">
+		<title>为什么骇客会在你的系统里面植入木马？</title>
+		<para>通常挂马攻击骇客都是有目的的很少会破坏你的系统，而是利用你的系统。</para>
+		<para>例如，使用你的网络作DDOS攻击，下载你的数据资料卖钱等等</para>
+	</section>
+	<section id="when">
+		<title>什么时候被挂马？</title>
+		<para>有时你到一家新公司，接手一堆烂摊子，俗称“擦屁股”。这是中国是离职，中国式裁员，中国式工作交接.....的结果，各种奇葩等着你。</para>
+		<para>你接手第一项工作就是工作交接，最重要的工作可能就是检查系统后门。通常工作交接少有积极配合的，全要靠你自己。</para>
+	</section>
+	<section id="where">
+		<title>在那里挂马的？</title>
+		<para>在我多年的工作中遇到过很多种形式挂马，有基于Linux的rootkit，有PHP脚本挂马，Java挂马，ASP挂马。通常骇客会植入数据库浏览工具，文件目录管理工具，压缩解压工具等等。</para>
+	</section>
+	<section id="who">
+		<title>谁会在你的系统里挂马？</title>
+		<para>98%是骇客入侵，1%是内人干的，1%是开后门仅仅为了工作方便。</para>
+		<para>本文对现有的系统无能为力，只能监控新的入侵植入</para>
+	</section>
+	<section id="how">
+		<title>怎样监控植入式攻击</title>
+		<section>
+			<title>程序与数据分离</title>
+			<para>程序包括脚本，变异文件等等，通常是只读权限</para>
+			<para>数据是指由程序生成的文件，例如日志</para>
+			<para>将程序与数据分离，存放在不同目录，设置不同权限, 请关注“延伸阅读”中的文章，里面有详细介绍，这里略过。</para>
+			<para>我们这里关注一旦运行的程序被撰改怎么办，包括入侵进入与合法进入。总之我们要能快速知道那些程序文件被修改。前提是我们要将程序与数据分离，才能更好地监控程序目录。</para>
+		</section>
+		<section>
+			<title>监控文件变化</title>
+			<para>我使用 Incron 监控文件变化</para>
+			<screen>
+# yum install -y incron
+# systemctl enable incrond
+# systemctl start incrond
+			</screen>
+			<para>安装日志推送程序</para>
+			<screen>
+$ git clone https://github.com/netkiller/logging.git
+$ cd logging
+$ python3 setup.py sdist
+$ python3 setup.py install			
+			</screen>
+			<para>配置触发事件</para>
+			<screen>
+# incrontab -e
+/etc IN_MODIFY /srv/bin/monitor.sh $@/$#
+/www IN_MODIFY /srv/bin/monitor.sh $@/$#
+
+# incrontab -l
+/etc IN_MODIFY /srv/bin/monitor.sh $@/$#
+/www IN_MODIFY /srv/bin/monitor.sh $@/$#
+			</screen>
+			<para>/srv/bin/monitor.sh 脚本</para>
+			<screen>
+# cat /srv/bin/monitor.sh
+#!/bin/bash
+echo $@ | /usr/local/bin/rlog -d -H 172.16.0.10 -p 1220 --stdin						
+			</screen>
+			<para>/etc 与 /www 目录中的任何文件被修改都回运行/srv/bin/monitor.sh脚本，/srv/bin/monitor.sh脚本通过/usr/local/bin/rlog程序将文件路径数据发给远程主机172.16.0.10。</para>
+		</section>
+		<section>
+			<title>安装日志收集程序</title>
+			<screen>
+$ git clone https://github.com/netkiller/logging.git
+$ cd logging
+$ python3 setup.py sdist
+$ python3 setup.py install				
+			</screen>
+			<para>配置收集端端口，编辑文件logging/init.d/ucollection</para>
+			<screen>
+			<![CDATA[
+done << EOF
+1220 /backup/172.16.0.10/incron.log
+1221 /backup/172.16.0.11/incron.log
+1222 /backup/172.16.0.12/incron.log
+EOF
+			]]>
+			</screen>
+			<para>然后根据incron.log给相关管理人员发送邮件或短信警报等等，关于怎么发邮件与短信不再本文谈论范围，有兴趣留意我的官网。</para>
+		</section>		
+	</section>
+	<section>
+		<title>延伸阅读</title>
+		<para><ulink url="http://netkiller.github.io/journal/mysql.security.html">数据库记录安全解决方案</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/tomcat.html">Tomcat 安全配置与性能优化</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/security.html">Linux 系统安全与优化配置</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/refresh.html">网站防刷方案</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/security.php.html">PHP 安全与性能</ulink></para>
+		<para><ulink url="http://netkiller.github.io/storage/incron.html" /></para>
+	</section>
+</article>
