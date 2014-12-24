@@ -77,6 +77,16 @@
 			</orderedlist>
 			<para>从第二级开始就具备“零数据丢失”，远远高于国家标准与国际标准。一级可能需要人工介入，但从第二级开始都是无人值守，到第三级可以达到7*24*365不停机运转，实现智能故障转移。</para>
 		</section>
+		<section>
+			<title>做灾备你面临最大的挑战是什么？</title>
+			<orderedlist>
+				<title>What are your biggest disaster recovery challenges?</title>
+				<listitem>Scalability(可扩展性)</listitem>
+				<listitem>Availability(可用性)</listitem>
+				<listitem>Performance(性能)</listitem>
+				<listitem>Flexibility(灵活性)</listitem>
+			</orderedlist>	
+		</section>
 	</section>
 	<section>
 		<title>灾备整体解决方案</title>

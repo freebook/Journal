@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>Shell 历史记录异地留痕审计与监控</title>
+		<subtitle>http://netkiller.github.io/journal/shell.history.html</subtitle>
+		&article.author.xml;
+
+		<copyright>
+			<year>2014</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>
+
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>.bash_history</keyword>
+			<keyword>history</keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>什么是Shell历史记录异地留痕与监控</title>
+		<para>首先谈谈什么是“历史记录异地留痕”，历史记录就是~/.bash_history文件，不同Shell名字可能不同，它会记录每次用户在键盘上敲下的命令，我们可以通过下面命令查询历史记录。 </para>
+		<screen>
+$ history | head
+ 1009  ls /www
+ 1010  vim Makefile
+ 1011  cat Makefile
+ 1012  make index.html
+ 1013  vim Makefile
+ 1014  make index.html
+ 1015  vim Makefile
+ 1016  make index.html
+ 1017  vim Makefile
+ 1018  make index.html
+
+ $ history | tail
+ 2000  find /tmp/var/
+ 2001  ll
+ 2002  cd workspace/Journal/
+ 2003  s
+ 2004  ls
+ 2005  make shell.html
+ 2006  cat ~/.bash_history
+ 2007  history
+ 2008  history | head
+ 2009  history | tail
+
+ $ cat ~/.bash_history | head -n 100
+ cat /etc/issue
+cat /etc/resolv.conf
+ifconfig
+cat /etc/resolv.conf
+dmd
+df
+df -T
+cat /etc/fstab
+cat /etc/issue
+uname -a
+ps ax
+cd /srv/
+ls
+cd workspace/
+ls
+df
+df -T
+df
+ls
+cd ..
+ls
+		</screen>
+		<para>由于篇幅的限制，我是用了head,tail 命令限制显示长度。</para>
+		<para>现在我在看看“监控”，监控就是过滤 ~/.bash_history 文件内字符串，达到匹配标准，做出报警操作等等。例如我们发现adduser命令应立即报警，通知相关人员检查。</para>
+	</section>
+	<section id="why">
+		<title>什么要将Shell历史记录异地留痕并监控</title>
+		<para>首先我们将要用户操作留痕，以方便随时调阅，我们要知道系统管理员做了那些操作，还可用于审计工作。例如我们开发工作中有一个环节就是Code Review (代码审查)，可以帮助我们提前发现BUG，以及不合理做法，甚至是人为恶意植入后门等等。</para>
+		<para>历史记录异地留痕就是运维工作的 sysop review(运维审查)。</para>
+		<para>其次是监控，注意这里的~/.bash_history监控并非实时监控，因为只有用户推出shell后才能保存~/.bash_history文件。所以监控是滞后的，但也足够能帮助我们更早的知道系统发生了那些变化。</para>
+	</section>
+	<section id="when">
+		<title>何时做历史记录异地留痕</title>
+		<para>这个系统可以实时部署，对现有的业务不会影响。</para>
+	</section>
+	<section id="where">
+		<title>在哪里做历史记录异地留痕</title>
+		<para>历史记录异地留痕分为两个部分，第一个部分是节点，第二部分是收集端，收集段同时还负责监控与报警。节点将收集的数据发送给收集端，然后收集端归档日志。</para>
+	</section>
+	<section id="who">
+		<title>角色与权限</title>
+		<para>最高权限着负责部署即可</para>
+	</section>
+	<section id="how">
+		<title>怎么实现历史记录异地留痕</title>
+		<section>
+			<title>节点配置</title>
+			<para>首先修改history格式，默认只有行号，我需要记录每一个命令的输入时间点。</para>
+			<screen>
+			<![CDATA[
+cat >> /etc/bashrc <<EOF
+export HISTTIMEFORMAT="%Y-%m-%d-%H:%M:%S "
+EOF
+			]]>
+			</screen>
+			<para>此时输入history命令你可以看到时间点</para>
+			<screen>
+# history
+  741  2014-12-24-10:06:26 ll
+  742  2014-12-24-10:06:40 ls
+  743  2014-12-24-10:06:44 ll
+  744  2014-12-24-10:06:47 ls
+  745  2014-12-24-10:58:13 history
+			</screen>
+		</section>
+		<section>
+			<title>推送端</title>
+			<screen>
+$ git clone https://github.com/netkiller/logging.git
+$ cd logging
+$ python3 setup.py sdist
+$ python3 setup.py install
+			</screen>
+			<para>配置启动脚本，打开文件logging/init.d/uhistory</para>
+			<screen>
+			<![CDATA[
+HOST=127.0.0.1 #此处为收集端的IP地址
+
+# Port | User 
+# -------------------
+# 配置端口号与用户
+done << EOF
+1220 neo
+1221 jam
+1222 sam
+EOF
+			]]>	
+			</screen>
+		</section>
+		<section>
+			<title>收集端</title>
+			<screen>
+$ git clone https://github.com/netkiller/logging.git
+$ cd logging
+$ python3 setup.py sdist
+$ python3 setup.py install			
+			</screen>
+			<para>配置收集端端口，编辑文件logging/init.d/ucollection</para>
+			<screen>
+			<![CDATA[
+done << EOF
+1220 /backup/neo/.bash_history
+1221 /backup/jam/.bash_history
+1222 /backup/sam/.bash_history
+EOF
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>延伸阅读</title>
+		<para><ulink url="http://netkiller.github.io/journal/log.html">《日志归档与数据挖掘》</ulink></para>
+	</section>
+</article>
