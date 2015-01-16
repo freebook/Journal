@@ -20,10 +20,10 @@
 		&book.info.abstract.xml;
 		<keywordset>
 			<keyword>tomcat</keyword>
-			<keyword>jre</keyword>
+			<keyword>jre, jdk</keyword>
 			<keyword>java</keyword>
 		</keywordset>
-		<pubdate>$Date: 2013-08-05 17:41:22 +0800 (Mon, 05 Aug 2013) $</pubdate>
+		<pubdate>$Date$</pubdate>
 		<release>$Id: tomcat.xml 656 2013-08-05 09:41:22Z netkiller $</release>
 	</articleinfo>
 
@@ -62,6 +62,11 @@ export JAVA_OPTS="-server -Xms512m -Xmx4096m  -XX:PermSize=64M -XX:MaxPermSize=5
 			</screen>
 			<tip><para>很多做过php运维的朋友在这里会犯一个大错误，php优化服务器通常怎做法是安装cpu以及内存的情况配置连接数，连接数过万都很正常，但java不同jvm配置要非常小心，稍有差错就会崩溃。</para></tip>
 			<para>maxThreads 配置要结合 JVM -Xmx 参数调整，也就是要考虑内存开销。</para>
+			<screen>
+maxThreads  		客户请求最大线程数
+minSpareThreads    	初始化时创建的 socket 线程数
+maxSpareThreads   	连接器的最大空闲 socket 线程数
+			</screen>
 		</section>
 		<section>
 			<title>虚拟主机</title>
@@ -83,6 +88,11 @@ export JAVA_OPTS="-server -Xms512m -Xmx4096m  -XX:PermSize=64M -XX:MaxPermSize=5
 			]]>
 			</screen>
 			<tip><para>压缩会增加Tomcat负担，最好采用Nginx + Tomcat 或者 Apache + Tomcat 方式，压缩交由Nginx/Apache 去做。</para></tip>
+			<screen>
+compression 			打开压缩功能   
+compressionMinSize   	启用压缩的输出内容大小，这里面默认为2KB
+compressableMimeType 	压缩类型			
+			</screen>
 		</section>
 	</section>
 
@@ -104,9 +114,11 @@ rm -rf /srv/apache-tomcat/webapps/*
 </tomcat-users>
 			]]>
 			</screen>
-			<para>隐藏Tomcat版本信息</para>
-			<screen>
-			<![CDATA[
+			<section>
+				<title>隐藏版本信息</title>
+				<para>隐藏Tomcat版本信息</para>
+				<screen>
+				<![CDATA[
 vim $CATALINA_HOME/conf/server.xml
 
     <Connector port="80" protocol="HTTP/1.1"
@@ -119,17 +131,25 @@ vim $CATALINA_HOME/conf/server.xml
 				enableLookups="false"
                 server="Neo App Srv 1.0"/>
 
-
-
 # curl -I http://localhost:8080/
 HTTP/1.1 400 Bad Request
 Transfer-Encoding: chunked
 Date: Thu, 20 Oct 2011 09:51:55 GMT
 Connection: close
 Server: Neo App Srv 1.0
-			]]>
-			</screen>
-			<para>服务器信息已经被改为 Server: Neo App Srv 1.0</para>
+				]]>
+				</screen>
+				<para>服务器信息已经被改为 Server: Neo App Srv 1.0</para>
+			</section>
+			<section>
+				<title>应用程序安全</title>
+				<para>关闭war自动部署 unpackWARs="false" autoDeploy="false"。防止被植入木马等恶意程序</para>
+				<para>关闭 reloadable="false" 也用于防止被植入木马</para>
+			</section>
+			<section>
+				<title>JSESSIONID</title>
+				<para>修改 Cookie 变量 JSESSIONID， 这个cookie 是用于维持Session关系。建议你改为PHPSESSID。 </para>
+			</section>			
 		</section>
 		<section>
 			<title>启动用户与端口</title>
@@ -158,15 +178,6 @@ iptables -t nat -L
 			</screen>
 			<para>另一个就是从80请求去调用8080的方案</para>
 			<para>这个方案可以在 Tomcat 前段增加反向代理，例如：Nginx,Apache,Squid,Varnish或者F5， Array这类设备等等</para>
-		</section>
-		<section>
-			<title>应用程序安全</title>
-			<para>关闭war自动部署 unpackWARs="false" autoDeploy="false"。防止被植入木马等恶意程序</para>
-			<para>关闭 reloadable="false" 也用于防止被植入木马</para>
-		</section>
-		<section>
-			<title>JSESSIONID</title>
-			<para>修改 Cookie 变量 JSESSIONID， 这个cookie 是用于维持Session关系。建议你改为PHPSESSID。 </para>
 		</section>
 	</section>
 	<section>
