@@ -64,7 +64,67 @@ mysql>  show variables like '%timeout%';
 12 rows in set (0.00 sec)
 		]]>
 		</screen>
-		
+		<section>
+			<title>关于 Sleep 进程</title>
+			<screen>
+			<![CDATA[
+mysql> show processlist;
++----+------+-----------------+-----------------+---------+------+-------+------------------+
+| Id | User | Host            | db              | Command | Time | State | Info             |
++----+------+-----------------+-----------------+---------+------+-------+------------------+
+|  5 | app  | 127.0.0.1:35551 | app.example.com | Sleep   | 4444 |       | NULL             |
+|  6 | app  | 127.0.0.1:35552 | app.example.com | Sleep   | 4444 |       | NULL             |
+|  7 | app  | 127.0.0.1:35554 | app.example.com | Sleep   | 4444 |       | NULL             |
+|  8 | app  | 127.0.0.1:35556 | app.example.com | Sleep   | 4444 |       | NULL             |
+|  9 | app  | 127.0.0.1:35555 | app.example.com | Sleep   | 4444 |       | NULL             |
+| 10 | app  | 127.0.0.1:35557 | app.example.com | Sleep   | 4444 |       | NULL             |
+| 11 | app  | 127.0.0.1:35558 | app.example.com | Sleep   | 4444 |       | NULL             |
+| 12 | app  | 127.0.0.1:35559 | app.example.com | Sleep   | 4444 |       | NULL             |
+| 13 | app  | 127.0.0.1:35560 | app.example.com | Sleep   | 4444 |       | NULL             |
+| 14 | app  | 127.0.0.1:35561 | app.example.com | Sleep   |   35 |       | NULL             |
+| 15 | app  | 127.0.0.1:35562 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 16 | app  | 127.0.0.1:35563 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 17 | app  | 127.0.0.1:35565 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 18 | app  | 127.0.0.1:35566 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 19 | app  | 127.0.0.1:35567 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 20 | app  | 127.0.0.1:35568 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 21 | app  | 127.0.0.1:35569 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 22 | app  | 127.0.0.1:35570 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 23 | app  | 127.0.0.1:35571 | app.example.com | Sleep   | 4439 |       | NULL             |
+| 24 | app  | 127.0.0.1:35572 | app.example.com | Sleep   |   38 |       | NULL             |
+| 25 | app  | 127.0.0.1:35575 | app.example.com | Sleep   | 4432 |       | NULL             |
+| 26 | app  | 127.0.0.1:35576 | app.example.com | Sleep   | 4432 |       | NULL             |
+| 27 | app  | 127.0.0.1:35578 | app.example.com | Sleep   | 4432 |       | NULL             |
+| 28 | app  | 127.0.0.1:35579 | app.example.com | Sleep   | 4432 |       | NULL             |
+| 29 | app  | 127.0.0.1:35580 | app.example.com | Sleep   | 4432 |       | NULL             |
+| 30 | app  | 127.0.0.1:54330 | app.example.com | Sleep   |   10 |       | NULL             |
+| 31 | app  | 127.0.0.1:1081  | app.example.com | Query   |    0 | init  | show processlist |
++----+------+-----------------+-----------------+---------+------+-------+------------------+
+27 rows in set (0.09 sec)
+
+mysql>
+			]]>
+			</screen>
+			<screen>
+show variables where variable_name in ('wait_timeout','interactive_timeout')
+			</screen>
+			<para>与Sleep线程有关的配置 'wait_timeout'与'interactive_timeout'默认是8小时，也就是说Sleep 8小时才会关闭，如果你的服务器访问量很低，可以适当加快线程回收。</para>
+			<screen>
+			<![CDATA[
+mysql>  show variables where variable_name in ('wait_timeout','interactive_timeo
+ut');
++---------------------+-------+
+| Variable_name       | Value |
++---------------------+-------+
+| interactive_timeout | 28800 |
+| wait_timeout        | 28800 |
++---------------------+-------+
+2 rows in set (0.47 sec)
+			]]>
+			</screen>
+			<para>另外PHP与Java两个群体在数据库处理上不同。PHP主张块连接快释放，让出更多的资源给其他服务。而Java多采用连接池独占数据库资源，连接池设置多少连接数就对应数据库创建多少持久连接，所以你会看到你并没有访问数据库但show processlist;会看到很多Sleep连接。</para>
+			<para>两个群起所采用的方式，并无好坏，都能达到最终目的。但使用连接池需要注意当MySQL最大连接数等于连接池连接数时来自其他服务器的请求将无法连接。</para>
+		</section>
 	</section>
 	<section>
 		<title>线程部分</title>
@@ -95,16 +155,7 @@ thread_cache_hit=(connections-thread_created)/connections*100%
 开启 pool-of-threads 模式
 		]]>
 		</screen>
-		<screen>
-		<![CDATA[
-		
-		]]>
-		</screen>		
-		<screen>
-		<![CDATA[
-		
-		]]>
-		</screen>		
+
 	</section>
 	<section>
 		<title>查询缓存部分</title>
@@ -144,12 +195,12 @@ mysql> show status like '%Qcache%';
 8 rows in set (0.00 sec)
 		]]>
 		</screen>
-		
-		
-		
-		
+
+
+
+
 	</section>
-	
+
 	<section>
 		<title>缓冲区部分</title>
 		<screen>
@@ -164,9 +215,9 @@ mysql> show variables like '%sort_buffer_size%';
 +-------------------------+---------+
 3 rows in set (0.00 sec)
 		]]>
-		</screen>		
+		</screen>
 	</section>
-	
+
 	<section>
 		<title>部分</title>
 		<screen>
@@ -203,7 +254,7 @@ mysql> show variables like 'low_priority_updates';
 +----------------------+-------+
 | low_priority_updates | ON    |
 +----------------------+-------+
-1 row in set (0.01 sec)		
+1 row in set (0.01 sec)
 		]]>
 		</screen>
 		<para>SESSION 会立即生效</para>
@@ -218,24 +269,24 @@ mysql> show variables like 'low_priority_updates';
 +----------------------+-------+
 | low_priority_updates | ON    |
 +----------------------+-------+
-1 row in set (0.00 sec)		
+1 row in set (0.00 sec)
 		]]>
-		</screen>		
-	</section>	
+		</screen>
+	</section>
 	<section>
 		<title>默认编码设置</title>
 		<screen>
 		<![CDATA[
 character-set-server=utf8
-collation_server=utf8_general_ci		
+collation_server=utf8_general_ci
 		]]>
 		</screen>
-	</section>	
+	</section>
 	<section>
 		<title>SECTION</title>
 		<screen>
 		<![CDATA[
-		
+
 		]]>
 		</screen>
 	</section>
