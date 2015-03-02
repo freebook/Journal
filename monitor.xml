@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>监控的艺术</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="background">
+		<title>背景</title>
+		<para>每个企业都意识到监控工作的重要性，但80%企业的监控工作仍然处在监控的初级阶段。</para>
+		<orderedlist>
+			<title>什么事初级阶段呢？</title>
+			<listitem>被动监控，故障发生运维人员永远不是第一个发现故障的人</listitem>
+			<listitem>监控IP地址与TCP端口，很多时候HTTP 80端口正常接受请求，但WEB服务器不能正常工作。</listitem>
+			<listitem>人肉监控（人肉运维），采用人海战术，桌面摆放很多显示器，甚至投影仪，要求监控者盯着各种仪表板界面，制定各种工作流程以及KPI考核监控人员。</listitem>
+			<listitem>人肉测试，要求监控人员每间隔几分钟人工操作一次，以确认系统正常工作，例如（没15分钟登陆一次，下一笔顶单，做一次支付等等）。</listitem>
+			<listitem>万能的重启，定其重启所有的服务器。</listitem>
+		</orderedlist>
+		<orderedlist>
+			<title>什么事中级阶段呢？</title>
+			<listitem>报警：手机短信更靠谱，因为手机随身携带（邮件不算，邮件到达速度慢，各种因素不稳定）</listitem>
+			<listitem>监控服务：探测服务的可用性，而不是仅仅监控端口，注意我是指私有协议的监控（HTTP，SMTP,FTP,MySQL 不算在内）</listitem>
+			<listitem>故障分析：通过日志与调试工具分析软件BUG，指导开发人员改善软件质量，使其故障不会再次发生，达到不用restart重启方式解决故障</listitem>
+			<listitem>半自动化测试：</listitem>
+		</orderedlist>
+		<para>什么事高级阶段呢？ 我认为高级阶段是监控与灾备系统打通融合一体。</para>
+		<para>除了监控，另一个息息相关的是自动故障转移，有兴趣可以看看我的其他文章 <ulink url="http://netkiller.github.io/journal/" /></para>
+		
+	</section>
+	<section id="overview">
+		<title>概述</title>
+		<para>你在百度上搜索监控多半是一些开源或商业软件的安装配置指南。这些文章中会告诉你怎样监控CPU、内存、硬盘空间以及网络IP地址与端口号码。</para>
+		<para>开源软件无非是 Nagios, Cacti, Mrtg, Zibbix ..... 这些软件在我的电子出书<ulink url="http://netkiller.github.io/monitoring/index.html">《Netkiller Monitoring 手札》</ulink>中都有详细说明安装与配置方法。</para>
+		<para>商业软件也有很多如 SolarWinds， Whit's Up，PRTG ......</para>
+		<para>所有的服务器，网络设备，监控你都做了，那么按照我上面的监控分级，你处于监控的那个阶段？</para>
+	</section>
+	<section id="how">
+		<title>怎样监控</title>
+		<para></para>
+		<section>
+			<title>卫星监测</title>
+		</section>
+		<section>
+			<title>逐级诊断</title>
+		</section>
+		<section>
+			<title>模拟人工</title>
+		</section>
+		<section>
+			<title>主动通报</title>
+		</section>
+		<section>
+			<title>日志分析</title>
+		</section>
+	</section>
+	<section id="summary">
+		<title>总结</title>
+	</section>
+</article>
