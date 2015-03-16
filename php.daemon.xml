@@ -266,5 +266,14 @@ $cgse->main($argv);
 			]]>
 			</programlisting>
 		</section>
+		<section>
+			<title>单例模式</title>
+			<para>所有线程共用数据库连接，在多线程中这个非常重要，如果每个线程建立以此数据库连接在关闭，这对数据库的开销是巨大的。</para>
+			<screen>
+protected function getInstance(){
+	return self::$dbh;
+}			
+			</screen>
+		</section>
 	</section>
 </article>
