@@ -18,10 +18,10 @@
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
-			<keyword>MT4, MT5, MetaTrader</keyword>
-			<keyword>GTS, GT1, MTF</keyword>
-			<keyword></keyword>
-			<keyword></keyword>
+			<keyword>Remote Applied Level Disaster Recovery System (RALDRS)</keyword>
+			<keyword>Long distance disaster recovery</keyword>
+			<keyword>remote data disaster recovery system</keyword>
+			<keyword>Disaster Recovery Backup System Research</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
