@@ -10,7 +10,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>PHP 安全与性能</title>
-
+		<subtitle>http://netkiller.github.io/journal/security.php.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
@@ -631,6 +631,13 @@ show variables like '%timeout%'
 				</screen>
 			</section>
 		</section>
-
+		<section>
+			<title>浏览器上传文件尺寸控制</title>
+			<para>Nginx</para>
+			<screen>
+client_max_body_size 8M
+			</screen>
+			<para>设置不能过大，因为可以通过你的网站上传功能，持续上传实现攻击。</para>
+		</section>
 	</section>
 </article>
