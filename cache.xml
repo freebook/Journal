@@ -17,6 +17,8 @@
 		<abstract>
 			<para>写这篇文章的原因，是我看到网上很多谈这类的文章，多是人云亦云，不求实事，误导读者。</para>
 			<para>下面文中我会一个一个做实验，并展示给你，说明为什么会这样。只有自己亲自尝试才能拿出有说服力的真凭实据。</para>
+			<para>2014-03-12 首次发布</para>
+			<para>2015-08-27 修改，增加特殊数据缓存</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -985,6 +987,64 @@ server {
 }
 			</screen>
 			<para>Nginx 反向代理作为代理绰绰有余，如果做缓存服务器，还是使用squid, varnish吧。</para>
+		</section>
+	</section>
+	<section id="data">
+		<title>特殊数据缓存</title>
+		<para>缓存并非只能缓存静态内容，HTML,CSS,JS以及图片意外的数据一样可以缓存。</para>
+		<para>只要处理好HTTP头即可。例如Ajax动态内容缓存，JSON数据缓存。</para>
+		<section>
+			<title>json</title>
+			<para>当用户请求json地址时，我们将 json 数据附加HTTP头（Cache-Control, Expires, ETag），然后返回给用户，用户的设备会遵循HTTP的声明，进行缓存操作。</para>
+			<screen>
+curl -I http://api.example.com/article/json/2/20/0.html
+HTTP/1.1 200 OK
+Expires: Wed, 26 Aug 2015 05:40:57 GMT
+Date: Wed, 26 Aug 2015 05:39:57 GMT
+Server: nginx
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Cache-Control: max-age=60
+ETag: 4238111283
+Age: 69475
+X-Via: 1.1 kaifeng45:3 (Cdn Cache Server V2.0)
+Connection: keep-alive
+			</screen>
+			<para>注意这里使用了伪静态 /article/json/2/20/0.html 伪静态与缓存没有关系，实际起作用的是HTTP头。</para>
+			<para>我们可以看到 Content-Type: application/json; charset=utf-8 声明，表明这是json数据，而不是HTML。</para>
+			<para>现在我们来演示一下JSON被缓存的效果，首先要说明 http://api.example.com/article/json/2/20/0.html 不是0.html文件，而是采用phalcon框架开发的一个程序，article是控制器类名称，json是jsonAction方法, 2/20/0 是传递给jsonAction的参数。</para>
+			<screen>
+$ curl -I http://api.example.com/article/json/2/20/0.html
+HTTP/1.1 200 OK
+Expires: Thu, 27 Aug 2015 05:24:21 GMT
+Date: Thu, 27 Aug 2015 05:23:21 GMT
+Server: nginx/1.5.7
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Cache-Control: max-age=60
+ETag: 558918903
+Age: 1
+X-Via: 1.1 kaifeng45:3 (Cdn Cache Server V2.0)
+Connection: keep-alive
+			</screen>
+			<para>上面第一次请求数据将被缓存。我们第二次请求推送 HTTP 头 If-None-Match。</para>
+			<screen>
+$ curl -H 'If-None-Match: 558918903' -I http://api.example.com/article/json/2/20/0.html
+HTTP/1.0 304 Not Modified
+Date: Thu, 27 Aug 2015 05:23:22 GMT
+Content-Type: application/json; charset=utf-8
+Expires: Thu, 27 Aug 2015 05:24:22 GMT
+ETag: 558918903
+Cache-Control: max-age=60
+Age: 15
+X-Via: 1.0 kaifeng45:3 (Cdn Cache Server V2.0)
+Connection: keep-alive			
+			</screen>
+			<para>数据被缓存并返回结果 HTTP/1.0 304 Not Modified，304代码是告诉用户端该页面或者数据没有变动，无需要再次下载数据。</para>
+		</section>
+		<section>
+			<title>XML</title>
+			<para>这里是指动态生成的XML，处理方式与 JSON一样，XML数据附加HTTP头（Cache-Control, Expires, ETag）后返回给用户。</para>
 		</section>
 	</section>
 	<section id="summary">
