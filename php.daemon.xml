@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
-	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
 	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
 	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
@@ -20,7 +20,8 @@
 		
 		&book.info.legalnotice.xml;
 		<abstract>
-			<para></para>
+			<para>2014-09-01 发表</para>
+			<para>2015-08-31 更新</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -30,7 +31,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-09-01</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 320ac59b573018a5ed96108359a070e4000071cb $</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是守护进程</title>
@@ -52,9 +53,6 @@
 		<para>我们希望程序只能运行一个实例，不运行同事开启两个以上的程序，因为会出现端口冲突等等问题。</para>
 	</section>
 	<!-- 
-	<section id="where">
-		<title>where-何地做</title>
-	</section>
 	<section id="who">
 		<title>who-谁去做</title>
 	</section>
@@ -407,4 +405,32 @@ protected function getInstance(){
 			</screen>
 		</section>
 	</section>
+	<section id="proc">
+		<title>进程意外退出解决方案</title>
+		<para>如果是非常重要的进程，必须要保证程序正常运行，一旦出现任何异常退出，都需要做即时做处理。下面的程序可能检查进程是否异常退出，如果退出便立即启动。</para>
+		<screen>
+		<![CDATA[
+#!/bin/sh
+
+LOGFILE=/var/log/$(basename $0 .sh).log
+PATTERN="my.php"
+RECOVERY="/path/to/my.php start"
+
+while true
+do
+        TIMEPOINT=$(date -d "today" +"%Y-%m-%d_%H:%M:%S")
+        PROC=$(pgrep -o -f ${PATTERN})
+        #echo ${PROC}
+        if [ -z "${PROC}" ]; then
+		${RECOVERY} >> $LOGFILE
+                echo "[${TIMEPOINT}] ${PATTERN} ${RECOVERY}" >> $LOGFILE
+                
+        #else
+                #echo "[${TIMEPOINT}] ${PATTERN} ${PROC}" >> $LOGFILE
+        fi
+sleep 5
+done &
+		]]>
+		</screen>
+	</section>	
 </article>
