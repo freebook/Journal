@@ -13,7 +13,8 @@
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-
+			<para>2014-04-21 第一次发表</para>
+			<para>2014-03-31 修改</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -23,7 +24,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-04-21</pubdate>
-		<release>$Id$</release>
+		<release>$Id: fb35742738c9144334dee43054ff7cc7ce8716cd $</release>
 	</articleinfo>
 	<section>
 		<title>背景</title>
@@ -40,16 +41,18 @@
 	</section>
 	<section>
 		<title>实现思路</title>
-		<para>B/S结构应用程序无法获取客户端的分辨率等信息，我们将采用Javascript取出参数，然后告知服务器端。</para>
-		<orderedlist>
-			<title>有下面几种实现方式：</title>
-			<listitem><para>通过cookie</para></listitem>
-			<listitem><para>post传递给服务器，然后存储在session中</para></listitem>
-			<listitem><para>get 传递给服务器，然后存储在session中</para></listitem>
-		</orderedlist>
-		<para>仅举一个例子</para>
-		<screen>
-		<![CDATA[
+		<section>
+			<title>尺寸动态变化</title>
+			<para>B/S结构应用程序无法获取客户端的分辨率等信息，我们将采用Javascript取出参数，然后告知服务器端。</para>
+			<orderedlist>
+				<title>有下面几种实现方式：</title>
+				<listitem><para>通过cookie</para></listitem>
+				<listitem><para>post传递给服务器，然后存储在session中</para></listitem>
+				<listitem><para>get 传递给服务器，然后存储在session中</para></listitem>
+			</orderedlist>
+			<para>仅举一个例子</para>
+			<screen>
+			<![CDATA[
 <script type="text/javascript">
 $(function(){
     var width=window.screen.height;
@@ -57,21 +60,84 @@ $(function(){
     $.post('http://www.example.com/screen/resize.html',{w:width,h:height});
 });
 </script>
-		]]>
-		</screen>
-		<para>HTML页面中的图片的引用路径</para>
-		<screen>
-		<![CDATA[
+			]]>
+			</screen>
+			<para>HTML页面中的图片的引用路径</para>
+			<screen>
+			<![CDATA[
 <img src="http://img.example.com/sample.jpg" />		
-		]]>
-		</screen>
-		<para>图片服务器rewrite处理</para>
-		<screen>
-		<![CDATA[
+			]]>
+			</screen>
+			<para>图片服务器rewrite处理</para>
+			<screen>
+			<![CDATA[
 http://img.example.com/sample.jpg => http://img.example.com/index.php/sample.jpg		
-		]]>
-		</screen>
-		<para>index.php会首先载入sample.jpg文件，然后综合网速，带宽，分辨率等因素，重新压缩图片，修改尺寸，发送mime头，输出正文。</para>
+			]]>
+			</screen>
+			<para>index.php会首先载入sample.jpg文件，然后综合网速，带宽，分辨率等因素，重新压缩图片，修改尺寸，发送mime头，输出正文。</para>
+		</section>
+		<section>
+			<title>实时裁剪并静态化</title>
+			<para>为了防止图片地址冲突，我们首先需要URL唯一化，这样每访问一次会生成一张符合你需求尺寸的图片。</para>
+			<para>http://img.example.com/sample_(width)x(height)_(quality).jpg </para>
+			<screen>
+			<![CDATA[
+<img src="http://img.example.com/sample_1980x1080_100.jpg" />	
+<img src="http://img.example.com/sample_800x600_80.jpg" />
+<img src="http://img.example.com/sample_640x480_50.jpg" />
+			]]>
+			</screen>
+			<para>配置nginx通过try_files配置项可以实现检查静态文件是否存在，如果不存在边调用index.php生成图片，当再次访问时会直接读取静态文件，不会再重新生成。 </para>
+			<screen>
+server {
+    listen       80;
+    server_name  inf.example.com;
+
+    charset utf-8;
+    access_log  /var/log/nginx/inf.example.com.access.log  main;
+    error_log  /var/log/nginx/inf.example.com.error.log;
+
+    location / {
+        root   /www/example.com/inf.example.com/images;
+        index  index.html;
+		try_files $uri $uri/ /index.php?_url=$request_uri;
+    }
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+
+    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+    #
+    #location ~ \.php$ {
+    #    proxy_pass   http://127.0.0.1;
+    #}
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    location ~ /index\.php$ {
+        root           html;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  /www/example.com/inf.example.com/frontend/public$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    location ~ /\.ht {
+        deny  all;
+    }
+}			
+			</screen>
+			<para>通过这种方法还可以实现更复杂的需求，例如调整亮度，对比度，饱和度，色阶，图层叠加等等......</para>
+		</section>
 	</section>
 	<section>
 		<title>web或代理服务器插件实现方案</title>
