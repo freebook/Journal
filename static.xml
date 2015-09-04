@@ -10,7 +10,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>网站静态内容出版解决方案</title>
-
+		<subtitle>http://netkiller.github.io/journal/static.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>

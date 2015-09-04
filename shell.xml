@@ -10,8 +10,8 @@
 <article xml:base="http://netkiller.sourceforge.net/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>启动Shell编写</title>
-
+		<title>Linux 启动 Shell</title>
+		<subtitle>http://netkiller.github.io/journal/shell.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
