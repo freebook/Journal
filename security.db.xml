@@ -10,7 +10,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>Linux 系统与数据库安全</title>
-
+		<subtitle>http://netkiller.github.io/journal/security.db.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>

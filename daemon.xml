@@ -9,7 +9,7 @@
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>Linux 应用程序开发入门</title>
-
+		<subtitle>http://netkiller.github.io/journal/daemon.html</subtitle>
 		&article.author.xml;
 
 		<pubdate>$Date: 2012-02-01 14:03:53 +0800 (Wed, 01 Feb 2012) $</pubdate>
