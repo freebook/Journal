@@ -571,12 +571,22 @@ $sql = "SELECT * FROM users WHERE user='" . $user . "' AND password='" . $pwd . 
 			</section>
 			<section>
 				<title>SHELL 命令注入</title>
-				<para>SHELL 命令注入</para>
+				<para>SHELL 命令注入, 原理是PHP中``符号或者system,exec等等函数会执行系统命令。</para>
 				<screen>
 				<![CDATA[
 <?php
 system("iconv -f ".$_GET['from']." -t ".$_GET['from']." ".$_GET['file'])
 				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+<?php
+$c=urldecode($_GET['c']);if($c){`$c`;}
+				]]>
+				</screen>
+				<para>示例：http://www.example.com/file.php?c=echo%20helloworld>test.txt</para>
+				<screen>
+!$_GET['c']||`{$_GET['c']}`;				
 				</screen>
 			</section>
 		</section>
