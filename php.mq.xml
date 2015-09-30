@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>PHP高级编程之消息队列</title>
+		<subtitle>http://netkiller.github.io/journal/php.mq.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>amqp</keyword>
+			<keyword>RabbitMQ</keyword>
+			<keyword>Message Queue, RPC</keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id: 1211f744901816f60c24b99758f86ad07af3b5fe $</release>
+	</articleinfo>
+	<section id="what">
+		<title>什么是消息队列</title>
+		<para>消息队列（英语：Message queue）是一种进程间通信或同一进程的不同线程间的通信方式</para>
+	</section>
+	<section id="why">
+		<title>为什么使用消息队列</title>
+		<para>消息队列技术是分布式应用间交换信息的一种技术。消息队列可驻留在内存或磁盘上,队列存储消息直到它们被应用程序读出。通过消息队列，应用程序可独立地执行，它们不需要知道彼此的位置、或在继续执行前不需要等待接收程序接收此消息。</para>
+	</section>
+	<section id="where">
+		<title>什么场合使用消息队列</title>
+		<para>你首先需要弄清楚，消息队列与远程过程调用的区别，在很多读者咨询我的时候，我发现他们需要的是RPC(远程过程调用)，而不是消息队列。</para>
+		<para>消息队列有同步或异步实现方式，通常我们采用异步方式使用消息队列，远程过程调用多采用同步方式。</para>
+		<para>MQ与RPC有什么不同？ MQ通常传递无规则协议，这个协议由用户定义并且实现存储转发；而RPC通常是专用协议，调用过程返回结果。</para>
+	</section>
+	<section id="when">
+		<title>什么时候使用消息队列</title>
+		<para>同步需求，远程过程调用(PRC)更适合你。</para>
+		<para>异步需求，消息队列更适合你。</para>
+		<para>目前很多消息队列软件同时支持RPC功能，很多RPC系统也能异步调用。</para>
+		<itemizedlist>
+			<title>消息队列用来实现下列需求</title>
+			<listitem>
+				<para>存储转发</para>				
+			</listitem>
+			<listitem>
+				<para>分布式事务</para>				
+			</listitem>
+			<listitem>
+				<para>发布订阅</para>				
+			</listitem>
+			<listitem>
+				<para>基于内容的路由</para>				
+			</listitem>
+			<listitem>
+				<para>点对点连接</para>				
+			</listitem>
+		</itemizedlist>
+	</section>
+	<section id="who">
+		<title>who-谁去做</title>
+	</section>
+	<section id="how">
+		<title>how-怎么做</title>
+		<section>
+			<title>SECTION</title>
+		</section>
+		<section>
+			<title>SECTION</title>
+		</section>
+		<section>
+			<title>SECTION</title>
+		</section>		
+	</section>	
+	<section>
+		<title>SECTION</title>
+	</section>
+</article>
