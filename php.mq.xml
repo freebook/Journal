@@ -44,41 +44,153 @@
 		<para>同步需求，远程过程调用(PRC)更适合你。</para>
 		<para>异步需求，消息队列更适合你。</para>
 		<para>目前很多消息队列软件同时支持RPC功能，很多RPC系统也能异步调用。</para>
-		<itemizedlist>
+		<orderedlist>
 			<title>消息队列用来实现下列需求</title>
 			<listitem>
-				<para>存储转发</para>				
+				<para>存储转发</para>
 			</listitem>
 			<listitem>
-				<para>分布式事务</para>				
+				<para>分布式事务</para>
 			</listitem>
 			<listitem>
-				<para>发布订阅</para>				
+				<para>发布订阅</para>
 			</listitem>
 			<listitem>
-				<para>基于内容的路由</para>				
+				<para>基于内容的路由</para>
 			</listitem>
 			<listitem>
-				<para>点对点连接</para>				
+				<para>点对点连接</para>
 			</listitem>
-		</itemizedlist>
+		</orderedlist>
 	</section>
-	<section id="who">
-		<title>who-谁去做</title>
+ 	<section id="who">
+		<title>谁负责处理消息队列</title>
+		<para>
+			通常的做法，如果小的项目团队可以有一个人实现，包括消息的推送，接收处理。如果大型团队，通常是定义好消息协议，然后各自开发各自的部分，
+			例如一个团队负责写推送协议部分，另一个团队负责写接收与处理部分。
+		</para>
+		<para>那么为什么我们不讲消息队列框架化呢？</para>
+		<orderedlist>
+			<title>框架化有几个好处：</title>
+			<listitem>开发者不用学习消息队列接口</listitem>
+			<listitem>开发者不需要关心消息推送与接收</listitem>
+			<listitem>开发者通过统一的API推送消息</listitem>
+			<listitem>开发者的重点是实现业务逻辑功能</listitem>
+		</orderedlist>
 	</section>
 	<section id="how">
-		<title>how-怎么做</title>
+		<title>怎么实现消息队列框架</title>
+		<para>下面是作者开发的一个SOA框架，该框架提供了三种接口，分别是SOAP,RESTful,AMQP(RabbitMQ)，理解了该框架思想，你很容易进一步扩展，例如增加XML-RPC, ZeroMQ等等支持。</para>
+		<para><ulink url="https://github.com/netkiller/SOA" /></para>
+		<para>本文只讲消息队列框架部分。</para>
 		<section>
-			<title>SECTION</title>
+			<title>守护进程</title>
+			<para>消息队列框架是本地应用程序（命令行程序），我们为了让他在后台运行，需要实现守护进程。</para>
+			<para><ulink url="https://github.com/netkiller/SOA/blob/master/bin/rabbitmq.php" /></para>
+			<para>每个实例处理一组队列，实例化需要提供三个参数，$queueName = '队列名', $exchangeName = '交换名', $routeKey = '路由'</para>
+			<screen>
+$daemon = new \framework\RabbitDaemon($queueName = 'email', $exchangeName = 'email', $routeKey = 'email');
+			</screen>
+			<para>守护进程需要使用root用户运行，运行后会切换到普通用户，同事创建进程ID文件，一边进程停止的时候使用。</para>
+			<para>守护进程核心代码<ulink url="https://github.com/netkiller/SOA/blob/master/system/rabbitdaemon.class.php" /></para>
 		</section>
 		<section>
-			<title>SECTION</title>
+			<title>消息队列协议</title>
+			<para>消息协议是一个数组，将数组序列化或者转为JSON推送到消息队列服务器，这里使用json格式的协议。</para>
+			<screen>
+$msg = array(
+	'Namespace'=>'namespace',
+	"Class"=>"Email",
+	"Method"=>"smtp",
+	"Param" => array(
+		$mail, $subject, $message, null
+	)
+);			
+			</screen>
+			<para>序列化后的协议</para>
+			<screen>
+{"Namespace":"single","Class":"Email","Method":"smtp","Param":["netkiller@msn.com","Hello"," TestHelloWorld",null]}			
+			</screen>
+			<para>使用json格式是考虑到通用性，这样推送端可以使用任何语言。如果不考虑兼容，建议使用二进制序列化，例如msgpack效率更好。</para>
 		</section>
 		<section>
-			<title>SECTION</title>
-		</section>		
-	</section>	
+			<title>消息队列处理</title>
+			<para>消息队列处理核心代码</para>
+			<para><ulink url="https://github.com/netkiller/SOA/blob/master/system/rabbitmq.class.php" /></para>
+			<para>所以消息的处理在下面一段代码中进行</para>
+			<screen>
+$this->queue->consume(function($envelope, $queue) {
+
+	$speed = microtime(true);
+	
+	$msg = $envelope->getBody();
+	$result = $this->loader($msg);
+	$queue->ack($envelope->getDeliveryTag()); //手动发送ACK应答
+
+	//$this->logging->info(''.$msg.' '.$result)
+	$this->logging->debug('Protocol: '.$msg.' ');
+	$this->logging->debug('Result: '. $result.' ');
+	$this->logging->debug('Time: '. (microtime(true) - $speed) .'');
+});
+			</screen>
+			<para>public  function loader($msg = null) 负责拆解协议，然后载入对应的类文件，传递参数，运行方法，反馈结果。</para>
+			<para>Time 可以输出程序运行所花费的时间，对于后期优化十分有用。</para>
+			<tip>
+				<para>loader() 可以进一步优化，使用多线程每次调用loader将任务提交到线程池中，这样便可以多线程处理消息队列。 </para>
+			</tip>
+		</section>
+		<section>
+			<title>测试</title>
+			<para>测试代码 <ulink url="https://github.com/netkiller/SOA/blob/master/test/queue/email.php" /></para>
+			<screen>
+			<![CDATA[
+<?php
+$queueName = 'example';
+$exchangeName = 'email';
+$routeKey = 'email';
+$mail = $argv[1];
+$subject = $argv[2];
+$message = empty($argv[3]) ? 'Hello World!' : ' '.$argv[3];
+
+ 
+$connection = new AMQPConnection(array(
+	'host' => '192.168.4.1', 
+	'port' => '5672', 
+	'vhost' => '/', 
+	'login' => 'guest', 
+	'password' => 'guest'
+	));
+$connection->connect() or die("Cannot connect to the broker!\n");
+ 
+$channel = new AMQPChannel($connection);
+$exchange = new AMQPExchange($channel);
+$exchange->setName($exchangeName);
+$queue = new AMQPQueue($channel);
+$queue->setName($queueName);
+$queue->setFlags(AMQP_DURABLE);
+$queue->declareQueue();
+
+$msg = array(
+	'Namespace'=>'namespace',
+	"Class"=>"Email",
+	"Method"=>"smtp",
+	"Param" => array(
+		$mail, $subject, $message, null
+	)
+);
+
+$exchange->publish(json_encode($msg), $routeKey);
+printf("[x] Sent %s \r\n", json_encode($msg));
+
+
+$connection->disconnect();	
+			]]>		
+			</screen>
+			<para>这里只给出了少量测试与演示程序，如有疑问请到渎者群，或者公众号询问。</para>
+		</section>
+	</section>
 	<section>
-		<title>SECTION</title>
+		<title>总结</title>
+		<para>该消息队列框架还比较简陋，但在生产环境已经运行很长一段时间，效果还是不错的。同时降低了消息队列的开发难度，开发者更多的时间是考虑业务逻辑的实现，而不用操心消息队列本身的使用。</para>
 	</section>
 </article>
