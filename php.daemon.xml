@@ -545,5 +545,10 @@ sleep 5
 done &
 		]]>
 		</screen>
+	</section>
+	<section>
+		<title>延伸阅读</title>
+		<para><ulink url="http://netkiller.github.io/journal/php.mq.html">PHP高级编程之消息队列</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/php.thread.html">PHP高级编程之多线程</ulink></para>
 	</section>	
 </article>

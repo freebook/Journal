@@ -193,4 +193,9 @@ $connection->disconnect();
 		<title>总结</title>
 		<para>该消息队列框架还比较简陋，但在生产环境已经运行很长一段时间，效果还是不错的。同时降低了消息队列的开发难度，开发者更多的时间是考虑业务逻辑的实现，而不用操心消息队列本身的使用。</para>
 	</section>
+	<section>
+		<title>延伸阅读</title>
+		<para><ulink url="http://netkiller.github.io/journal/php.daemon.html">PHP高级编程之守护进程</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/php.thread.html">PHP高级编程之多线程</ulink></para>
+	</section>
 </article>

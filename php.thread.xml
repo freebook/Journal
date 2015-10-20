@@ -26,7 +26,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 526b99fae49fc55280e5bc0da0792205b7f451b8 $</release>
 	</articleinfo>
 
 	<section>
@@ -1138,5 +1138,10 @@ $example->main($argv);
 			</screen>
 			<para>此程序涉及守候进程实现$this->daemon()运行后转到后台运行，进程ID保存，进程的互斥（不允许同时启动两个进程），线程池连接数以及线程任务等等</para>
 		</section>
+	</section>
+	<section>
+		<title>延伸阅读</title>
+		<para><ulink url="http://netkiller.github.io/journal/php.mq.html">PHP高级编程之消息队列</ulink></para>
+		<para><ulink url="http://netkiller.github.io/journal/php.daemon.html">PHP高级编程之守护进程</ulink></para>
 	</section>
 </article>
