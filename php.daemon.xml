@@ -22,6 +22,7 @@
 		<abstract>
 			<para>2014-09-01 发表</para>
 			<para>2015-08-31 更新</para>
+			<para>2015-10-20 更新，增加优雅重启</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -403,6 +404,118 @@ protected function getInstance(){
 	return self::$dbh;
 }			
 			</screen>
+		</section>
+		<section>
+			<title>实现优雅重启</title>
+			<para>所谓优雅重启是指进程不退出的情况加实现重新载入包含重置变量，刷新配置文件，重置日志等等</para>
+			<para>stop/start 或者 restart都会退出进程，重新启动，导致进程ID改变，同时瞬间退出导致业务闪断。所以很多守护进程都会提供一个reload功能，者就是所谓的优雅重启。</para>
+			<para>reload 实现原理是给进程发送SIGHUP信号，可以通过kill命令发送 kill -s SIGHUP 64881，也可以通过库函数实现 posix_kill(posix_getpid(), SIGUSR1);</para>
+			<screen>
+			<![CDATA[
+<?php
+pcntl_signal(SIGTERM,  function($signo) {
+    echo "\n This signal is called. [$signo] \n";
+    Status::$state = -1;
+});
+
+pcntl_signal(SIGHUP,  function($signo) {
+    echo "\n This signal is called. [$signo] \n";
+    Status::$state = 1;
+	Status::$ini = parse_ini_file('test.ini');
+});
+
+class Status{
+    public static $state = 0;
+	public static $ini = null;
+}
+
+$pid = pcntl_fork();
+if ($pid == -1) {
+    die('could not fork');
+}
+
+if($pid) {
+    // parent
+} else {
+	$loop = true;
+	Status::$ini = parse_ini_file('test.ini');
+    while($loop) {
+		print_r(Status::$ini);
+        while(true) {
+			// Dispatching... 
+			pcntl_signal_dispatch();
+			if(Status::$state == -1) {
+				// Do something and end loop.
+				$loop = false;
+				break;
+			}
+			
+			if(Status::$state == 1) {
+				printf("This program is reload.\r\n");
+				Status::$state = 0;
+				break;
+			}
+            echo '.';
+            sleep(1);
+        }
+        echo "\n";
+    }
+    
+    echo "Finish \n";
+    exit();
+}
+			]]>
+			</screen>
+			<para>创建配置文件</para>
+			<screen>
+[root@netkiller pcntl]# cat test.ini 
+[db]
+host=192.168.0.1
+port=3306
+			</screen>
+			<para>测试方法，首先运行该守护进程</para>
+			<screen>
+# php signal.reload.php 
+Array
+(
+    [host] => 192.168.0.1
+    [port] => 3306
+)
+			</screen>
+			<para>现在修改配置文件，增加user=test配置项</para>
+			<screen>
+[root@netkiller pcntl]# cat test.ini 
+[db]
+host=192.168.0.1
+port=3306
+user=test
+			</screen>
+			<para>发送信号，在另一个终端窗口，通过ps命令找到该进程的PID，然后使用kill命令发送SIGHUP信号，然后再通过ps查看进程，你会发现进程PID没有改变</para>
+			<screen>
+[root@netkiller pcntl]# ps ax | grep reload
+64881 pts/0    S      0:00 php -c /srv/php/etc/php-cli.ini signal.reload.php
+65073 pts/1    S+     0:00 grep --color=auto reload
+
+[root@netkiller pcntl]# kill -s SIGHUP 64881
+
+[root@netkiller pcntl]# ps ax | grep reload
+64881 pts/0    S      0:00 php -c /srv/php/etc/php-cli.ini signal.reload.php
+65093 pts/1    S+     0:00 grep --color=auto reload
+
+			</screen>
+			<para>配置文件被重新载入</para>
+			<screen>
+This signal is called. [1] 
+This program is reload.
+
+Array
+(
+    [host] => 192.168.0.1
+    [port] => 3306
+    [user] => test
+)			
+			</screen>
+			<para>优雅重启完成。</para>
 		</section>
 	</section>
 	<section id="proc">
