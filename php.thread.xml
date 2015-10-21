@@ -331,11 +331,83 @@ shm_detach( $shmid );
 		]]>
 		</programlisting>
 	</section>
-	<section>
+	<section id="pool">
 		<title>线程池</title>
 		<section>
-			<title>线程池</title>
-			<para>自行实现一个Pool类</para>
+			<title>pthreads Pool类</title>
+			<para>pthreads 提供的 Pool class 例子</para>
+			<programlisting>
+			<![CDATA[
+<?php
+
+class WebWorker extends Worker {
+
+	public function __construct(SafeLog $logger) {
+		$this->logger = $logger;
+	}
+
+	protected $loger;
+}
+
+class WebWork extends Stackable {
+
+	public function isComplete() {
+		return $this->complete;
+	}
+
+	public function run() {
+		$this->worker
+			->logger
+			->log("%s executing in Thread #%lu",
+				  __CLASS__, $this->worker->getThreadId());
+		$this->complete = true;
+	}
+
+	protected $complete;
+}
+
+class SafeLog extends Stackable {
+
+	protected function log($message, $args = []) {
+		$args = func_get_args();
+
+		if (($message = array_shift($args))) {
+			echo vsprintf(
+				"{$message}\n", $args);
+		}
+	}
+}
+
+
+$pool = new Pool(8, \WebWorker::class, [new SafeLog()]);
+
+$pool->submit($w=new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->submit(new WebWork());
+$pool->shutdown();
+
+$pool->collect(function($work){
+	return $work->isComplete();
+});
+
+var_dump($pool);
+			]]>
+			</programlisting>
+		</section>		
+		<section>
+			<title>线程池的原理</title>
+			<para>我们自行实现一个类来解释Pool工作原理</para>
 			<programlisting>
 			<![CDATA[
 <?php
@@ -514,83 +586,12 @@ try {
 			]]>
 			</programlisting>
 		</section>
-		<section>
-			<title>pthreads Pool类</title>
-<para>pthreads 提供的 Pool class 例子</para>
-			<programlisting>
-			<![CDATA[
-<?php
-
-class WebWorker extends Worker {
-
-	public function __construct(SafeLog $logger) {
-		$this->logger = $logger;
-	}
-
-	protected $loger;
-}
-
-class WebWork extends Stackable {
-
-	public function isComplete() {
-		return $this->complete;
-	}
-
-	public function run() {
-		$this->worker
-			->logger
-			->log("%s executing in Thread #%lu",
-				  __CLASS__, $this->worker->getThreadId());
-		$this->complete = true;
-	}
-
-	protected $complete;
-}
-
-class SafeLog extends Stackable {
-
-	protected function log($message, $args = []) {
-		$args = func_get_args();
-
-		if (($message = array_shift($args))) {
-			echo vsprintf(
-				"{$message}\n", $args);
-		}
-	}
-}
-
-
-$pool = new Pool(8, \WebWorker::class, [new SafeLog()]);
-
-$pool->submit($w=new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->submit(new WebWork());
-$pool->shutdown();
-
-$pool->collect(function($work){
-	return $work->isComplete();
-});
-
-var_dump($pool);
-			]]>
-			</programlisting>
-		</section>
-
+		
 	</section>
-	<section>
+	<section id="filelock">
 		<title>多线程文件安全读写（文件锁）</title>
-		<para>文件所种类。</para>
+		<para>在多线程中读写文件但进程是有区别的，读取内容比较容易时间，但写入数据就需要保证同一时刻只能有一个进程操作，虽然通过互斥锁可以解决，但从安全的角度文件必须上锁。</para>
+		<para>文件锁种类。</para>
 		<screen>
 LOCK_SH 取得共享锁定（读取的程序）。
 LOCK_EX 取得独占锁定（写入的程序。
@@ -935,6 +936,103 @@ $dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass, array(
 ?>
 			]]>
 			</programlisting>
+			<para>但有些场景数据库持久链接适得其反，所以根据你的场景选择链接方式</para>
+			<programlisting>
+			<![CDATA[
+<?php
+$dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass, array(
+    PDO::ATTR_PERSISTENT => false
+));
+?>
+			]]>
+			</programlisting>			
+			<para>由于现成持续链接数据，有时可能因为数据库或者网络原因导致数据无法连接，程序抛出异常或终止，所以使用单例并不保险。</para>
+			<programlisting>
+			<![CDATA[
+protected function getInstance(){
+	return self::$dbh;
+}
+			]]>
+			</programlisting>
+			<para>为单例增加重新连接功能</para>
+			<programlisting>
+			<![CDATA[
+class SenderWorker extends Worker {
+
+	protected $config;
+	protected static $dbh;
+	protected static $amqp;
+	
+	public function __construct($config) {
+		$this->config = $config;
+		$this->logger = new Logger();
+	}
+	public function run() {
+
+	}
+	private function connect(){
+		try {
+			$dbhost = $this->config['database']['host'];
+			$dbport = $this->config['database']['port'];
+			$dbuser = $this->config['database']['user'];
+			$dbpass = $this->config['database']['password'];
+			$dbname = $this->config['database']['dbname'];
+
+			self::$dbh = new PDO ( "mysql:host=$dbhost;port=$dbport;dbname=$dbname", $dbuser, $dbpass, array (
+					PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
+					PDO::MYSQL_ATTR_COMPRESS => true
+					/*PDO::ATTR_PERSISTENT => true*/
+			) );
+			self::$dbh->setAttribute ( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
+
+		} catch ( PDOException $e ) {
+			$this->logger ( 'Exception worker', $e->getMessage( ) );
+		} catch ( Exception $e ) {
+			$this->logger ( 'Exception worker', $e->getMessage( ) );
+		}
+	}
+	protected function getInstance() {
+
+		if(!self::$dbh) {
+			$this->connect();
+			$this->logger ( 'Database', sprintf("Connect database %s, %s", $this->config['database']['dbname'], $this->getThreadId ()) );
+		}else{
+			$this->logger ( 'Database', sprintf("Get instance database %s, %s", $this->config['database']['dbname'], $this->getThreadId ()) );
+		}
+		
+		if(self::$dbh){
+			return self::$dbh;
+		}else{
+			$this->logger ( 'Database', sprintf("Connect database is error %s, %s", $this->config['database']['dbname'], $this->getThreadId ()) );
+			$this->logger ( 'Error', sprintf("Worker is shutdown %s", $this->getThreadId ()) );
+			$this->shutdown();
+		}
+	}
+	
+	public function logger($type, $message) {
+		$this->logger->logger($type, $message);
+	}
+	
+	public function getAmqpInstance(){
+		if(!self::$amqp){
+			self::$amqp = new AMQPConnection(array(
+				'host' 	=> $this->config['amqp']['host'], 
+				'port' 	=> $this->config['amqp']['port'], 
+				'vhost'	=> $this->config['amqp']['vhost'], 
+				'login' => $this->config['amqp']['login'], 
+				'password' => $this->config['amqp']['password']
+			));
+			$this->logger ( 'AMQP', sprintf("Connect amqp %s, %s", $this->config['amqp']['host'], $this->getThreadId ()) );
+		}else{
+			$this->logger ( 'AMQP', sprintf("Get instance amqp %s, %s", $this->config['amqp']['host'], $this->getThreadId ()) );
+		}	
+		return self::$amqp;
+	}
+
+}
+			]]>
+			</programlisting>
+			<para>每次调用 getInstance() 会判断当前数据库是否已经链接，如果链接丢失，将重新链接数据库。</para>
 		</section>
 	</section>
 	<section>
@@ -942,7 +1040,7 @@ $dbh = new PDO('mysql:host=localhost;dbname=test', $user, $pass, array(
 		<para>应用场景，我使用触发器监控数据库某个表，一旦发现有改变就通知程序处理数据</para>
 		<section>
 			<title>数据库端</title>
-			<para>首先安装ZeroMQ 与 MySQL UDF https://github.com/netkiller/mysql-zmq-plugin, 然后创建触发器。</para>
+			<para>首先安装ZeroMQ 与 ZeroMQ for MySQL UDF 然后创建触发器。 <ulink url="https://github.com/netkiller/mysql-zmq-plugin" /></para>
 			<programlisting>
 			<![CDATA[
 CREATE DEFINER=`dba`@`192.168.%` PROCEDURE `Table_Example`(IN `TICKET` INT, IN `LOGIN` INT, IN `CMD` INT, IN `VOLUME` INT)
