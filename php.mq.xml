@@ -91,7 +91,7 @@
 			<screen>
 $daemon = new \framework\RabbitDaemon($queueName = 'email', $exchangeName = 'email', $routeKey = 'email');
 			</screen>
-			<para>守护进程需要使用root用户运行，运行后会切换到普通用户，同事创建进程ID文件，一边进程停止的时候使用。</para>
+			<para>守护进程需要使用root用户运行，运行后会切换到普通用户，同时创建进程ID文件，以便进程停止的时候使用。</para>
 			<para>守护进程核心代码<ulink url="https://github.com/netkiller/SOA/blob/master/system/rabbitdaemon.class.php" /></para>
 		</section>
 		<section>
