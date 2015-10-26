@@ -30,7 +30,7 @@
 		<release>$Id: 526b99fae49fc55280e5bc0da0792205b7f451b8 $</release>
 	</articleinfo>
 
-	<section>
+	<section id="install">
 		<title>多线程环境安装</title>
 		<section>
 			<title>PHP 5.5.9</title>
@@ -91,7 +91,7 @@
 			</screen>
 		</section>
 	</section>
-	<section>
+	<section id="thread">
 		<title>Thread</title>
 		<programlisting language="php" role='PHP'>
 		<![CDATA[
@@ -115,7 +115,7 @@ if ($thread->start()) {
 		]]>
 		</programlisting>
 	</section>
-	<section>
+	<section id="worker">
 		<title>Worker 与 Stackable</title>
 		<programlisting language="php" role='PHP'>
 		<![CDATA[
@@ -166,7 +166,7 @@ $worker->shutdown();
 		]]>
 		</programlisting>
 	</section>
-	<section>
+	<section id="mutex">
 		<title>互斥锁</title>
 		<para>什么情况下会用到互斥锁？在你需要控制多个线程同一时刻只能有一个线程工作的情况下可以使用。</para>
 		<para>下面我们举一个例子，一个简单的计数器程序，说明有无互斥锁情况下的不同。</para>
@@ -276,7 +276,7 @@ shm_detach( $shmid );
 			</programlisting>
 		</section>
 	</section>
-	<section>
+	<section id="synchronized">
 		<title>线程同步</title>
 		<para>有些场景我们不希望  thread->start() 就开始运行程序，而是希望线程等待我们的命令。</para>
 		<para>$thread->wait();测作用是 thread->start()后线程并不会立即运行，只有收到 $thread->notify(); 发出的信号后才运行 </para>
@@ -710,9 +710,9 @@ fclose($fp);
 		</programlisting>
 
 	</section>
-	<section>
+	<section id="db">
 		<title>多线程与数据连接</title>
-		<para>pthreads 与 pdo 同时使用是，需要注意一点，需要静态声明public static $dbh;并且通过单例模式访问数据库连接。</para>
+		<para>多线程中操作数据库总结与注意事项 pthreads 与 pdo 同时使用是，需要注意一点，需要静态声明public static $dbh;并且通过单例模式访问数据库连接。</para>
 		<section>
 			<title>Worker 与 PDO</title>
 			<programlisting>
@@ -995,7 +995,7 @@ $pool->shutdown();
 			</programlisting>
 		</section>
 		<section>
-			<title>多线程中操作数据库总结</title>
+			<title>数据库持久连接</title>
 			<para>总的来说 pthreads 仍然处在发展中，仍有一些不足的地方，我们也可以看到pthreads的git在不断改进这个项目</para>
 			<para>数据库持久链接很重要，否则每个线程都会开启一次数据库连接，然后关闭，会导致很多链接超时。</para>
 			<programlisting>
@@ -1105,8 +1105,32 @@ class SenderWorker extends Worker {
 			</programlisting>
 			<para>每次调用 getInstance() 会判断当前数据库是否已经链接，如果链接丢失，将重新链接数据库。</para>
 		</section>
+		<section>
+			<title>涉及数据库更新</title>
+			<para>多线程编程中对数据库更新操作需要注意的是，有些场景，你需要控制同一时刻只能有一个线程对数据库做Update, Delete, Insert，否则数据容易出错。</para>
+			<para>例如下面的操作，你会发现程序运行完成后数据字段没有任何变化。这是因为线程间相互覆盖对方之前更新的数据。</para>
+			<programlisting>
+$sql = "update import set succeed = succeed+1 where status = :status and id = :id";
+			</programlisting>
+			<para>解决方法有两种，一种是外部实现排他锁，一种是在数据库内部实现，通过事物处理，解决线程资源争夺，相互覆盖的问题。</para>
+			<programlisting>
+			<![CDATA[
+	private function updateSucceed($task){
+		$dbh = $this->worker->getInstance();
+		$dbh->beginTransaction();
+		$sql = "update import set succeed = succeed+1 where status = :status and id = :id";
+		$sth = $dbh->prepare ( $sql );
+		$sth->bindValue ( ':id', $task->id );
+		$sth->bindValue ( ':status', 'Processing' );
+		$status = $sth->execute ();
+		$dbh->commit();
+		return $status;
+	}
+			]]>
+			</programlisting>
+		</section>
 	</section>
-	<section>
+	<section id="zero">
 		<title>Thread And ZeroMQ</title>
 		<para>应用场景，我使用触发器监控数据库某个表，一旦发现有改变就通知程序处理数据</para>
 		<section>
