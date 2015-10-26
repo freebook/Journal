@@ -17,6 +17,7 @@
 			<para>2014-05-15 第二版</para>
 			<para>2014-06-13 第三版</para>
 			<para>2014-07-24 第四版</para>
+			<para>2015-10-26 第五版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -404,6 +405,9 @@ $pool->collect(function($work){
 var_dump($pool);
 			]]>
 			</programlisting>
+			<para>现在我来详细讲解线程池，官方文档比较少，很多经验是笔者工作中摸索出来的。</para>
+			<para>Pool 构造方法第一次参数 size, 手册解释是 Pool 对象可容纳的 Worker 对象的最大数量，但我实际使用发现 size 并不是控制pool压入任务的数量，而是同时并发的线程数。</para>
+			<para>$pool->submit()是可以无线提交任务的，只要内存允许（参考php.ini配置），但同时执行的线程数由size控制。</para>
 		</section>		
 		<section>
 			<title>线程池的原理</title>
@@ -586,7 +590,74 @@ try {
 			]]>
 			</programlisting>
 		</section>
+		<section>
+			<title>等待线程池中的线程运行完毕</title>
+			<para> $pool->submit 是非阻塞，提交到线程池中，就会运行下面代码，有时我们希望等待线程执行完毕，收集线程的工作状况。</para>
+			<programlisting>
+			<![CDATA[
+		$mutex = Mutex::create();
+		$pool = new Pool ( self::MAXCONN , \ImportWorker::class, array($this->config, $mutex) );
 		
+		$pool->collect(function($work){
+				return $work->isComplete();
+			});
+		
+		foreach($tasks as $task){
+			$this->logger ( __CLASS__, sprintf("Task %s %s", $task->file, 'Processing') );
+
+			pcntl_signal_dispatch();
+			
+			if(Signal::get() == SIGHUP){
+				Signal::reset();
+				break;
+			}
+			
+			if(file_exists ($task->file)){
+
+				$handle = fopen($task->file, 'r');
+				$i = 0;
+				while (($row = fgetcsv($handle, 100000, ',')) !== false) {
+					$work[$i] =  new Import ( $task, $row );
+					$pool->submit ( $work[$i] );
+					$i++;
+					//$pool->submit ( new Import ( $task, $row ));
+
+				}
+		
+				fclose($handle);
+				
+				$waiting = true;
+				while($waiting){
+					
+					for($i=0;$i<count($work);$i++){
+						
+						if($work[$i]->isComplete()){
+							Counter::$completed++;
+						}
+						//printf("work %s:%s \n", count($work), Counter::$completed);
+						if(Counter::$completed == count($work)){
+							$waiting = false;
+							break;
+						}
+					}
+					sleep(1);
+				}
+
+				$this->completedTask($task);
+			}else{
+				$this->failedTask($task);
+			}
+			//printf("Ignore: %s\n", Counter::$ignore ) ;
+		}
+		
+		$pool->shutdown ();
+
+		//Mutex::unlock($mutex);
+		Mutex::destroy($mutex);			
+			]]>
+			</programlisting>
+			<para>while($waiting) 对持续运行，直到所有线程都完成后才会退出。</para>
+		</section>
 	</section>
 	<section id="filelock">
 		<title>多线程文件安全读写（文件锁）</title>
