@@ -334,7 +334,7 @@ try {
 		</section>
 	</section>
 	<section id="controller">
-		<title>Controller PK</title>
+		<title>Controller</title>
 		<section>
 			<title>welcome</title>
 			<section>
@@ -556,7 +556,7 @@ class MemberController extends ControllerBase
 
 	</section>
 	<section id="view">
-		<title>View PK</title>
+		<title>View</title>
 		<section>
 			<title>Variable</title>
 			<section>
@@ -765,7 +765,7 @@ $this->tag->setDoctype(Tag::HTML401_STRICT);
 		</section>
 	</section>
 	<section id="model">
-		<title>Model PK</title>
+		<title>Model</title>
 		<section>
 			<title>Phalcon</title>
 			<para>模型定义</para>
@@ -947,6 +947,351 @@ public class Test {
 	}
 
 }
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section id="cache">
+		<title>Cache</title>
+		<section>
+			<title>Redis</title>
+			<section>
+				<title>Phalcon</title>
+				<screen>
+				<![CDATA[
+//Cache arbitrary data
+ $this->cache->save('my-key', array(1, 2, 3, 4, 5));
+
+ //Get data
+ $data = $this->cache->get('my-key');
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>Spring</title>
+				<para>pom.xml</para>
+				<screen>
+				<![CDATA[
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-redis</artifactId>
+        <version>1.6.1.RELEASE</version>
+    </dependency>
+</dependencies>				
+				]]>
+				</screen>
+				<para>Configure RedisTemplate....</para>
+				<screen>
+				<![CDATA[
+<bean id="jedisConnFactory" 
+    class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" 
+    p:use-pool="true"/>
+
+<!-- redis template definition -->
+<bean id="redisTemplate" 
+    class="org.springframework.data.redis.core.RedisTemplate" 
+    p:connection-factory-ref="jedisConnFactory"/>
+				
+				]]>
+				</screen>
+				<para>Testing</para>
+				<screen>
+				<![CDATA[
+public class Example {
+
+    // inject the actual template
+    @Autowired
+    private RedisTemplate<String, String> template;
+
+    // inject the template as ListOperations
+    // can also inject as Value, Set, ZSet, and HashOperations
+    @Resource(name="redisTemplate")
+    private ListOperations<String, String> listOps;
+
+    public void addLink(String userId, URL url) {
+        listOps.leftPush(userId, url.toExternalForm());
+        // or use template directly
+        redisTemplate.boundListOps(userId).leftPush(url.toExternalForm());
+    }
+}				
+				]]>
+				</screen>
+
+			</section>
+		</section>
+		
+		<section>
+			<title>Model + Cache</title>
+			<section>
+				<title>Phalcon</title>
+				<screen>
+				<![CDATA[
+   	$articles = Article::find(array(
+   			"cache" => array("service"=> 'redis', "key" => $key, "lifetime" => 60)
+   	));
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>MyBatis</title>
+				<para>MyBatis Redis Cache adapter http://mybatis.github.io/redis-cache</para>
+				<para>pom.xml</para>
+				<screen>
+				<![CDATA[
+  <dependencies>
+    <!--
+     | Provided dependencies
+    -->
+    <dependency>
+      <groupId>org.mybatis</groupId>
+      <artifactId>mybatis</artifactId>
+      <version>3.3.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!--
+     | compile dependencies
+    -->
+	<dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>2.7.3</version>
+      <scope>compile</scope>
+	</dependency>
+  </dependencies>
+				]]>
+				</screen>
+				
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+				
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+				
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+				
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+			</section>
+		</section>
+		
+		<section>
+			<title>Phalcon vs Ehcache</title>
+			<section>
+				<title></title>
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title></title>
+				<screen>
+				<![CDATA[
+				]]>
+				</screen>
+			</section>
+		</section>
+	</section>
+	<section id="json">
+		<title>JSON Data</title>
+		<section>
+			<title>Phalcon</title>
+			<para>Encode</para>
+			<screen>
+			<![CDATA[
+<?php
+
+$json = array(
+	'contact' => array(
+		'name' 		=> 'Neo',
+		'website' 	=> 'http://www.netkiller.cn',
+		'nickname' 	=> 'netkiller' 
+	) 
+); 
+print(json_encode($json));
+			]]>
+			</screen>
+			<para>Output</para>
+			<screen>
+{"contact":{"name":"Neo","website":"http:\/\/www.netkiller.cn","nickname":"netkiller"}}
+			</screen>
+			
+			<para>Decode</para>
+			<screen>
+			<![CDATA[
+<?php
+$string = '{"contact":{"name":"Neo","website":"http:\/\/www.netkiller.cn","nickname":"netkiller"}}';
+print_r(json_decode($string));
+			]]>
+			</screen>
+			<para>输出</para>
+			<screen>
+			<![CDATA[
+stdClass Object
+(
+    [contact] => stdClass Object
+        (
+            [name] => Neo
+            [website] => http://www.netkiller.cn
+            [nickname] => netkiller
+        )
+
+)
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Spring</title>
+			<para>JSON 编码</para>
+			<screen>
+			<![CDATA[
+package netkiller.json;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import javax.json.*;
+
+public final class Writer {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		JsonObjectBuilder jsonBuilder = Json.createObjectBuilder();
+		JsonObjectBuilder addressBuilder = Json.createObjectBuilder();
+		JsonArrayBuilder phoneNumBuilder = Json.createArrayBuilder();
+
+		phoneNumBuilder.add("12355566688").add("0755-2222-3333");
+
+		addressBuilder.add("street", "Longhua").add("city", "Shenzhen").add("zipcode", 518000);
+
+		jsonBuilder.add("nickname", "netkiller").add("name", "Neo").add("department", "IT").add("role", "Admin");
+
+		jsonBuilder.add("phone", phoneNumBuilder);
+		jsonBuilder.add("address", addressBuilder);
+
+		JsonObject jsonObject = jsonBuilder.build();
+
+		System.out.println(jsonObject);
+
+		try {
+			// write to file
+			File file = new File("json.txt");
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+			OutputStream os = null;
+			os = new FileOutputStream(file);
+			JsonWriter jsonWriter = Json.createWriter(os);
+			jsonWriter.writeObject(jsonObject);
+			jsonWriter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+		
+运行后输出
+
+{"nickname":"netkiller","name":"Neo","department":"IT","role":"Admin","phone":["12355566688","0755-2222-3333"],"address":{"street":"Longhua","city":"Shenzhen","zipcode":"518000"}}
+			]]>
+			</screen>
+			<para>JSON 解码</para>
+			<screen>
+			<![CDATA[
+package netkiller.json;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+ 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+ 
+public final class Reader {
+ 
+    public static final String JSON_FILE="json.txt";
+     
+    public static void main(String[] args) throws IOException {
+        InputStream fis = new FileInputStream(JSON_FILE);
+        //create JsonReader object
+        JsonReader jsonReader = Json.createReader(fis);
+
+        //get JsonObject from JsonReader
+        JsonObject jsonObject = jsonReader.readObject();
+         
+        //we can close IO resource and JsonReader now
+        jsonReader.close();
+        fis.close();
+         
+        System.out.printf("nickname: %s \n", jsonObject.getString("nickname"));
+        System.out.printf("name: %s \n", jsonObject.getString("name"));
+        System.out.printf("department: %s \n", jsonObject.getString("department"));
+        System.out.printf("role: %s \n", jsonObject.getString("role"));
+        JsonArray jsonArray = jsonObject.getJsonArray("phone");
+        
+        //long[] numbers = new long[jsonArray.size()];
+        int index = 0;
+        for(JsonValue value : jsonArray){
+            //numbers[index++] = Long.parseLong(value.toString());
+        	System.out.printf("phone[%d]: %s \n", index++, value.toString());
+        }
+
+        //reading inner object from json object
+        JsonObject innerJsonObject = jsonObject.getJsonObject("address");
+        
+        System.out.printf("address: %s, %s, %d \n", innerJsonObject.getString("street"), innerJsonObject.getString("city"), innerJsonObject.getInt("zipcode"));
+         
+    }
+ 
+}		
+		
+运行结果
+
+nickname: netkiller 
+name: Neo 
+department: IT 
+role: Admin 
+phone[0]: +8612355566688 
+phone[1]: 0755-2222-3333 
+address: Longhua, Shenzhen, 518000
+			]]>
+			</screen>
+			
+		</section>
+	</section>
+	<section id="queue">
+		<title>Message Queue</title>
+		<section>
+			<title>Phalcon</title>
+			<screen>
+			<![CDATA[
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Spring</title>
+			<screen>
+			<![CDATA[
 			]]>
 			</screen>
 		</section>
