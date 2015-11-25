@@ -120,7 +120,7 @@ EOF
 			</screen>
 		</section>
 	</section>
-	<section>
+	<section id="initialization">
 		<title>Project initialization</title>
 		<section>
 			<title>Phalcon</title>
@@ -333,7 +333,7 @@ try {
 			</screen>
 		</section>
 	</section>
-	<section>
+	<section id="controller">
 		<title>Controller PK</title>
 		<section>
 			<title>welcome</title>
@@ -348,7 +348,7 @@ class IndexController extends ControllerBase
 
     public function indexAction()
     {
-		
+
     }
     public function welcomeAction()
     {
@@ -384,7 +384,7 @@ public class Welcome {
 				</screen>
 			</section>
 		</section>
-		
+
 		<section>
 			<title>pathinfo</title>
 			<para>http://www.netkiller.cn/news/list/100.html</para>
@@ -398,7 +398,7 @@ public class Welcome {
 class NewsController extends \Phalcon\Mvc\Controller
 {
 
-    
+
     public function listAction($category_id)
     {
 		$this->view->setVar('category_id',$category_id);
@@ -448,7 +448,7 @@ public class Pathinfo {
 				</screen>
 			</section>
 		</section>
-		
+
 		<section>
 			<title>HTTP Get</title>
 			<para>http://www.netkiller.cn/member/login?email=netkiller@msn.com</para>
@@ -488,7 +488,7 @@ public class Welcome {
 	public String getEmailWithRequestParam(@RequestParam("email") String email) {
 	    return "email=" + email;
 	}
-	
+
 }
 				]]>
 				</screen>
@@ -517,11 +517,11 @@ public class Welcome {
 	    ...
 	    ...
 	}
-	
+
 }
 				]]>
-				</screen>				
-				
+				</screen>
+
 			</section>
 		</section>
 		<section>
@@ -548,14 +548,14 @@ class MemberController extends ControllerBase
 				<title>Spring</title>
 				<screen>
 				<![CDATA[
-				
+
 				]]>
 				</screen>
 			</section>
 		</section>
-		
+
 	</section>
-	<section>
+	<section id="view">
 		<title>View PK</title>
 		<section>
 			<title>Variable</title>
@@ -592,12 +592,12 @@ class MemberController extends ControllerBase
 <body>
 	${message}
 </body>
-</html>					
+</html>
 				]]>
 				</screen>
 			</section>
 		</section>
-		
+
 		<section>
 			<title>Array</title>
 			<section>
@@ -615,7 +615,7 @@ class MemberController extends ControllerBase
 	<?php foreach($books as $book) {?>
 		<?php echo $book ?> <br>
 	<?php } ?>
-	
+
 </body>
 </html>
 				]]>
@@ -641,12 +641,12 @@ class MemberController extends ControllerBase
 	</c:forEach>
 
 </body>
-</html>					
+</html>
 				]]>
 				</screen>
 			</section>
 		</section>
-		
+
 		<section>
 			<title>Map or Hashmap</title>
 			<section>
@@ -664,7 +664,7 @@ class MemberController extends ControllerBase
 	<?php foreach($books as $key=>$value) {?>
 		<?php echo $key ?> : <?php echo $value ?> <br>
 	<?php } ?>
-	
+
 </body>
 </html>
 				]]>
@@ -676,7 +676,7 @@ class MemberController extends ControllerBase
 				<![CDATA[
 <%@ page language="java" contentType="text/html; charset=utf-8"
     pageEncoding="utf-8"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>  
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -684,11 +684,11 @@ class MemberController extends ControllerBase
 <title>Insert title here</title>
 </head>
 <body>
-	<c:forEach items="${books}" var="book">  
+	<c:forEach items="${books}" var="book">
 		<c:out value="${book.key}"></c:out> : <c:out value="${book.value}"></c:out> <br>
-	</c:forEach> 
+	</c:forEach>
 </body>
-</html>				
+</html>
 				]]>
 				</screen>
 			</section>
@@ -718,7 +718,7 @@ $this->tag->setDoctype(Tag::HTML401_STRICT);
 	<?php echo $this->tag->textArea(array("aboutYou","","cols" => "6","rows" => 20)) ?>
 	<?php echo $this->tag->hiddenField(array("parent_id","value"=> "5")) ?>
 	<?= $this->tag->submitButton("Register"); ?>
-	
+
 <?php = $this->tag->endForm() ?>
 </body>
 </html>
@@ -740,43 +740,213 @@ $this->tag->setDoctype(Tag::HTML401_STRICT);
 
 	<form:input path="name" />
 	<form:password path="password" />
-	
-    <form:radiobutton path="gender" value="M" label="M" /> 
+
+    <form:radiobutton path="gender" value="M" label="M" />
     <form:radiobutton path="gender" value="F" label="F" />
-    
+
     <form:select path="country">
 	    <form:option value="0" label="Select" />
 	    <form:options items="${countryList}" itemValue="countryId" itemLabel="countryName" />
     </form:select>
-        
+
     <form:textarea path="aboutYou" />
     <form:checkboxes path="communityList" items="${communityList}" itemValue="key" itemLabel="value" />
     <form:checkbox path="mailingList" label="Would you like to join our mailinglist?" />
-    
+
     <input type="submit" value="Register">
-    
+
 </form:form>
 
 </body>
-</html>				
+</html>
 				]]>
 				</screen>
 			</section>
-		</section>		
+		</section>
 	</section>
-	<section>
+	<section id="model">
 		<title>Model PK</title>
 		<section>
 			<title>Phalcon</title>
+			<para>模型定义</para>
 			<screen>
 			<![CDATA[
+<?php
+
+class User extends \Phalcon\Mvc\Model
+{
+	public function initialize()
+	{
+
+	}
+}
+			]]>
+			</screen>
+			<para>在控制器重调用查询数据</para>
+			<screen>
+			<![CDATA[
+<?php
+$user = User::find();
+print_r($user);			
 			]]>
 			</screen>
 		</section>
 		<section>
-			<title>Spring</title>
+			<title>MyBatis</title>
+			<para>Maven 增加mybatis与mysql依赖设置</para>
 			<screen>
 			<![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>MyBatis</groupId>
+	<artifactId>MyBatis</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis</artifactId>
+			<version>3.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.37</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+			]]>
+			</screen>
+			<para>mybatis.xml</para>
+			<screen>
+			<![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<!-- 配置数据库连接信息 -->
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.jdbc.Driver" />
+				<property name="url" value="jdbc:mysql://192.168.6.1:3306/mybatis" />
+				<property name="username" value="mybatis" />
+				<property name="password" value="mybatis" />
+			</dataSource>
+		</environment>
+	</environments>
+	<mappers>
+
+		<mapper resource="cn/netkiller/mapping/userMapping.xml" />
+	</mappers>
+</configuration>
+			]]>
+			</screen>
+			<para>cn/netkiller/mapping/userMapping.xml</para>
+			<screen>
+			<![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.netkiller.mapping.UserMapping">
+	<select id="getUser" parameterType="String" resultType="cn.netkiller.model.User">
+		select * from user where id=#{id}
+	</select>
+</mapper>
+			]]>
+			</screen>
+			<para>数据类型映射</para>
+			<screen>
+			<![CDATA[
+package cn.netkiller.model;
+
+public class User {
+	private String id;
+	private String name;
+	private int age;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", name=" + name + ", age=" + age + "]";
+	}
+}
+
+			]]>
+			</screen>
+			
+			<para>测试程序</para>
+			<screen>
+			<![CDATA[
+package cn.netkiller.test;
+
+import java.io.InputStream;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+
+import cn.netkiller.model.*;
+
+public class Test {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		String resource = "mybatis.xml";
+
+		InputStream is = Tests.class.getClassLoader().getResourceAsStream(resource);
+		SqlSessionFactory sessionFactory = new SqlSessionFactoryBuilder().build(is);
+		SqlSession session = sessionFactory.openSession();
+
+		String statement = "cn.netkiller.mapping.UserMapping.getUser";// 映射sql的标识字符串
+
+		User user = session.selectOne(statement, "2");
+		System.out.println(user.toString());
+	}
+
+}
 			]]>
 			</screen>
 		</section>
