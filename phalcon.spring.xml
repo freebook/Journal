@@ -8,7 +8,7 @@
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>Phalcon VS Spring</title>
+		<title>Phalcon vs Spring</title>
 		<subtitle>http://www.netkiller.cn/journal/phalcon.spring.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
@@ -524,7 +524,7 @@ public class Welcome {
 
 			</section>
 		</section>
-		<section>
+		<section id="http.post">
 			<title>HTTP Post</title>
 			<section>
 				<title>Phalcon</title>
@@ -538,6 +538,8 @@ class MemberController extends ControllerBase
     public function loginAction()
     {
 		echo "email=" . $request->getPost("email");
+		echo "password=" . $request->getPost("password");
+		echo "phone=" . $request->getPost("phone");
     }
 
 }
@@ -548,7 +550,48 @@ class MemberController extends ControllerBase
 				<title>Spring</title>
 				<screen>
 				<![CDATA[
+package cn.netkiller.controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+public class Member {
+
+	@RequestMapping("/http/form")
+	public ModelAndView createCustomer(){
+		ModelMap model = new ModelMap();
+
+		model.addAttribute("email", "netkiller@msn.com");
+		model.addAttribute("phone", "13113668890");
+		
+	    return new ModelAndView("http/form", model);
+	}	
+	
+	@RequestMapping(value= "/http/post", method = RequestMethod.POST)
+	public ModelAndView saveCustomer(HttpServletRequest request, 
+	        @RequestParam(value="Email", required=false) String email, 
+	        @RequestParam(value="Password", required=false) String password, 
+	        @RequestParam(value="Phone", required=false) String phone){
+
+		ModelMap model = new ModelMap();
+
+		model.addAttribute("email", email);
+		model.addAttribute("password", password);
+		model.addAttribute("phone", phone);
+		
+	    return new ModelAndView("http/post", model);
+	}
+	
+}
 				]]>
 				</screen>
 			</section>
@@ -950,6 +993,145 @@ public class Test {
 			]]>
 			</screen>
 		</section>
+	</section>
+	<section id="session">
+		<title>Session</title>
+		<section>
+				<title>Phalcon</title>
+				<screen>
+				<![CDATA[
+<?php
+
+use Phalcon\Mvc\Controller;
+
+class SessionController extends Controller
+{
+    public function setAction()
+    {
+        // Set a session variable
+        $this->session->set("username", "netkiller");
+    }
+
+    public function getAction()
+    {
+        // Check if the variable is defined
+        if ($this->session->has("username")) {
+
+            // Retrieve its value
+            echo $this->session->get("username");
+        }
+    }
+    
+    public function removeAction()
+    {
+        // Remove a session variable
+        $this->session->remove("username");
+    }
+
+    public function destroyAction()
+    {
+        // Destroy the whole session
+        $this->session->destroy();
+    }    
+
+}
+				]]>
+				</screen>
+				<para>传统方式</para>
+				<screen>
+				<![CDATA[
+$_SESSION['username'] = "netkiller";
+
+unset($_SESSION['username']);
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>Spring</title>
+				<screen>
+				<![CDATA[
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.session</groupId>
+        <artifactId>spring-session</artifactId>
+        <version>1.0.2.RELEASE</version>
+    </dependency>
+</dependencies>
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+package cn.netkiller.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
+
+import cn.netkiller.*;
+
+@Controller
+public class Http {
+
+	@RequestMapping("/session")
+	@ResponseBody
+	public String home(HttpServletRequest request) {
+		return "" + request.getSession().getCreationTime();
+	}
+
+	@RequestMapping("/session/set")
+	@ResponseBody
+	public String setSession(HttpSession session) {
+		String username = "netkiller";
+		session.setAttribute("username", username);
+		return username;
+	}
+
+	@RequestMapping("/session/get")
+	@ResponseBody
+	public String getSession(HttpSession session) {
+		String username = (String) session.getAttribute("username");
+		return username;
+	}
+	
+	@RequestMapping("/session/remove")
+	@ResponseBody
+	public String removeSession(HttpSession session) {
+		session.removeAttribute("username");
+		String username = (String) session.getAttribute("username");
+		return username;
+	}
+	
+	@RequestMapping("/session/invalidate")
+	@ResponseBody
+	public String invalidateSession(HttpSession session) {
+		session.invalidate();
+		return "invalidate";
+	}
+
+}
+
+				]]>
+				</screen>
+				<para>Servlet 传统方式</para>
+				<screen>
+				<![CDATA[
+	@RequestMapping("/session/Servlet")
+	@ResponseBody
+	public String servletSession(HttpServletRequest request) {
+		String username = "neo";
+		request.getSession().setAttribute("username", username);
+		return username;
+	}
+				]]>
+				</screen>
+			</section>					
+		
 	</section>
 	<section id="cache">
 		<title>Cache</title>
