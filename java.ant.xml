@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
+	xml:lang="zh-cn">
+	<articleinfo>
+		<title>Apache Ant 实现自动化部署</title>
+		<subtitle>http://www.netkiller.cn/journal/java.ant.html</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+			<title>这篇文章帮你解决下列问题:</title>
+			<para>源码获取，源码编译，处理配置文件，应用部署，远程备份，部署回撤，启动，服务器状态，停止</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>Java, JDK, JRE</keyword>
+			<keyword>javac, ant, build.xml</keyword>
+			<keyword>devops</keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>2015-11-10</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="background">
+		<title>背景</title>
+		<para>在你的企业中是怎样完成从开发，测试到运维的？</para>
+		<para>很多企业的升级是这样做的，写完代码后编译打包，放到FTP上，同时发送一个升级邮件。然后让运维按照升级文档，一步一步操作。</para>
+
+		<para>这样的流程有很多问题</para>
+		<orderedlist>
+			<listitem>
+				<para>开发者通常是在Windows系统上完成开发与编译，而服务器通常是Linux操作系统，操作系统的差异可能导致编译后的程序运行不了。</para>
+			</listitem>
+			<listitem>
+				<para>安全角度，源码可以审查，但编译文件无法审查，打包过程可能被植入恶意代码</para>
+			</listitem>
+			<listitem>
+				<para>经常出现生产环境与本地开发环境不一致，运行有差异</para>
+			</listitem>
+			<listitem>
+				<para>浪费人力，理论上代码写完，就跟开发人员一点关系都没有了，但实际上每次升级过程开发与测试都需要在场</para>
+			</listitem>
+		</orderedlist>
+		<para>稍先进一点做法是使用Subversion/Git，开发将代码放到版本库中，运维直接使用 svn up / git pull
+			升级，这样做法也有很多问题存在</para>
+		<orderedlist>
+			<listitem>
+				首次升级非常慢，svn 还好些，svn只取最后一次提交的版本；git 将所有的版本克隆到本地。
+			</listitem>
+			<listitem>
+				如果修改了本地文件，更新会产生冲突
+			</listitem>
+			<listitem>
+				配置文件无法个性化配置
+			</listitem>
+		</orderedlist>
+	</section>
+	<section id="overview">
+		<title>我们需要什么样的流程</title>
+		<para>我们需要什么样的流程或者什么样的流程才是最理想流程？</para>
+		<orderedlist>
+			<title>我认为:</title>
+			<listitem>
+				<para>开发人员不要做与开发无关的事情，代码写完就与开发没有半点关系了。通知测试人员，代码已经完成。</para>
+			</listitem>
+			<listitem>
+				<para>测试人员自己部署测试环境，不依赖开发人员，测试完成，通知运维人员可能升级了</para>
+			</listitem>
+			<listitem>
+				<para>运维人员不接受任何部门提供的打包或补丁程序，代码只能在配置管理服务器上完成编译打包以及部署。</para>
+			</listitem>
+			<listitem>
+				<para>升级应该由自动化工具完成，而不是人工操作。</para>
+			</listitem>
+		</orderedlist>
+		<para>开发，测试，运维各司其职，这就是DevOps。</para>
+	</section>
+	<section id="workflow">
+		<title>怎样实现自动部署</title>
+		<para>实现自动化部署有很多方法，很多年前笔者就开始研究总结，下面是一些经验分享。</para>
+		<section>
+			<title>操作系统</title>
+			<para>开发，测试，生产三个环境的配置如果出自同一个模板会减少很多由于环境差异带来的困扰。</para>
+			<procedure>
+				<title>操作系统部署</title>
+				<step>
+					<para>无人值守安装</para>
+					<para>通过无人值守脚本安装操作系统，减少人为安装造成的差异</para>
+				</step>
+				<step>
+					<para>运行环境</para>
+					<para>统一配置运行环境，开发库以及版本统一</para>
+				</step>
+				<step>
+					<para>应用服务器统一</para>
+					<para>应用服务器版本，安装标准，配置文件都需要统一，减少差异</para>
+				</step>
+			</procedure>
+		</section>
+		<section>
+			<title>程序部署</title>
+
+			<para>实现应用程序自动部署，首先你要清楚自动部署所需要的流程，部署一个流程通常是这样的：</para>
+			<procedure>
+				<title>自动部署步骤</title>
+				<step>
+					<para>初始化</para>
+					<para>建立工作环境，例如目录，检查所需环境</para>
+				</step>
+				<step>
+					<para>获取</para>
+					<para>从版本库指定分支中获取代码并保存到本地</para>
+				</step>
+				<step>
+					<para>编译</para>
+					<para>编译可执行代码</para>
+				</step>
+				<step>
+					<para>配置</para>
+					<para>处理配置文件</para>
+				</step>
+				<step>
+					<para>备份</para>
+					<para>备份应用程序</para>
+				</step>
+				<step>
+					<para>停止</para>
+					<para>服务服务</para>
+				</step>
+				<step>
+					<para>部署</para>
+					<para>部署应用程序到目的主机，如果已存在需要覆盖原来的程序</para>
+				</step>
+				<step>
+					<para>启动</para>
+					<para>启动服务</para>
+				</step>
+			</procedure>
+
+		</section>
+		<section>
+			<title>自动部署程序</title>
+			<para>自动部署程序完成上面的部署，还需要做下面一些事情。</para>
+			<orderedlist>
+				<title>日志功能</title>
+				<listitem>记录什么时间点做过部署</listitem>
+				<listitem>部署了那些文件</listitem>
+			</orderedlist>
+		</section>
+	</section>
+	<section id="ant">
+		<title>Apache Ant 实现自动化部署</title>
+		<section>
+			<title>运行环境</title>
+			<para>准备一个全新的的服务器，最小化安装CentOS 7操作系统，然后运行下面脚本初始化</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/centos7.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/selinux.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/iptables/iptables.sh | bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/os/ntpd/ntp.sh |	bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/os/ssh/sshd_config.sh	| bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/os/user/www.sh |	bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/lang/gcc/gcc.sh	| bash
+			]]>
+			</screen>
+			<para>安装 server-jre 与 apache-tomcat </para>
+			<screen>
+			<![CDATA[
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/lang/java/server-jre-8u40.sh	| bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/web/tomcat/apache-tomcat-8.0.26.sh	| bash
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/web/tomcat/systemctl.sh	| bash
+			]]>
+			</screen>
+			<para>请使用systemctl 启动与停止 Tomcat</para>
+			<screen>
+			<![CDATA[
+systemctl start tomcat
+systemctl stop tomcat
+			]]>
+			</screen>
+			<para>Infrastructure Management Shell <ulink url="https://github.com/oscm/shell" /></para>
+		</section>
+		<section>
+			<title>部署机</title>
+			<para>安装Ant</para>
+			<screen>
+			<![CDATA[
+curl -s	https://raw.githubusercontent.com/oscm/shell/master/lang/java/ant.sh | bash
+			]]>
+			</screen>
+			<para>
+				下载build.xml文件
+				<ulink url="https://github.com/oscm/build/tree/master/Ant" />
+			</para>
+			<screen>
+			<![CDATA[
+wget https://raw.githubusercontent.com/oscm/build/master/Ant/build.xml			
+			]]>
+			</screen>
+			<para>打开 build.xml 文件	</para>
+			<screen>
+			<![CDATA[
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+Homepage: http://www.netkiller.cn
+Author: neo <netkiller@msn.com>
+Date: 2015-12-07
+-->
+<project name="admin.example.com" default="compile" basedir=".">
+
+	<property name="repository" value="git@58.96.11.18:example.com/admin.example.com.git" />
+	<property name="branch" value="master" />
+
+	<property name="remote" value="www@23.25.22.72" />
+	<property name="destination" value="/www/example.com/admin.example.com" />
+
+	<property name="project.dir" value="repository" />
+	<property name="project.src" value="${project.dir}/src" />
+	<property name="project.build" value="build" />
+	<property name="project.config" value="config" />
+	<property name="project.log" value="log" />
+
+	<property name="pkg" value="example-1.0.0.jar" />
+
+	<property name="backup.dir" value="backup" />
+	<property name="receive.timepoint" value="2015-12-04.17:46:35" />
+
+	<property name="build.sysclasspath" value="last" />
+	<property environment="env" />
+	<echo message="JAVA_HOME is set to = ${env.JAVA_HOME}" />
+	<echo message="CATALINA_HOME is set to = ${env.CATALINA_HOME}" />
+
+	<path id="classpath">
+		<fileset dir="${env.JAVA_HOME}/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${env.CATALINA_HOME}/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${project.dir}/WebRoot/WEB-INF/lib" includes="*.jar" />
+	</path>
+
+	<macrodef name="git">
+		<attribute name="command" />
+		<attribute name="dir" default="" />
+		<element name="args" optional="true" />
+		<sequential>
+			<!-- echo message="git @{command}" / -->
+			<exec executable="git" dir="@{dir}">
+				<arg value="@{command}" />
+				<args />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="rsync">
+		<attribute name="option" default="auzv" />
+		<attribute name="src" default="" />
+		<attribute name="dest" default="" />
+		<element name="args" optional="true" />
+		<sequential>
+			<!-- echo message="rsync @{option} ${src} ${dest}" / -->
+			<exec executable="rsync">
+				<arg value="@{option}" />
+				<args />
+				<arg value="@{src}" />
+				<arg value="@{dest}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="ssh">
+		<attribute name="host" />
+		<attribute name="command" />
+		<attribute name="keyfile" default="~/.ssh/id_rsa" />
+		<element name="args" optional="true" />
+		<sequential>
+			<exec executable="ssh">
+				<arg value="@{host}" />
+				<!-- arg value="-i @{keyfile}" / -->
+				<args />
+				<arg value="@{command}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<target name="dir.check">
+		<condition property="dir.exists">
+			<available file="${project.dir}" type="dir" />
+		</condition>
+	</target>
+
+	<target name="clone" depends="dir.check" unless="dir.exists">
+		<echo>clone</echo>
+		<git command="clone">
+			<args>
+				<arg value="${repository}" />
+				<arg value="${project.dir}" />
+			</args>
+		</git>
+	</target>
+
+	<target name="pull" depends="clone" if="dir.exists">
+		<echo>${project.dir} exists</echo>
+		<git command="pull" dir="${project.dir}" />
+		<git command="clean" dir="${project.dir}">
+			<args>
+				<arg value="-df" />
+			</args>
+		</git>
+
+		<git command="reset" dir="${project.dir}">
+			<args>
+				<arg value="HEAD" />
+				<arg value="--hard" />
+			</args>
+		</git>
+	</target>
+
+	<target name="branch" depends="pull" if="dir.exists">
+		<echo>${project.dir} exists</echo>
+		<git command="checkout" dir="${project.dir}">
+			<args>
+				<arg value="-f" />
+				<arg value="${branch}" />
+			</args>
+		</git>
+	</target>
+
+	<target name="init" depends="branch">
+
+		<mkdir dir="${project.build}" />
+		<mkdir dir="${project.log}" />
+
+		<copy todir="${project.build}">
+			<fileset dir="${project.dir}/WebRoot" includes="**/*" />
+		</copy>
+
+		<copy todir="${project.build}/WEB-INF/classes">
+			<fileset dir="${project.src}">
+				<include name="**/*.xml" />
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+
+	</target>
+	<target name="compile" depends="init">
+		<javac srcdir="${project.src}" destdir="${project.build}/WEB-INF/classes">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+
+	<target name="config" depends="compile">
+		<copy todir="${project.build}" overwrite="true">
+			<fileset dir="${project.config}" includes="**/*" />
+		</copy>
+	</target>
+
+	<target name="deploy" depends="config">
+		<tstamp>
+			<format property="timepoint" pattern="yyyy-MM-dd.HH:mm:ss" locale="cn,CN" />
+		</tstamp>
+		<rsync option="-auzv" src="${project.build}/" dest="${remote}:${destination}">
+			<args>
+				<arg value="--exclude=.git" />
+				<arg value="--exclude=.svn" />
+				<arg value="--exclude=.gitignore" />
+				<arg value="--backup" />
+				<arg value="--backup-dir=~/${backup.dir}/${timepoint}" />
+				<arg value="--log-file=log/${ant.project.name}.${timepoint}.log" />
+			</args>
+		</rsync>
+	</target>
+
+	<target name="pkg" depends="compile">
+		<jar jarfile="${pkg}" basedir="${project.build}" />
+	</target>
+
+	<target name="backup" depends="">
+		<tstamp>
+			<format property="TIMEPOINT" pattern="yyyy-MM-dd.HH:mm:ss" locale="cn,CN" />
+		</tstamp>
+		<echo>the backup directory is ${TIMEPOINT}.</echo>
+		<mkdir dir="${backup.dir}/${TIMEPOINT}" />
+		<rsync option="-auzv" src="${remote}:${destination}" dest="${backup.dir}/${TIMEPOINT}">
+		</rsync>
+	</target>
+
+	<target name="receive" depends="">
+		<echo>the receive directory is ${receive.timepoint}.</echo>
+		<rsync option="-auzv" src="${backup.dir}/${receive.timepoint}" dest="${remote}:${destination}" />
+	</target>
+
+	<target name="fetch">
+		<ant target="pull" />
+		<ant target="branch" />
+	</target>
+
+	<target name="stop" depends="">
+		<!-- ssh host="${remote}" command="/srv/apache-tomcat/bin/catalina.sh stop -force" keyfile="~/.ssh/id_rsa" / -->
+		<ssh host="${remote}" command="/srv/apache-tomcat/bin/shutdown.sh" />
+		<ant target="status" />
+	</target>
+	<target name="start" depends="">
+		<ssh host="${remote}" command="/srv/apache-tomcat/bin/startup.sh" keyfile="~/.ssh/id_rsa" />
+		<ant target="status" />
+	</target>
+	<target name="status" depends="">
+		<ssh host="${remote}" command="ps ax | grep tomcat | grep -v grep" />
+	</target>
+	<target name="kill" depends="">
+		<ssh host="${remote}" command="pkill -9 -f tomcat" />
+		<ant target="status" />
+	</target>
+	<target name="run" depends="">
+		<java classname="test.ant.HelloWorld" classpath="${hello}" />
+	</target>
+	<target name="clean">
+		<delete dir="${project.build}" />
+		<delete file="${hello}" />
+	</target>
+</project>
+
+			]]>
+			</screen>
+			<para>修改下面几处定义</para>
+			<screen>
+			<![CDATA[
+<property name="repository" value="版本库地址" />
+<property name="branch" value="部署分支" />
+<property name="remote" value="远程服务器" />
+<property name="destination" value="远程目录" />		
+			]]>
+			</screen>
+			<para>开始部署代码</para>
+			<screen>
+			<![CDATA[
+ant backup
+ant stop
+ant deploy
+ant start
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section id="summary">
+		<title>延伸阅读</title>
+		<para>如果你想学习制作部署工具，还可以看看笔者早期的作品<ulink url="https://github.com/oscm/deployment" />这个工具使用Bash开发，写这个工具仅仅半天时间，后面小改过几次，这个工具伴随笔者很多年。</para>
+		<para>第一个版本因为很多缺陷存在，笔者使用Python重新开发 <ulink url="https://github.com/oscm/devops" /> 这个工具更适合PHP项目部署</para>
+		<para>笔者微信公众号，QQ群：128659835 请注明“读者”</para>
+		<graphic format="jpg" fileref="images/weixin.jpg" width="250" srccredit="neo" />
+		<para></para>
+	</section>
+</article>
