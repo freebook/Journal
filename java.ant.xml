@@ -454,7 +454,7 @@ ant start
 		<para>如果你想学习制作部署工具，还可以看看笔者早期的作品<ulink url="https://github.com/oscm/deployment" />这个工具使用Bash开发，写这个工具仅仅半天时间，后面小改过几次，这个工具伴随笔者很多年。</para>
 		<para>第一个版本因为很多缺陷存在，笔者使用Python重新开发 <ulink url="https://github.com/oscm/devops" /> 这个工具更适合PHP项目部署</para>
 		<para>笔者微信公众号，QQ群：128659835 请注明“读者”</para>
-		<graphic format="jpg" fileref="images/weixin.jpg" width="250" srccredit="neo" />
+		<graphic format="jpg" fileref="/images/weixin.jpg" width="250" srccredit="neo" />
 		<para></para>
 	</section>
 </article>
