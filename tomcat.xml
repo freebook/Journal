@@ -20,11 +20,11 @@
 		&book.info.abstract.xml;
 		<keywordset>
 			<keyword>tomcat</keyword>
-			<keyword>jre, jdk</keyword>
+			<keyword>jre, jdk, server-jre</keyword>
 			<keyword>java</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id: tomcat.xml 656 2013-08-05 09:41:22Z netkiller $</release>
+		<release>$Id$</release>
 	</articleinfo>
 
 	<section id="jvm">
@@ -98,6 +98,15 @@ compressableMimeType 	压缩类型
 
 	<section>
 		<title>Tomcat 安全配置</title>
+		<section>
+			<title>禁用8005端口</title>
+			<para>telnet localhost 8005 然后输入 SHUTDOWN 就可以关闭 Tomcat，为了安全我们要禁用该功能</para>
+			<screen>
+			<![CDATA[
+<Server port="-1" shutdown="SHUTDOWN">
+			]]>
+			</screen>
+		</section>
 		<section>
 			<title>安装后初始化配置</title>
 			<para>当Tomcat完成安装后你首先要做的事情如下：</para>
