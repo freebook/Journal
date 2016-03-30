@@ -15,7 +15,7 @@
 		&book.info.legalnotice.xml;
 
 		<abstract>
-			<para></para>
+			<para>2016-3-30日更新增加Java 8 与 Tomcat 8 相关特性</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -24,7 +24,7 @@
 			<keyword>java</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 58fc143d6d9f24d2b12505fe712135f17a4e0b6c $</release>
 	</articleinfo>
 
 	<section id="jvm">
@@ -41,7 +41,9 @@ export JAVA_OPTS="-server -Xms512m -Xmx4096m  -XX:PermSize=64M -XX:MaxPermSize=5
 			</screen>
 			<para>-Xms 指定初始化时化的栈内存</para>
 			<para>-Xmx 指定最大栈内存</para>
+			<tip><para>Java 8 以后 -XX:PermSize 与 -XX:MaxPermSize 两个配置项被废弃</para></tip>
 		</section>
+		
 	</section>
 
 	<section id="tomcat">
@@ -125,7 +127,7 @@ rm -rf /srv/apache-tomcat/webapps/*
 			</screen>
 			<section>
 				<title>隐藏版本信息</title>
-				<para>隐藏Tomcat版本信息</para>
+				<para>隐藏Tomcat版本信息，首先隐藏HTTP头中的版本信息</para>
 				<screen>
 				<![CDATA[
 vim $CATALINA_HOME/conf/server.xml
@@ -149,6 +151,44 @@ Server: Neo App Srv 1.0
 				]]>
 				</screen>
 				<para>服务器信息已经被改为 Server: Neo App Srv 1.0</para>
+				<note>
+					<title>注意：当出现 404 页面时仍可能看到Tomcat的版本信息</title>
+					<screen>
+HTTP Status 404 - /sdf
+
+type Status report
+
+message /sdf
+
+description The requested resource is not available.
+
+Apache Tomcat/8.0.32					
+					</screen>
+					<para>隐藏Tomcat 404页面版本信息的方法如下</para>
+					<screen>
+					<![CDATA[
+mkdir -p apache-tomcat-8.0.33/lib/org/apache/catalina/util
+
+cat >> apache-tomcat-8.0.33/lib/org/apache/catalina/util/ServerInfo.properties <<EOF
+server.info=Apache
+server.number=
+server.built=
+EOF
+					]]>
+					</screen>
+					<para>测试</para>
+					<screen>
+HTTP Status 404 - /sdf
+
+type Status report
+
+message /sdf
+
+description The requested resource is not available.
+
+Apache
+					</screen>
+				</note>
 			</section>
 			<section>
 				<title>应用程序安全</title>
@@ -158,6 +198,11 @@ Server: Neo App Srv 1.0
 			<section>
 				<title>JSESSIONID</title>
 				<para>修改 Cookie 变量 JSESSIONID， 这个cookie 是用于维持Session关系。建议你改为PHPSESSID。 </para>
+				<screen>
+				<![CDATA[
+<Context path="" docBase="path/to/your" reloadable="false" sessionCookiePath="/" sessionCookieName="PHPSESSID">				
+				]]>
+				</screen>
 			</section>			
 		</section>
 		<section>
