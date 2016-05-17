@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://www.netkiller.cn/journal/" xmlns="http://docbook.org/ns/docbook"
+	xml:lang="zh-cn">
+	<articleinfo>
+		<title>项目管理之DEVOPS</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+			<title>摘要</title>
+			<para>很多管理者陷入一个误区，试图寻找一种管理工具，通过工具解决项目管理问题。</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+
+	<section id="project">
+		<title>软件项目管理篇</title>
+		<section id="task">
+			<title>任务分配</title>
+			<literallayout>
+				怎样管理好项目
+
+				怎样轻松地管理好项目，其实非常简单，做好下面几点即可。
+
+				- 规划目录
+				- 配置管理
+				-
+
+
+				你要关注那些事情要做，安排好先后顺序，每个版本中完成那些任务，完成多少任务达到一个里程碑，该在何时测试，何时部署。你每天要关注的是版本库的变化，代码的修改与审查，控制好分支等等。下面我会逐条详述。
+
+				首先立项后，你首先要规划好项目的目录结构与版本库布局，然后是配置项，包括开发，测试，生产三套，分别用户各种场景。同时需要配置三个项目环境。
+
+				接下来是分解任务，确认在那个版本发布那些完成的任务，规划里程碑。这些工作是增量，逐渐增加了，但确认第一个版本是必须的。
+
+				中国式开发，过于随意很难按照西方 ALPHA-1,2,3... -> BETA-1,2,3... -> RC1,2,3.... ->
+				Release 1,2,3...
+				这样的进度进行，每个环节都需要半个月之久，发布一个版本通常需要一年。中国更多的是上面拍板随时发布。所以我喜欢采用功能点对应版本的方式，即某某功能就是一个小版本，完成一个功能升级一个版本，里程碑就是一个大的Release
+				版本。这样可以满足中国式发布。每个版本一个分支，每个Release一个tag。
+
+				关注Timeline，代码每处修改都要仔细读一遍，很多bug都可以在review（代码审查）过程中过滤掉一部分，同时防止不符责任的提交（代码不能运行）
+
+				严格管控分支，把握项目进度与节奏，什么时候代码要从开发分支进入测试分支，什么时候代码要从测试分支进入Release分支，什么时间发布等等
+
+				你需要一个部署工具，能够实现全量发布，增量升级，本版切换，备份，失败回撤等等。例如http://netkiller.github.io/home/deployment.html
+
+			</literallayout>
+
+			<literallayout>
+			<![CDATA[
+一旦时间点确定，接下来就是分配任务倒指定开发人，任务的分配十分讲究，分配任务要精确描述，不能使用模糊语言，那样会造成误解。我的分配原则是5W1H方法：
+
+- What：做什么事？
+- Why：为什么做这件事？有什么意义？目的是什么？有必要吗？
+- When：什么时候做，完成的时间是否适当？
+- Where：在什么地方做，在什么范围内完成？
+- Who：由谁负责做？由谁负责执行？谁更合适？熟练程度低的人能做吗？
+- How：怎样做
+
+举例，运维任务
+- What：为api服务器做负载均衡，多增加一个节点，负载均衡算法采用最小连接数。
+- Why：目前api服务器只有一台，如果出现故障将影响倒所有业务运行，顾该服务器存在单点故障，需要增加节点。
+- When：本周内完成，周末上线。（此处可以写日期）
+- Where：在A机柜，低2机位处，连接倒交换机第三个端口。
+- Who：XXX负责网络配置，XXX负责上架，XXX 负责验收测试
+- How：增加/etc/hosts设置如下
+  - api.example.com   127.0.0.1
+  - api1.example.com  192.168.2.5
+  - api2.example.com  192.168.2.6
+  
+举例，开发任务
+- What：增加图片验证码。
+- Why：目前用户注册登陆以及发帖无验证吗，某些用户通过机器人软件批量开户/发广告帖，给我门管理带来很大困扰。
+- When：2014-06-15 开始开发，2014-06-20 12:00 上线。
+- Where：用户注册，登陆与发帖处增加该功能，。
+- Who：张三负责验证码生成类的开发，李四负责用户注册，登陆UI修改，王五负责发帖UI的修改。
+- How：具体怎么操作的细节，此处省略200字...
+			]]>
+			</literallayout>
+		</section>
+	</section>
+	<section id="tools">
+		<title>工具篇</title>
+		<para>项目管理工具我们使用 Gitlab，早年我倾向使用Trac，但Trac项目一直处于半死不活状态，目前来看Trac 对于
+			Ticket管理强于Gitlab，但Gitlab发展的很快，我们可以看到最近的一次升级中Issue 加入了 Due date
+			选项。Gitlab已经有风投介入，企业化运作，良性发展，未来会超越Redmine等项目管理软件，成为主流。所以我在工具篇采用Gitlab，BTW
+			我没有使用 Redmine，我认为 Redmine 的发展方向更接近传统项目管理思维。</para>
+		<para>软件项目管管理，我需要那些功能，Ticket/Issue管理、里程碑管理、内容管理Wiki、版本管理、合并分支、代码审查等等</para>
+
+		<procedure>
+			<title>Gitlab 初始化步骤</title>
+			<step>
+				<para>创建用户</para>
+
+			</step>
+			<step>
+				<para>创建组</para>
+
+			</step>
+			<step>
+				<para>创建项目</para>
+
+			</step>
+			<step>
+				<para>Step 2.</para>
+				<substeps>
+					<step>
+						<para>Substep a.</para>
+					</step>
+					<step>
+						<para>Substep b.</para>
+					</step>
+				</substeps>
+			</step>
+			<step>
+				<para>Step 3.</para>
+			</step>
+		</procedure>
+		<section>
+			<title>分支管理</title>
+			<para>起初我们应对并行开发在Subversion上创建分支，每个任务一个分支，每个Bug一个分支，完成任务或修复bug后合并到开发分支(development)内部测试，然后再进入测试分支(testing)提交给测试组，测试组完成测试，最后进入主干(trunk)。对于Subverion来说每一个分支都是一份拷贝，SVN版本库膨胀的非常快。</para>
+			<para>Git 解决了Svn 分支管理先天不足，对于分支在GIT类似快照。同时GIT还提供了</para>
+			<procedure>
+				<title>Gitlab 初始化步骤</title>
+				<step>
+					<para>创建用户</para>
+
+				</step>
+				<step>
+					<para>创建组</para>
+
+				</step>
+				<step>
+					<para>创建项目</para>
+
+				</step>
+				<step>
+					<para>Step 2.</para>
+					<substeps>
+						<step>
+							<para>Substep a.</para>
+						</step>
+						<step>
+							<para>Substep b.</para>
+						</step>
+					</substeps>
+				</step>
+				<step>
+					<para>Step 3.</para>
+				</step>
+			</procedure>
+		</section>
+		<section>
+			<title>分支管理</title>
+		</section>
+	</section>
+	<section id="summary">
+		<title>实战篇</title>
+	</section>
+	<section id="background">
+		<title>背景</title>
+	</section>
+	<section id="overview">
+		<title>概述</title>
+	</section>
+	<section id="summary">
+		<title>总结</title>
+	</section>
+</article>
