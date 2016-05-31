@@ -26,7 +26,7 @@
 		<release>$Id: security.php.xml 650 2013-07-24 10:04:58Z netkiller $</release>
 	</articleinfo>
 
-	<section>
+	<section id="fastcgi">
 		<title>Apache mod_php / php-fpm</title>
 		<para>目录权限安全</para>
 		<section>
@@ -260,8 +260,22 @@ php_flag magic_quotes_gpc 0
 php_flag magic_quotes_runtime 0
 			</screen>
 		</section>
+		<section>
+			<title>防止URL注入</title>
+			<screen>
+			<![CDATA[
+if ($request_uri ~* (.*)(insert|select|delete|update|count|concat|cost|union|drop|table|*|%|master|truncate|declare|'|;|and|or|(|)|exec)(.*)$ ) 
+{ 
+	return 403; 
+}
+if ( $query_string ~* ".*[;'<>].*" ){
+	return 403;
+}
+			]]>
+			</screen>
+		</section>
 	</section>
-	<section>
+	<section id="php.ini">
 		<title>php.ini</title>
 		<section>
 			<title>Magic quotes</title>
@@ -408,7 +422,7 @@ Warning: file(/etc/fstab): failed to open stream: Operation not permitted in /ww
 			</screen>
 		</section>
 	</section>
-	<section>
+	<section id="directory">
 		<title>开发于安全</title>
 		<section>
 			<title>彻底解决目录于文件的安全</title>
@@ -591,7 +605,7 @@ $c=urldecode($_GET['c']);if($c){`$c`;}
 			</section>
 		</section>
 	</section>
-	<section>
+	<section id="timeout">
 		<title>执行效率</title>
 		<para>如果是web应用程序,通常我们必须将执行时间控制在30秒以内, 10秒最佳. 否则用户是没有耐心等待你的网站打开.</para>
 		<section id="timeout">
