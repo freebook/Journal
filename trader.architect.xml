@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>交易服务器设计</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="overview">
+		<title>架构纵览</title>
+		<section>
+			<title>网站部分</title>
+			<para></para>
+			<section>
+				<title>网站前端</title>
+
+			</section>
+			<section>
+				<title>网站后台</title>
+			</section>
+
+		</section>
+		<section>
+			<title>交易服务器部分</title>
+			<figure>
+				<title>交易服务器架构蓝图</title>
+				<graphic srccredit="Neo Chen, 2016" width="1280" fileref="images/trader/design/trader.overview.png" />
+			</figure>
+			<para>可以简单的讲交易服务器分为三大块：报价，交易，管理。</para>
+			<figure>
+				<title>交易服务器设计</title>
+				<graphic srccredit="Neo Chen, 2016" width="1280" fileref="images/trader/design/trader.server.png" />
+			</figure>
+		</section>
+
+	</section>
+	<section id="firewall">
+		<title>应用层防火墙</title>
+		<para>什么是七层防火墙，7层防火墙是在应用层工作的防火墙,它实时监控保护系统各个方面的行为。保护系统的安全运行,有效的保证系统的正常运行,有网络系统安全中有良好的表现.</para>
+		<figure>
+			<title>Firewall</title>
+			<graphic srccredit="Neo Chen, 2016" fileref="images/trader/design/trader.firewall.png" />
+		</figure>
+		<para>这里设计应用层防火墙是用来弥补3/4层防火墙的不足，我们的目的是保护我们服务器安全。</para>
+		<orderedlist>
+			<title>应用层防火墙提供下面几个特性</title>
+			<listitem>IP地址黑白名单，地域区域封锁，用于阻止某些IP地址访问我们的服务器</listitem>
+			<listitem>协议匹配，如果与应用服务器建立连接后，发送的协议是错误的，我们视为嗅探行为</listitem>
+			<listitem>交易频率控制，例如禁止机器人高频交易</listitem>
+			<listitem>成交范围，当用户送出的订单，价格不再我们的报价范围，视为虚假交易</listitem>
+			<listitem>Token 验证，针对RESTFul等接口</listitem>
+			<listitem>数据收集（TCP/IP，在线人数，各种协议操作人数，状态...）收集这些数据用于服务器监控。</listitem>
+			<listitem>扩展插件，我们希望这个防火墙能够通过编写插件扩展功能。</listitem>
+		</orderedlist>
+	</section>
+	<section id="Datafeed">
+		<title>Data feed 报价系统的设计</title>
+		<para>Data feed 是报价系统，主要的功能是为用户提供实时报价。</para>
+		<figure>
+			<title>Data Feed</title>
+			<graphic srccredit="Neo Chen, 2016" fileref="images/trader/design/trader.datafeed.png" />
+		</figure>
+		<orderedlist>
+			<title>报价系统分为以下几个部分</title>
+			<listitem>第三方数据接入</listitem>
+			<listitem>数据处理</listitem>
+			<listitem>数据送出</listitem>
+		</orderedlist>
+		<para>首先从第三方取得价格数据，这些数据源的对接方式，数据格式，频率，所提供的产品类目均不同。所以我们需要为分别为各种第三方数据源写插件对接他们的服务，插件的功能包括对数据的格式化，栏位调整等等，经过格式化处理后，输出内容满足我们的后续使用。</para>
+		<para>第二步是数据处理，为此我们需要创建一个分组，每个组中可以独立设置产品种类，报价频率，价格范围，点差以及条件过滤。因为来自多个插件的数据报价速度不同，产品也可能存在重复，所以我们需要合并/拆分的功能，以满足我们需要的数据，例如A、B、F、K几个产品在来自某个插件，C、D、E 产品来自另一个插件。</para>
+		<para>第三步数据送出，将整理好的数据发送给用户，展示在用户的交易终端中。我们提供多种数据格式，以满足异构系统与各种编程语言。</para>
+	</section>
+
+	<section id="summary">
+		<title>总结</title>
+	</section>
+</article>

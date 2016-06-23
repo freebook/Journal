@@ -13,7 +13,7 @@ all: $(HTML)
 	@$(XSLTPROC) $(DSSSL) $< >  $(PREFIX)/$@
 	@sed -i "s#\$$Date#$(DATE)#g" $(PREFIX)/$@
 	@sed -i "s#\$$<#<#g" $(PREFIX)/$@
-	@$(shell test -d images && rsync -auv images $(PREFIX)/)
+	@$(shell test -d images && rsync -a images $(PREFIX)/)
 
 clean:
 	@rm -rf $(PREFIX)/*.html
