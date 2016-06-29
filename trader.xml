@@ -8,7 +8,7 @@
 <article xml:base="http://netkiller.github.io/journal/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>贵金属交易系统异地灾备方案</title>
+		<title>金融交易系统异地灾备方案</title>
 		<subtitle>http://netkiller.github.io/journal/trader.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
@@ -24,13 +24,13 @@
 			<keyword>Disaster Recovery Backup System Research</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 3175df33b35b2813a9651b8e3ec0a909ceeeaaf7 $</release>
 	</articleinfo>
 	<section>
 		<title>背景</title>
-		<para>随着贵金属交易的推出，贵金属市场必将非常活跃，交易量的快速增加对交易系统产生了更大的压力，如何使交易系统平稳运行，成为贵金属公司的头等大事。
-		随着客户风险意识的增强，保证关键核心业务系统持续成功运作的需要，将发生风险的损失降到最低，保证企业的核心竞争力，贵金属公司对交易系统的可靠性提出了更高的要求。
-		目前贵金属公司普遍安装了热备份系统，达到了一定程度上的备份，但无法应对整个机房或大楼的灾难事故，这就需要在异地建立一套贵金属交易系统，一旦主系统发生问题，且无法启动热备的情况下，马上切换到异地灾备系统进行交易。
+		<para>随着各种金融交易的推出，金融市场必将非常活跃，交易量的快速增加对交易系统产生了更大的压力，如何使交易系统平稳运行，成为金融公司的头等大事。
+		随着客户风险意识的增强，保证关键核心业务系统持续成功运作的需要，将发生风险的损失降到最低，保证企业的核心竞争力，金融公司对交易系统的可靠性提出了更高的要求。
+		目前金融公司普遍安装了热备份系统，达到了一定程度上的备份，但无法应对整个机房或大楼的灾难事故，这就需要在异地建立一套金融交易系统，一旦主系统发生问题，且无法启动热备的情况下，马上切换到异地灾备系统进行交易。
 		</para>
 		<section>
 			<title>建立容灾系统需要考虑哪些因素</title>
@@ -283,7 +283,7 @@ Update tab set status=Y where id=1 and node =<my node> …
 		<section>
 			<title>大数据的问题</title>
 			<para>我们这个行业不是门户网站，所以数据量不会非常大，但我们要未雨绸缪，我们在设计阶段就将这些问题考虑进去，使将来不会困扰我们。</para>
-			<para>数据量最大的当属交易数据，贵金属双向交易，交易时间长，所以交易数据的累积相当可观。</para>
+			<para>数据量最大的当属交易数据，有些金融产品双向交易，交易时间长，所以交易数据的累积相当可观。</para>
 			<para>虽然你可以定时删除，但我不建议。我认为交易数据需要永久保留，为什么？ 当交易数据积累到一定数量级，我们就可以从多角度数据挖掘，为决策提供数据支持。</para>
 			<section>
 				<title>第一个阶分区表</title>
