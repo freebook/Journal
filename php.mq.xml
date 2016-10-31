@@ -342,7 +342,7 @@ class RabbitMQ {
 		</screen>
 	</section>
 	<section>
-		<title>多请阅横向扩展</title>
+		<title>订阅节点横向扩展</title>
 		<para>上面使用多线程达到对单机资源的充分使用，除此之外我们还可以横向扩展系统，增加订阅节点的数量。</para>
 	</section>
 	<section>
