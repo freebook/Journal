@@ -13,7 +13,8 @@
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-
+			<para>2015-10-19 第一版</para>
+			<para>2016-11-31 第二版</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -23,7 +24,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id: 1211f744901816f60c24b99758f86ad07af3b5fe $</release>
+		<release>$Id: 87f856a017816b1c14daeb3fc39f800c5ed97318 $</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是消息队列</title>
@@ -188,6 +189,161 @@ $connection->disconnect();
 			</screen>
 			<para>这里只给出了少量测试与演示程序，如有疑问请到渎者群，或者公众号询问。</para>
 		</section>
+	</section>
+	<section>
+		<title>多线程</title>
+		<para>上面消息队列 核心代码如下</para>
+		<screen>
+		<![CDATA[
+$this->queue->consume(function($envelope, $queue) {	
+	$msg = $envelope->getBody();
+	$result = $this->loader($msg);
+	$queue->ack($envelope->getDeliveryTag());
+});
+		]]>
+		</screen>
+		<para>这段代码生产环境使用了半年，发现效率比较低。有些业务场入队非常快，但处理起来所花的时间就比较长，容易出现队列堆积现象。</para>
+		<para>增加多线程可能更有效利用硬件资源，提高业务处理能力。代码如下</para>
+		<screen>
+		<![CDATA[
+<?php
+namespace framework;
+
+require_once( __DIR__.'/autoload.class.php' );
+
+class RabbitThread extends \Threaded {
+
+	private $queue;
+	public $classspath;
+	protected $msg;
+
+	public function __construct($queue, $logging, $msg) {
+		$this->classspath = __DIR__.'/../queue';
+		$this->msg = $msg;
+		$this->logging = $logging;
+		$this->queue = $queue;
+	}
+	public function run() {
+		$speed = microtime(true);
+		$result = $this->loader($this->msg);
+		$this->logging->debug('Result: '. $result.' ');
+		$this->logging->debug('Time: '. (microtime(true) - $speed) .'');
+	}
+	// private
+	public  function loader($msg = null){
+		
+		$protocol 	= json_decode($msg,true);
+		$namespace	= $protocol['Namespace'];
+		$class 		= $protocol['Class'];
+		$method 	= $protocol['Method'];
+		$param 		= $protocol['Param'];
+		$result 	= null;
+
+		$classspath = $this->classspath.'/'.$this->queue.'/'.$namespace.'/'.strtolower($class)  . '.class.php';
+		if( is_file($classspath) ){
+			require_once($classspath);
+			//$class = ucfirst(substr($request_uri, strrpos($request_uri, '/')+1));
+			if (class_exists($class)) {
+				if(method_exists($class, $method)){
+					$obj = new $class;
+					if (!$param){
+						$tmp = $obj->$method();
+						$result = json_encode($tmp);
+						$this->logging->info($class.'->'.$method.'()');
+					}else{
+						$tmp = call_user_func_array(array($obj, $method), $param);
+						$result = (json_encode($tmp));
+						$this->logging->info($class.'->'.$method.'("'.implode('","', $param).'")');
+					}
+				}else{
+					$this->logging->error('Object '. $class. '->' . $method. ' is not exist.');
+				}
+			}else{
+				$msg = sprintf("Object is not exist. (%s)", $class);
+				$this->logging->error($msg);
+			}
+		}else{
+			$msg = sprintf("Cannot loading interface! (%s)", $classspath);
+			$this->logging->error($msg);
+		}
+		return $result;
+	}
+}
+
+class RabbitMQ {
+	
+	const loop = 10;
+	
+	protected $queue;
+	protected $pool;
+	
+	public function __construct($queueName = '', $exchangeName = '', $routeKey = '') {
+
+		$this->config = new \framework\Config('rabbitmq.ini');
+		$this->logfile = __DIR__.'/../log/rabbitmq.%s.log';
+		$this->logqueue = __DIR__.'/../log/queue.%s.log';
+		$this->logging = new \framework\log\Logging($this->logfile, $debug=true); //.H:i:s
+		
+		$this->queueName	= $queueName;
+		$this->exchangeName	= $exchangeName;
+		$this->routeKey		= $routeKey; 
+
+		$this->pool = new \Pool($this->config->get('pool')['thread']);
+
+	}
+	public function main(){
+		
+		$connection = new \AMQPConnection($this->config->get('rabbitmq'));
+		try {
+			$connection->connect();
+			if (!$connection->isConnected()) {
+				$this->logging->exception("Cannot connect to the broker!".PHP_EOL);
+			}
+			$this->channel = new \AMQPChannel($connection);
+			$this->exchange = new \AMQPExchange($this->channel);
+			$this->exchange->setName($this->exchangeName);
+			$this->exchange->setType(AMQP_EX_TYPE_DIRECT); //direct类型
+			$this->exchange->setFlags(AMQP_DURABLE); //持久�?
+			$this->exchange->declareExchange();
+			$this->queue = new \AMQPQueue($this->channel);
+			$this->queue->setName($this->queueName);
+			$this->queue->setFlags(AMQP_DURABLE); //持久�?
+			$this->queue->declareQueue();
+
+			$this->queue->bind($this->exchangeName, $this->routeKey);
+
+			$this->queue->consume(function($envelope, $queue) {
+				$msg = $envelope->getBody();
+				$this->logging->debug('Protocol: '.$msg.' ');
+				//$result = $this->loader($msg);
+				$this->pool->submit(new RabbitThread($this->queueName, new \framework\log\Logging($this->logqueue, $debug=true), $msg));
+				$queue->ack($envelope->getDeliveryTag()); 
+			});
+			$this->channel->qos(0,1);
+		}
+		catch(\AMQPConnectionException $e){
+			$this->logging->exception($e->__toString());
+		}
+		catch(\Exception $e){
+			$this->logging->exception($e->__toString());
+			$connection->disconnect();
+			$this->pool->shutdown();
+		}
+	}
+	private function fault($tag, $msg){
+		$this->logging->exception($msg);
+		throw new \Exception($tag.': '.$msg);
+	}
+
+	public function __destruct() {
+	}	
+}
+		]]>
+		</screen>
+	</section>
+	<section>
+		<title>多请阅横向扩展</title>
+		<para>上面使用多线程达到对单机资源的充分使用，除此之外我们还可以横向扩展系统，增加订阅节点的数量。</para>
 	</section>
 	<section>
 		<title>总结</title>

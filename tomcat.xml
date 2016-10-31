@@ -24,7 +24,7 @@
 			<keyword>java</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 58fc143d6d9f24d2b12505fe712135f17a4e0b6c $</release>
 	</articleinfo>
 
 	<section id="jvm">
@@ -43,7 +43,15 @@ export JAVA_OPTS="-server -Xms512m -Xmx4096m  -XX:PermSize=64M -XX:MaxPermSize=5
 			<para>-Xmx 指定最大栈内存</para>
 			<tip><para>Java 8 以后 -XX:PermSize 与 -XX:MaxPermSize 两个配置项被废弃</para></tip>
 		</section>
-		
+		<section>
+			<title>java.security 优化</title>
+			<para>打开$JAVA_HOME/jre/lib/security/java.security文件，找到下面的内容：</para>
+			<screen>
+securerandom.source=file:/dev/urandom
+替换成  
+securerandom.source=file:/dev/./urandom			
+			</screen>
+		</section>
 	</section>
 
 	<section id="tomcat">
