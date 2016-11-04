@@ -10,12 +10,14 @@
 <article xml:base="http://netkiller.sourceforge.net/article/"
 	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
-		<title>Linux 启动 Shell</title>
+		<title>Shell 高级编程</title>
 		<subtitle>http://netkiller.github.io/journal/shell.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-			<para>.</para>
+			<para>Shell 更多是被看成一种批处理命令，确实很多是是吧 Shell当成批处理去使用的。</para>
+			<para>我确不这么看，我认为要想开发程序一样去写Shell，把Shell当成一种语言。</para>
+			<para>我们需要将很多软件开发技巧应用在Shell领域</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -26,17 +28,67 @@
 		<pubdate>$Data$</pubdate>
 		<releaseinfo>$Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $</releaseinfo>
 	</articleinfo>
-
+	
 	<section>
-		<title>启用 shell</title>
-		<para>1 解决重复运行问题</para>
-		<para>1 记录PID以便可以停止Shell运维</para>
+		<title>递归调用</title>
+		<para>不懂递归不算是合格的程序员</para>
+		<para>递归调用是一种特殊的嵌套调用，是一个函数在它的函数体内调用它自身称为递归调用。这种函数称为递归函数。</para>
+		<screen>
+		<![CDATA[
+#!/bin/bash
+########################################
+# Author: Neo <netiller@msn.com>
+# Home : http://netkiler.github.io
+# Project: https://github.com/oscm/shell
+########################################
+domain=$1
+########################################
+function include(){
+	txt=$1
+	for host in $(echo $txt | egrep -o "include:(.+) ")
+	do
+		txt=$(dig $(echo $host | cut -d":" -f2) txt | grep "v=spf1")
+		echo $txt;
+		if [ "$(echo $txt | grep "include")" ]; then
+			include "$txt"
+		fi
+	done
+}
+function main(){
+	spf=$(dig ${domain} txt | grep "v=spf1")
+	echo $spf
+
+	if [ "$(echo $spf | grep "include")" ]; then
+		include "$spf"
+	fi
+}
+
+main $domain
+		]]>
+		</screen>
+		<para>运行上面的程序</para>
+		<screen>
+$ bash spf.sh 163.com
+163.com. 6878 IN TXT "v=spf1 include:spf.163.com -all"
+spf.163.com. 16991 IN TXT "v=spf1 include:a.spf.163.com include:b.spf.163.com include:c.spf.163.com include:d.spf.163.com -all"
+a.spf.163.com. 8001 IN TXT "v=spf1 ip4:220.181.12.0/22 ip4:220.181.31.0/24 ip4:123.125.50.0/24 ip4:220.181.72.0/24 ip4:123.58.178.0/24 ip4:123.58.177.0/24 ip4:113.108.225.0/24 ip4:218.107.63.0/24 ip4:123.58.189.128/25 -all"
+b.spf.163.com. 10131 IN TXT "v=spf1 ip4:176.34.21.58 ip4:176.34.53.178 ip4:121.195.178.48/28 ip4:223.252.213.0/24 -all"
+c.spf.163.com. 17199 IN TXT "v=spf1 ip4:223.252.206.0/24 ip4:43.230.90.0/27 -all"
+d.spf.163.com. 17615 IN TXT "v=spf1 ip4:123.126.65.0/24 ip4:106.2.88.0/24 ip4:220.181.97.0/24 ip4:180.150.142.123 ip4:180.150.142.124 ip4:180.150.154.88 ip4:180.150.154.92 ip4:180.150.154.93 ip4:103.251.128.69 -all"
+		</screen>
+	</section>
+	<section>
+		<title>实现守护进程</title>
+		<para>无论是C语言还是php/python/perl 通过fork命令实现守护进程，让当前程序进入后台运行，这种手段常常用于服务器软件。</para>
+		<para>启用 shell 解决重复运行问题，记录PID以便可以停止Shell运维</para>
 		<screen>
 		<![CDATA[
 #!/bin/bash
 ##############################################
-# $Author: netkiller $
 # $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $
+# Author: Neo <netiller@msn.com>
+# Home : http://netkiler.github.io
+# Project: https://github.com/oscm/shell
 ##############################################
 NAME=info
 BASEDIR='/www'
@@ -90,66 +142,92 @@ exit $?
 		]]>
 		</screen>
 	</section>
+	
 	<section>
-		<title>htpasswd 密码批量生成</title>
+		<title>进程间通信</title>
+		<para>进程间通信就是在不同进程之间传播或交换信息。</para>
+		<para>脚本具有黑白名单功能，一个进程专门负责采集数据，另一个进程专门负责处理由第一个进程发送过来的数据。</para>
 		<screen>
 		<![CDATA[
-#!/bin/bash
-
-PASSFILE=nginx.password
-[ ! -f $PASSFILE ] && touch $PASSFILE
-
-while read username password
-do
-        htpasswd -b -d $PASSFILE $username $password
-done << EOF
-neo     FwJSYxD4WBzPr4CQvxI8HIbV0yDkQi
-chen    2hsD3OgkeM4GPPcNYUceqL8ccMzXjU
-bg7nyt  XAq7Zcln8dGCTIIKt8GwwEwqmCN8d1
-netkiller       fcCIY3GaroTPCSW40XBrg0HNlmbLD7
-neochen DPSiWJtqUIaI2bUUobuX2PjdyzDGgI
-EOF
+#!/bin/bash           
+########################################  
+# Homepage: http://netkiller.github.io  
+# Author: neo <netkiller@msn.com>  
+########################################  
+BLACKLIST=/tmp/BLACKLIST.lst  
+PIPE=/tmp/pipe  
+pidfile=/tmp/firewall.pid  
+KEYWORD=XXDD0S  
+ACCESSLOG=/www/logs/www.example.com/access.$(date +'%Y-%m-%d').log  
+########################################  
+if [ -z $1 ]; then  
+    echo "$0 clear|fw|collect|process|close"  
+fi
+  
+if [ "$1" == "clear" ]; then  
+    rm -rf $BLACKLIST  
+    rm -rf $PIPE  
+    echo "Clear OK!!!"  
+fi
+  
+if [ "$1" == "close" ]; then  
+        kill `cat $pidfile`  
+    echo > $pidfile  
+fi
+  
+if [ ! -f $BLACKLIST ]; then  
+    touch $BLACKLIST  
+fi  
+  
+if [ ! -e $PIPE ]; then  
+    mkfifo $PIPE  
+fi  
+  
+if [ "$1" == 'fw' ]; then  
+    iptables -A OUTPUT -p tcp --dport 2049 -j REJECT  
+    iptables -A OUTPUT -p tcp -m multiport --dports 22,21 -j REJECT  
+fi  
+  
+if [ "$1" == "collect" ]; then  
+    killall tail
+    for (( ; ; ))  
+    do  
+        tail -f $ACCESSLOG | grep $KEYWORD | cut -d ' ' -f1 > $PIPE  
+    done &  
+    echo $! > $pidfile  
+fi  
+  
+if [ "$1" == "process" ]; then  
+for (( ; ; ))  
+do  
+    while read line   
+    do  
+        grep $line ${BLACKLIST}
+        if [ $? -eq 1 ] ; then  
+            echo $line >> ${BLACKLIST}
+            iptables -I INPUT -p tcp --dport 80 -s $line -j DROP      
+        fi  
+    done < $PIPE  
+done &  
+echo $! >> $pidfile  
+fi  
 		]]>
 		</screen>
+		<para>首先启动第一个进程，准备接收数据</para>
+		<screen>
+# ipfw process
+		</screen>
+		<para>然后启动第二个进程，发送采集数据</para>
+		<screen>
+# ipfw collect
+		</screen>
+		<para>这个程序使用管道作为进程见通信手段，所以只能在一个系统下运行，如果改为Socket通信就可以实现跨服务器数据处理</para>
 	</section>
 	<section>
-		<title>firewall</title>
-		<para>分析access.log 文件,将 top 30 的IP放入黑名单.</para>
-		<para>脚本具有黑白名单功能</para>
+		<title></title>
 		<screen>
 		<![CDATA[
-#!/bin/bash
 
-ACCCESS_LOG=/tmp/access.log
-TIMEPOINT='24/May/2012'
-BLACKLIST=/var/tmp/black
-WHITELIST=/var/tmp/white
-if [ ! -f ${BLACKLIST} ]; then
-    touch ${BLACKLIST}
-fi
-
-if [ ! -f ${WHITELIST} ]; then
-    touch ${WHITELIST}
-fi
-
-for deny in $(grep ${TIMEPOINT} ${ACCCESS_LOG} | awk '{print $1}' | awk -F'.' '{print $1"."$2"."$3"."$4}' | sort | uniq -c | sort -r -n | head -n 30| awk '{print $2}')
-do
-
-    if [ $(grep -c $deny ${WHITELIST}) -ne 0 ]; then
-        echo 'Allow IP:' $deny
-	iptables -D INPUT -p tcp --dport 443 -s $deny -j DROP
-	iptables -D INPUT -p tcp --dport 80 -s $deny -j DROP
-	continue
-    fi
-
-    if [ $(grep -c $deny ${BLACKLIST}) -eq 0 ] ; then
-
-	echo 'Deny IP:' $deny
-        echo $deny >> ${BLACKLIST}
-        iptables -I INPUT -p tcp --dport 443 -s $deny -j DROP
-        iptables -I INPUT -p tcp --dport 80 -s $deny -j DROP
-    fi
-done
 		]]>
 		</screen>
 	</section>
