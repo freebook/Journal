@@ -15,6 +15,8 @@
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>Linux 系统安全问题</para>
+			<para>2013-07-25 首发</para>
+			<para>2016-11-16 更新</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -185,7 +187,7 @@ chmod 700 /usr/bin/mysql*
 		</section>
 
 	</section>
-	<section>
+	<section id="firewall">
 		<title>防火墙</title>
 		<para>开启防火墙</para>
 		<screen>
@@ -220,7 +222,7 @@ lokkit --enabled
 		</section>
 		<section>
 			<title>防止成为跳板机 </title>
-
+			<para>跳板机就是用户首先登陆任意一台服务器后，由该服务器在登陆另外一台服务器。</para>
 			<para>封锁22等端口，避免相互跳转</para>
 			<screen>
 iptables -A OUTPUT -p tcp -m multiport --dports 22,21,873 -j REJECT
@@ -229,6 +231,36 @@ iptables -L -n
 			</screen>
 			<para>web 服务器禁止使用ssh，作为跳板机</para>
 			<para>用户将不能使用ssh命令登陆到其他电脑</para>
+		</section>
+		<section>
+			<title>端口安全</title>
+			<para>有一种情况，例如你的服务器被植入了木马，木马将开启一个Socket端口给远程骇客接入进来，通常会启动一个类似telnet服务器,怎样防止未经允许的程序监听一个端口呢？ </para>
+			<screen>
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT  
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT 
+-A INPUT -m state --state INVALID,NEW -j DROP
+			</screen>
+			<para>用法</para>
+			<orderedlist>
+				<listitem><para>systemctl stop iptables</para></listitem>
+				<listitem><para>启动 httpd / nginx</para></listitem>
+				<listitem><para>systemctl start iptables</para></listitem>
+			</orderedlist>
+			<para>注意必须按照上面的步骤，如果你试图如下尝试将失败</para>
+			<orderedlist>
+				<listitem><para>systemctl start iptables</para></listitem>
+				<listitem><para>启动 httpd / nginx</para></listitem>
+			</orderedlist>
+			<para>80端口将无法对外提供服务，因为当 -A INPUT -m state --state INVALID,NEW -j DROP 运行以后，任何试图监听端口的程序将被拒绝。</para>
+		</section>
+		<section>
+			<title>封锁特定字符串</title>
+			<para>下面的例子是拒绝爬虫</para>
+			<screen>
+# iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string "Spider" -j DROP
+# iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string "Baidu" -j DROP
+# iptables -A INPUT -p tcp --dport 80 -m string --algo bm --string "Robat" -j DROP
+			</screen>
 		</section>
 	</section>
 
