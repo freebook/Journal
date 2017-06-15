@@ -23,7 +23,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 601af1a7923a55b46af10a9402ebbbbf89798aad $</release>
 	</articleinfo>
 	<section id="background">
 		<title>背景</title>
@@ -34,4 +34,5 @@
 	<section id="summary">
 		<title>总结</title>
 	</section>
+	<!-- Conclusion -->
 </article>
