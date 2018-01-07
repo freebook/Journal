@@ -12,7 +12,7 @@
 		<subtitle>http://netkiller.github.io/journal/db.restore.html</subtitle>
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
-		<releaseinfo>$Id$</releaseinfo>
+		<releaseinfo>$Id: b4ba1e8a4e7c23f60300b43f75864bc0fb30d85f $</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>这里所谈的内容是对备份数据的恢复，不是对损坏数据表的恢复，或者说灾难恢复。 </para>

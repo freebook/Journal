@@ -29,7 +29,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id$</release>
+		<release>$Id: b5188153f0d297cea9b9f032dedbaf199a87ca3e $</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是数据库结构版本控制</title>

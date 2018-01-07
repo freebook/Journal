@@ -12,7 +12,7 @@
 		<subtitle>How to Install Nginx and PHP-FPM on FreeBSD 10</subtitle>
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
-		<releaseinfo>$Id$</releaseinfo>
+		<releaseinfo>$Id: 23bc969217575b813237e0766fff733cf10951a8 $</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>FreeBSD 10.0 的 pkg 无法安装php-fpm 最终采用 posts 编译安装</para>

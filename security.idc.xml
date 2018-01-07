@@ -12,7 +12,7 @@
 		<subtitle>http://netkiller.github.io/journal/security.idc.html</subtitle>
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
-		<releaseinfo>$Id$</releaseinfo>
+		<releaseinfo>$Id: 161f838a2fd37d2fc35178f48ff39d7933d311de $</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>在群里看到有网友问，IDC的服务器是否需要开启防火墙，我意识到应该写一篇关于IDC安全的文章。 </para>

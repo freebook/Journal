@@ -30,7 +30,7 @@
 			<keyword>mysql security config</keyword>
 		</keywordset>
 		<pubdate>2014-08-19</pubdate>
-		<release>$Id$</release>
+		<release>$Id: 3e31e95be1d6dbdb2b43de7b52dab8af97466979 $</release>
 	</articleinfo>
 	<section id="what">
 		<title>What is anti delete and change.</title>

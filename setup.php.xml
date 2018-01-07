@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $ -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN" "/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.sourceforge.net/article/syslog.html"
+	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+	<articleinfo>
+		<title>CentOS 7 + nginx-1.12 + php-7.2 + MySQL-5.7</title>
+		<subtitle>使用 Netkiller OSCM 一键安装PHP环境</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+			<para>在工作中，需要经常为新系统安装软件，重复而简单，但又不得不作，我将过去几年中工作中临时写的脚本这里了一下，能够实现半自动化安装标本，只需要Ctrl+C,
+				Ctrl+V 快速粘贴复制，即可快速完成安装</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>linux</keyword>
+			<keyword>apache, lighttpd, nginx</keyword>
+			<keyword>php, redis, mongodb</keyword>
+			<keyword>
+			</keyword>
+		</keywordset>
+		<pubdate>$Date: 2013-05-31 19:25:25 +0800 (Fri, 31 May 2013) $</pubdate>
+		<releaseinfo>$Id: setup.xml 608 2013-05-31 11:25:25Z netkiller $</releaseinfo>
+	</articleinfo>
+	<section id="centos">
+		<title>CentOS 7 64bit (Minimal ISO) 安装后 新机初始化常用软件包安装</title>
+		<para>
+			<ulink url="https://www.centos.org/download/">Minimal ISO</ulink>
+		</para>
+		<para>初始化操作系统</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/personalise.sh | bash
+		]]>
+		</screen>
+	</section>
+	<section id="mysql">
+		<title>MySQL-5.7</title>
+		<para>卸载旧的包，以免出现冲突</para>
+		<screen>
+		<![CDATA[
+rpm -e --nodeps mysql-libs
+yum localinstall MySQL-*		
+		]]>
+		</screen>
+		<para>安装 MySQL</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql57-community-release-el7-11.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql.server.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql.client.sh | bash		
+		]]>
+		</screen>
+	</section>
+	<section id="php">
+		<title>php-7.2</title>
+		<para></para>
+		<para>安装编译器和一些依赖的devel包。</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/gcc/gcc.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/7.1/devel.sh | bash		
+		]]>
+		</screen>
+		<para>安装 PHP 7.2</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/7.2/php-7.2.1.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/php-profile.sh | bash		
+		]]>
+		</screen>
+		<para>安装 PHP 扩展</para>
+		<!-- curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/pecl/redis.sh 
+			| bash -->
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/pecl/amqp.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/pecl/mongodb.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/pecl/pthreads.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/php/pecl/phalcon.sh | bash		
+		]]>
+		</screen>
+		<para>Redis 暂不支持 7.2，至少现在没有稳定版本，我们只能使用最新的Release版本。</para>
+		<screen>
+		<![CDATA[
+https://raw.githubusercontent.com/oscm/shell/master/lang/php/7.2/extension/redis.sh
+		]]>
+		</screen>
+
+	</section>
+	<section id="nginx">
+		<title>nginx-1.12</title>
+		<para>为web服务器创建一个用户，我喜欢使用www,id为80更容易记，同时将一个单独分区挂在/www上用户存放web应用程序。</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/user/www.sh | bash		
+		]]>
+		</screen>
+		<para>安装 nginx</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/web/nginx/stable/nginx.sh | bash
+		]]>
+		</screen>
+		<para>如果你不懂编译器优化，建议你使用yum方案。在不优化的情况下编译出来程序很臃肿。</para>
+
+		<screen>
+		<![CDATA[
+[root@localhost src]# rpm -qa | grep nginx
+nginx-release-centos-7-0.el7.ngx.noarch
+nginx-1.12.2-1.el7_4.ngx.x86_64	
+		]]>
+		</screen>
+		<para>配置虚拟主机</para>
+		<section>
+			<title>host 配置</title>
+			<screen>
+			<![CDATA[
+mkdir -p /www/www.mydomain.com/htdocs
+
+cd /etc/nginx/conf.d
+cp
+default.conf www.mydomain.com.conf
+vim www.mydomain.com.conf
+			]]>
+			</screen>
+
+			<screen>
+			<![CDATA[
+			
+server {
+	listen 80;
+	server_name www.mydomain.com;
+	
+	charset utf-8;
+	access_log /var/log/nginx/www.mydomain.com.access.log main;
+	
+	location / {
+		root /www/www.mydomain.com/htdocs;
+		index index.html index.php;
+	}
+	
+	#error_page 404 /404.html;
+	
+	# redirect server error pages to the
+	static page /50x.html
+	#
+	error_page 500 502 503 504 /50x.html;
+	location = /50x.html {
+		root /usr/share/nginx/html;
+	}
+	
+	# proxy the PHP scripts to
+	Apache listening on 127.0.0.1:80
+	#
+	#location ~ \.php$ {
+	# proxy_pass http://127.0.0.1;
+	#}
+	
+	# pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+	#
+	location ~ \.php$ {
+		root html;
+		fastcgi_pass 127.0.0.1:9000;
+		fastcgi_index index.php;
+		fastcgi_param
+		SCRIPT_FILENAME /www/www.mydomain.com/htdocs$fastcgi_script_name;
+		include fastcgi_params;
+	}
+	
+	# deny access to .htaccess files, if
+	Apache's document root
+	# concurs with nginx's one
+	#
+	location ~ /\.ht {
+		deny all;
+	}
+}
+			]]>
+			</screen>
+			<para>创建测试页面</para>
+			<screen>
+			<![CDATA[
+cat >> /www/www.mydomain.com/htdocs/index.php <<PHP
+<?php
+phpinfo();
+PHP
+			]]>
+			</screen>
+			<para>启动服务器</para>
+			<screen>
+				service php-fpm start
+				service nginx start
+			</screen>
+			<para>检查index.php输出</para>
+			<screen>
+				# curl -H HOST:www.mydomain.com http://127.0.0.1/index.php
+			</screen>
+		</section>
+	</section>
+	<section id="redis">
+		<title>redis-4.0.6</title>
+		<para>安装 Redis 因为YUM安装的Redis版本比较低，所以我们选择了源码安装</para>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/redis/source/redis-4.0.6.sh | bash		
+		]]>
+		</screen>
+		<para>安装redis</para>
+		<screen>
+		<![CDATA[
+[root@localhost redis-4.0.6]# redis-cli 
+127.0.0.1:6379> set nickname netkiller 10
+(error) ERR syntax error
+127.0.0.1:6379> get nickname
+(nil)
+127.0.0.1:6379> set nickname netkiller 
+OK
+127.0.0.1:6379> get nickname
+"netkiller"
+127.0.0.1:6379> expire nickname 5
+(integer) 1
+127.0.0.1:6379> get nickname
+(nil)
+127.0.0.1:6379> 
+		]]>
+		</screen>
+	</section>
+	<section id="mongodb">
+		<title>MongoDB</title>
+		<screen>
+
+		</screen>
+	</section>
+</article>
