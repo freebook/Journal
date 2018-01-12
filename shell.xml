@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- $Author: netkiller $ -->
-<!-- $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $ -->
+<!-- $Id$ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
 	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
@@ -26,7 +26,7 @@
 			<keyword>error.log</keyword>
 		</keywordset>
 		<pubdate>$Data$</pubdate>
-		<releaseinfo>$Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $</releaseinfo>
+		<releaseinfo>$Id$</releaseinfo>
 	</articleinfo>
 	
 	<section>
@@ -85,7 +85,7 @@ d.spf.163.com. 17615 IN TXT "v=spf1 ip4:123.126.65.0/24 ip4:106.2.88.0/24 ip4:22
 		<![CDATA[
 #!/bin/bash
 ##############################################
-# $Id: shell.xml 449 2012-08-10 10:38:08Z netkiller $
+# $Id$
 # Author: Neo <netiller@msn.com>
 # Home : http://netkiler.github.io
 # Project: https://github.com/oscm/shell

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Id: security.php.xml 650 2013-07-24 10:04:58Z netkiller $ -->
+<!-- $Id$ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
 	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
@@ -23,7 +23,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date: 2013-07-24 18:04:58 +0800 (Wed, 24 Jul 2013) $</pubdate>
-		<release>$Id: security.php.xml 650 2013-07-24 10:04:58Z netkiller $</release>
+		<release>$Id$</release>
 	</articleinfo>
 
 	<section id="fastcgi">

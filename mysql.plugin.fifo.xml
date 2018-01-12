@@ -12,7 +12,7 @@
 		<subtitle>数据库与其他第三方应用程序进程间通信解决方案</subtitle>
 		&article.author.xml;
 		<pubdate>$Date: 2013-12-16 13:34:20 +0800 (Thu, 16 May 2013) $</pubdate>
-		<releaseinfo>$Id: mysql-plugin.xml 587 2013-12-16 14:00:00Z netkiller $</releaseinfo>
+		<releaseinfo>$Id$</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>你是否想过当数据库中的数据发生变化的时候出发某种操作？但因数据无法与其他进程通信（传递信号）让你放弃，而改用每隔一段时间查询一次数据变化的方法？下面的插件可以解决你的问题。</para>
