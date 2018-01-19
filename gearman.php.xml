@@ -12,7 +12,7 @@
 		<subtitle>http://netkiller.github.io/journal/gearman.php.html</subtitle>
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
-		<releaseinfo>$Id: 9c398ce66f66eef0683cd940da22340dbed1c671 $</releaseinfo>
+		<releaseinfo>$Id$</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>在群里看到有网友问，IDC的服务器是否需要开启防火墙，我意识到应该写一篇关于IDC安全的文章。 </para>

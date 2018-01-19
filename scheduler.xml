@@ -29,7 +29,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-09-30</pubdate>
-		<release>$Id: bd790f6ee0c771b461ca6105d9ef4d45b9d22fa0 $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是分布式计划任务</title>

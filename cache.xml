@@ -12,7 +12,7 @@
 		<subtitle>http://netkiller.github.io/journal/cache.html</subtitle>
 		&article.author.xml;
 		<pubdate>$Date$</pubdate>
-		<releaseinfo>$Id: 12dfba037a04a025e01285ca3d35a1192d9bb95d $</releaseinfo>
+		<releaseinfo>$Id$</releaseinfo>
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>写这篇文章的原因，是我看到网上很多谈这类的文章，多是人云亦云，不求实事，误导读者。</para>

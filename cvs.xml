@@ -29,7 +29,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-09-26</pubdate>
-		<release>$Id: 21f8d4861205f0b4ebfa3e1cb7f01b273ec69cf7 $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是CVS框架</title>

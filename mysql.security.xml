@@ -30,7 +30,7 @@
 			<keyword>mysql安全配置</keyword>
 		</keywordset>
 		<pubdate>2014-08-19</pubdate>
-		<release>$Id: 8437833b683d98085dc082013059a4342c3d68bb $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是防删除，防撰改</title>

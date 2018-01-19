@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- $Id: 371ba541bb66a54a7b6d00eedde41929ff4aeae8 $ -->
+<!-- $Id$ -->
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
 	"/usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd" [
 	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
@@ -24,7 +24,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date: 2012-12-04 17:01:55 +0800 (Tue, 04 Dec 2012) $</pubdate>
-		<release>$Id: 371ba541bb66a54a7b6d00eedde41929ff4aeae8 $</release>
+		<release>$Id$</release>
 	</articleinfo>
 
 	<section id="utility.ip">

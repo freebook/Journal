@@ -29,7 +29,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id: 3f77d6ec6cca70ef05c7db96d2f05de320dfab1a $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是 systemd</title>

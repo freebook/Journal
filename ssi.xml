@@ -29,7 +29,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-09-17</pubdate>
-		<release>$Id: 7d740c00e7a5ec9e632e8953ee1b1f70ddf3c4ac $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是SSI(Server Side Include)</title>

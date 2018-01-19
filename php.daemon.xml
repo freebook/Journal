@@ -32,7 +32,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>2014-09-01</pubdate>
-		<release>$Id: cbb4a1dae22dd035814872c2f402f47d62a8ad01 $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是守护进程</title>

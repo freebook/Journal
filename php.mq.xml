@@ -24,7 +24,7 @@
 			<keyword></keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
-		<release>$Id: d00e14c42f3da2f2cc6fe592e3c68e724d2d6b7b $</release>
+		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
 		<title>什么是消息队列</title>
