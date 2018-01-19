@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
+	xml:lang="zh-cn">
+	<articleinfo>
+		<title>区块链入门</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+
+		<copyright>
+			<year>2018</year>
+			<holder>http://netkiller.github.io</holder>
+		</copyright>		
+		
+		&book.info.legalnotice.xml;
+		<abstract>
+
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>https://cn.hyperledger.org</keyword>
+			<keyword>https://hub.docker.com/u/hyperledger/</keyword>
+			<keyword>https://github.com/hyperledger/</keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="what">
+		<title>what-做什么</title>
+		<para>区块链技术发展至今，形成了公有链、联盟链和邦链三种种主流技术平台。</para>
+		<para>公有链：
+			面向大众，用户可以匿名参与，非常方便，账本数据也公开，加上强大的智能合约，因此公有链极大地促进了区块链概念和技术的普及，比如比特币、Ethereum平台等。</para>
+		<para>联盟链：
+			考虑到商业应用对安全、隐私、监管、审计、性能的需求，提高准入门槛，增加了安全、隐私、可监管审计等商业特性，是区块链技术在商业领域的应用探索。</para>
+		<para>邦链：暂时资料比较少。</para>
+	</section>
+	<section id="why">
+		<title>why-为什么做</title>
+	</section>
+	<section id="when">
+		<title>when-何时做</title>
+	</section>
+	<section id="where">
+		<title>where-何地做</title>
+	</section>
+	<section id="who">
+		<title>who-谁去做</title>
+	</section>
+	<section id="how">
+		<title>how-怎么做</title>
+		<screen>
+		<![CDATA[
++---------------------------------+		
+|        	     SDK              |
++---------------------------------+	
+| golang | nodejs | python | java |
++---------------------------------+			
+	|
+	V
++---------------------------------+				
+| fabric-membersrvc :             |
++---------------------------------+
+     
++-------------------+     +-------------------+
+|	Peer            |     |  Peer             |	        
++-------------------+     +-------------------+		
+
++-------------------+     +-------------------+
+| Orderer           |     |                   |
++-------------------+     +-------------------+
+
++-------------------+		
+		]]>
+		</screen>
+		<section>
+			<title>安装Docker</title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/docker.centos7.ce.sh	 | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/registry-mirror.sh	 | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/docker-compose.sh	 | bash
+or 
+curl -fsSL https://get.docker.com/ | sh	
+
+创建2个docker网络,如下：
+docker network create fabric_noops
+docker network create fabric_pbft					
+				
+yum -y install epel-release
+yum install -y git
+yum install -y golang
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>安装 hyperledger 开发环境</title>
+			<para>对于开发环境，最小化的环境，包括 1 个 peer 节点、1 个 Orderer 节点、1 个 CA 节点。</para>
+			<para>准备一个服务器或者虚拟机，安装 CentOS 操作系统。</para>
+			<section>
+				<title>正常安装</title>
+				<screen>
+				<![CDATA[
+docker pull hyperledger/fabric-baseimage:latest \
+  && docker pull hyperledger/fabric-membersrvc:latest \
+  && docker pull hyperledger/fabric-peer:latest \
+  && docker pull hyperledger/fabric-orderer:latest \
+  && docker pull hyperledger/fabric-ca:latest \
+  && docker pull hyperledger/blockchain-explorer:latest
+				]]>
+				</screen>
+				<para>在中国安装会出现下面问题</para>
+				<screen>
+				<![CDATA[
+[root@localhost ~]# docker search fabric-peer | grep hyperledger/fabric-peer
+hyperledger/fabric-peer            Fabric Peer docker image for Hyperledger Pro…   69
+
+[root@localhost ~]# docker pull hyperledger/fabric-peer:latest
+Error response from daemon: manifest for hyperledger/fabric-peer:latest not found
+
+不清楚什么原因，可以 search 到的镜像 pull 不了，所以只能安装 yeasy 这个人的镜像。				
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>大陆安装</title>
+				<para>很多区块链资源被墙，你懂得，一种是穿墙，另一种方法是绕过，例如使用镜像什么的。</para>
+				<screen>
+				<![CDATA[
+[root@localhost ~]# docker login
+Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.
+Username: netkiller
+Password: 
+Login Succeeded
+
+$ docker pull yeasy/hyperledger-fabric-base:latest \
+&& docker pull yeasy/hyperledger-fabric-peer:latest \
+&& docker pull yeasy/hyperledger-fabric-orderer:latest \
+&& docker pull yeasy/hyperledger-fabric-ca:latest \
+&& docker pull yeasy/blockchain-explorer:latest \
+
+[root@localhost ~]# docker images
+REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE
+yeasy/hyperledger-fabric-peer      latest              8876b7225dc3        37 hours ago        1.08GB
+yeasy/hyperledger-fabric-orderer   latest              e897ecff0086        37 hours ago        1.06GB
+yeasy/hyperledger-fabric-base      latest              b509bb641b0e        37 hours ago        1.02GB
+yeasy/hyperledger-fabric-ca        latest              e526ccde93b6        6 days ago          851MB
+yeasy/blockchain-explorer          latest              eb397ff175d1        7 days ago          659MB
+
+docker tag yeasy/hyperledger-fabric-peer hyperledger/fabric-peer \
+&& docker tag yeasy/hyperledger-fabric-orderer hyperledger/fabric-orderer \
+&& docker tag yeasy/hyperledger-fabric-ca hyperledger/fabric-ca \
+&& docker tag yeasy/hyperledger-fabric-base hyperledger/fabric-baseimage \
+&& docker tag yeasy/hyperledger-fabric-base hyperledger/fabric-ccenv:x86_64-1.0.0-snapshot-preview		
+
+[root@localhost ~]# docker images
+REPOSITORY                         TAG                             IMAGE ID            CREATED             SIZE
+hyperledger/fabric-peer            latest                          8876b7225dc3        37 hours ago        1.08GB
+yeasy/hyperledger-fabric-peer      latest                          8876b7225dc3        37 hours ago        1.08GB
+hyperledger/fabric-orderer         latest                          e897ecff0086        37 hours ago        1.06GB
+yeasy/hyperledger-fabric-orderer   latest                          e897ecff0086        37 hours ago        1.06GB
+hyperledger/fabric-baseimage       latest                          b509bb641b0e        37 hours ago        1.02GB
+hyperledger/fabric-ccenv           x86_64-1.0.0-snapshot-preview   b509bb641b0e        37 hours ago        1.02GB
+yeasy/hyperledger-fabric-base      latest                          b509bb641b0e        37 hours ago        1.02GB
+hyperledger/fabric-ca              latest                          e526ccde93b6        6 days ago          851MB
+yeasy/hyperledger-fabric-ca        latest                          e526ccde93b6        6 days ago          851MB
+yeasy/blockchain-explorer          latest                          eb397ff175d1        7 days ago          659MB
+
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>编译安装</title>
+				<screen>
+				<![CDATA[
+git config --global core.autocrlf false				
+$ git clone https://github.com/hyperledger/fabric.git 
+$ make docker 
+$ git clone https://github.com/hyperledger/fabric-ca.git		
+$ make docker 
+
+cd fabric/devenv
+vagrant box add hyperledger/fabric-baseimage centos7.box
+vagrant up
+
+yum -y install epel-release
+yum -y install git
+yum -y install golang
+yum -y install python-pip	
+pip install --upgrade backports.ssl_match_hostname
+pip install docker-compose
+
+docker-compose -version
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>启动 docker 虚拟机</title>
+				<screen>
+				<![CDATA[
+git clone https://github.com/yeasy/docker-compose-files
+				]]>
+				</screen>
+				<para>创建文件 docker-compose.yml</para>
+				<screen>
+				<![CDATA[
+[root@localhost ~]# mkdir -p docker
+[root@localhost ~]# cd docker
+[root@localhost docker]# vim docker-compose.yml
+
+membersrvc:
+  image: hyperledger/fabric-membersrvc
+  ports:
+    - "7054:7054"
+  command: membersrvc
+vp0:
+  image: hyperledger/fabric-peer
+  ports:
+    - "7050:7050"
+    - "7051:7051"
+    - "7053:7053"
+  environment:
+    - CORE_PEER_ADDRESSAUTODETECT=true
+    - CORE_VM_ENDPOINT=unix:///var/run/docker.sock
+    - CORE_LOGGING_LEVEL=DEBUG
+    - CORE_PEER_ID=vp0
+    - CORE_PEER_PKI_ECA_PADDR=membersrvc:7054
+    - CORE_PEER_PKI_TCA_PADDR=membersrvc:7054
+    - CORE_PEER_PKI_TLSCA_PADDR=membersrvc:7054
+    - CORE_SECURITY_ENABLED=true
+    - CORE_SECURITY_ENROLLID=test_vp0
+    - CORE_SECURITY_ENROLLSECRET=MwYpmSRjupbT
+  volumes:
+      - /var/run/:/var/run/
+  links:
+    - membersrvc
+  command: sh -c "sleep 5; peer node start --peer-chaincodedev"				
+				]]>
+				</screen>
+				<para>启动 Docker</para>
+				<screen>
+				<![CDATA[
+[root@localhost docker]# docker-compose up
+Creating test_membersrvc_1
+Creating test_vp0_1
+Attaching to test_membersrvc_1, test_vp0_1
+vp0_1         | 2018-01-19 10:07:27.345 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+vp0_1         | 2018-01-19 10:07:27.345 UTC [nodeCmd] serve -> INFO 002 Starting peer:
+vp0_1         |  Version: 1.1.0
+vp0_1         |  Go version: go1.9.2
+vp0_1         |  OS/Arch: linux/amd64
+vp0_1         |  Experimental features: false
+vp0_1         |  Chaincode:
+vp0_1         |   Base Image Version: 0.4.2
+vp0_1         |   Base Docker Namespace: hyperledger
+vp0_1         |   Base Docker Label: org.hyperledger.fabric
+vp0_1         |   Docker Namespace: hyperledger				
+				]]>
+				</screen>
+				<para>查看进程</para>
+				<screen>
+				<![CDATA[
+[root@localhost docker]# docker-compose ps 
+      Name                     Command               State                                   Ports                                  
+-----------------------------------------------------------------------------------------------------------------------------------
+test_membersrvc_1   membersrvc                       Up      0.0.0.0:7054->7054/tcp                                                 
+test_vp0_1          sh -c sleep 5; peer node s ...   Up      0.0.0.0:7050->7050/tcp, 0.0.0.0:7051->7051/tcp, 0.0.0.0:7053->7053/tcp				
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>部署 chaincode_example</title>
+			<section id="">
+				<title>部署连</title>
+				<screen>
+				<![CDATA[
+[root@localhost docker]# docker-compose exec vp0 bash
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric#				
+				]]>
+				</screen>
+				<para>编译 chaincode_example02</para>
+				<screen>
+				<![CDATA[
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric# cd examples/chaincode/go/chaincode_example02/
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# go build ./chaincode_example02.go
+
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# ls -l
+total 22304
+-rwxr-xr-x 1 root root 22826520 Jan 19 11:49 chaincode_example02
+-rw-r--r-- 1 root root     5078 Jan 17 12:27 chaincode_example02.go
+-rw-r--r-- 1 root root     3165 Jan 17 12:27 chaincode_example02_test.go				
+				]]>
+				</screen>
+				<para>启动 chaincode_example02</para>
+				<!-- <para>命令如下： CORE_CHAINCODE_ID_NAME=mycc CORE_PEER_ADDRESS=0.0.0.0:7051 ./chaincode_example02 </para> -->
+				<screen>
+				<![CDATA[
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# ./chaincode_example02 
+2018-01-19 11:56:52.103 UTC [shim] SetupChaincodeLogging -> INFO 001 Chaincode log level not provided; defaulting to: INFO
+2018-01-19 11:56:52.104 UTC [shim] SetupChaincodeLogging -> INFO 002 Chaincode (build level: ) starting up ...
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title>测试</title>
+				<screen>
+				<![CDATA[
+peer chaincode deploy -n test_cc -p github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 -c '{"Args":["init","a","100","b","200"]}'				
+peer chaincode invoke -n test_cc -c '{"Args":["query","a"]}'
+peer chaincode invoke -n test_cc -c '{"Args":["query","b"]}'
+交易，a向b转账10元，如下：
+peer chaincode invoke -n test_cc -c '{"Args":["invoke","a","b","10"]}'				
+				]]>
+				</screen>
+			</section>
+		</section>
+	</section>
+
+</article>
