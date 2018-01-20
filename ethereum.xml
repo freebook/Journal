@@ -13,7 +13,9 @@
 		&book.info.legalnotice.xml;
 		<abstract>
 			<para>本文采用碎片化写作，原文会不定期更新，请尽量阅读原文。</para>
-			<para><ulink url="http://www.netkiller.cn/journal/ethereum.html">http://www.netkiller.cn/journal/ethereum.html</ulink></para>
+			<para>
+				<ulink url="http://www.netkiller.cn/journal/ethereum.html">http://www.netkiller.cn/journal/ethereum.html</ulink>
+			</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -332,8 +334,12 @@ at block: 531 (Tue, 14 Nov 2017 17:36:05 HST)
 > miner.start(1)		
 				]]>
 				</screen>
-				<para>这里的1表示只使用一个线程运行,第一次运行时将开始创建DAG文件，只需等待进度条到100，则将开始挖矿。 实际你看到的挖矿速度很快，这是因为我们已经在初始化创世区块时配置为:"nonce": "0x0000000000000042"。 “0x42”难度能让你在私有测试网链上快速挖以太币。</para>
-				<tip><para>挖矿时必然有矿工账户，而系统默认使用创建的第一个账号。</para></tip>
+				<para>这里的1表示只使用一个线程运行,第一次运行时将开始创建DAG文件，只需等待进度条到100，则将开始挖矿。
+					实际你看到的挖矿速度很快，这是因为我们已经在初始化创世区块时配置为:"nonce": "0x0000000000000042"。
+					“0x42”难度能让你在私有测试网链上快速挖以太币。</para>
+				<tip>
+					<para>挖矿时必然有矿工账户，而系统默认使用创建的第一个账号。</para>
+				</tip>
 				<screen>
 				<![CDATA[
 > miner.start(1)
@@ -426,7 +432,7 @@ true
 	</section>
 
 	<section id="geth">
-		<title>管理</title>
+		<title>geth 命令</title>
 		<section id="geth.console">
 			<title>控制台</title>
 			<screen>
@@ -497,11 +503,11 @@ neo@netkiller ~/ethereum % geth --exec 'eth.coinbase' attach http://172.16.0.10:
 			]]>
 			</screen>
 		</section>
-		<section id="account">
+		<section id="geth.account">
 			<title>账号管理</title>
 			<section id="new">
 				<title>新建账号</title>
-				
+
 				<para>查看账号</para>
 				<screen>
 				<![CDATA[
@@ -509,7 +515,7 @@ neo@netkiller ~/ethereum % geth account list
 Account #0: {83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6} keystore:///home/neo/.ethereum/keystore/UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6				
 				]]>
 				</screen>
-				
+
 				<para>创建账号</para>
 				<screen>
 				<![CDATA[
@@ -523,8 +529,8 @@ Address: {e8abf98484325fd6afc59b804ac15804b978e607}
 				<para>指定密码</para>
 				<screen>
 				<![CDATA[
-echo "abc123" > passwd 
-geth  -password passwd account new				
+$ echo "abc123" > password 
+$ geth --password /path/to/password account new
 				]]>
 				</screen>
 			</section>
@@ -540,7 +546,32 @@ Account #1: {e8abf98484325fd6afc59b804ac15804b978e607} keystore:///home/neo/.eth
 			</section>
 
 		</section>
-
+		<section id="rpc">
+			<title>api</title>
+			<para>rpcapi 启动后允许连接到系统的API协议</para>
+			<screen>
+			<![CDATA[
+geth --networkid 100000 --rpc --rpcapi "db,eth,net,web3" --rpccorsdomain "*" --datadir "/app/chain" --port "30303" console			
+			]]>
+			</screen>
+		</section>
+		<section id="password">
+			<title>配置自动解锁账号</title>
+			<para>创建password文件，在里面输入密码，每个账号一行密码如：</para>
+			<screen>
+			<![CDATA[
+123456
+123456
+123456			
+			]]>
+			</screen>
+			<para>启动参数</para>
+			<screen>
+			<![CDATA[
+geth --rpc --rpcaddr="0.0.0.0" --rpccorsdomain="*" --unlock '0,1,2' --password ~/.ethereum/password   --nodiscover --maxpeers '5' --networkid '12345' --datadir '~/.ethereum'  console			
+			]]>
+			</screen>
+		</section>
 		<section id="geth.exec">
 			<title>运行JS</title>
 			<screen>
@@ -555,6 +586,9 @@ $ geth --exec 'loadScript("/tmp/checkbalances.js")' attach http://123.123.123.12
 $ geth --jspath "/tmp" --exec 'loadScript("checkbalances.js")' attach http://123.123.123.123:8545			
 			]]>
 			</screen>
+		</section>
+		<section id="geth.bootnodes">
+			<title>--bootnodes</title>
 		</section>
 	</section>
 	<section id="javascript.console">
@@ -571,7 +605,13 @@ Repeat passphrase:
 "0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6"				
 				]]>
 				</screen>
-				
+				<para>指定密码创建用户</para>
+				<screen>
+				<![CDATA[
+personal.newAccount("123")				
+				]]>
+				</screen>
+
 			</section>
 			<section id="personal.listAccounts">
 				<title>显示账号</title>
@@ -592,8 +632,8 @@ Repeat passphrase:
 "0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6"				
 				]]>
 				</screen>
-				
-			</section>			
+
+			</section>
 		</section>
 		<section id="eth">
 			<title>eth 管理</title>
@@ -615,7 +655,7 @@ Repeat passphrase:
 > eth.accounts[0]
 "0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6"			
 				]]>
-				</screen>	
+				</screen>
 			</section>
 			<section id="eth.getBalance">
 				<title>余额</title>
@@ -644,7 +684,7 @@ balance = web3.fromWei(eth.getBalance(primary), "ether");
 					]]>
 					</screen>
 				</section>
-			</section>		
+			</section>
 			<section id="eth.sendTransaction">
 				<title>转账</title>
 				<screen>
@@ -696,16 +736,140 @@ null
 10
 				]]>
 				</screen>
-			</section>	
+			</section>
+			<section id="eth.blockNumber">
+				<title>查看当前区块总数</title>
+				<screen>
+				<![CDATA[
+> eth.blockNumber 
+719			
+				]]>
+				</screen>
+			</section>
+			<section id="eth.getBlock">
+				<title>查看区块信息</title>
+				<screen>
+				<![CDATA[
+> eth.getBlock(1) 
+{
+  difficulty: 131072,
+  extraData: "0xd783010702846765746885676f312e398777696e646f7773",
+  gasLimit: 4995119,
+  gasUsed: 0,
+  hash: "0x62bc2fc0fd647b43013ba75e65a3f16520cebb60cadc0995965c891d4266a88c",
+  logsBloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  miner: "0xba1821227ebad7e88a51078f6219b392fd601822",
+  mixHash: "0x80ad2e29d057e0f6bb9d03f12a252fdc65cb520248fa0023ae6624c997b5d5f2",
+  nonce: "0x3d743ef28ba8c8c8",
+  number: 1,
+  parentHash: "0x611596e7979cd4e7ca1531260fa706093a5492ecbdf58f20a39545397e424d04",
+  receiptsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  sha3Uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+  size: 535,
+  stateRoot: "0x418d9f66e33cbd41fd524b87c10c5fc75f8a6360896967d827a2d56a0c8aadda",
+  timestamp: 1510715249,
+  totalDifficulty: 262144,
+  transactions: [],
+  transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  uncles: []
+}
+> eth.getBlock(2)
+{
+  difficulty: 131072,
+  extraData: "0xd783010702846765746885676f312e398777696e646f7773",
+  gasLimit: 4990242,
+  gasUsed: 0,
+  hash: "0x3323c566fd3501c29e8b026c4a9d2e83a8dd62d153a32b5f879120e999013d07",
+  logsBloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  miner: "0xba1821227ebad7e88a51078f6219b392fd601822",
+  mixHash: "0xc415fc64f1bc13842455f8289d33842260c1578a32b5befded5b4293e7a92276",
+  nonce: "0x4f4a0e65412663db",
+  number: 2,
+  parentHash: "0x62bc2fc0fd647b43013ba75e65a3f16520cebb60cadc0995965c891d4266a88c",
+  receiptsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  sha3Uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+  size: 535,
+  stateRoot: "0x39ccb22ff5ca19a2340e137fa64acedb704d42827a753780b53a0aff8922e403",
+  timestamp: 1510715341,
+  totalDifficulty: 393216,
+  transactions: [],
+  transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+  uncles: []
+}
+				
+				]]>
+				</screen>
+			</section>
 		</section>
-		
+
+		<section id="web3">
+			<title>web3</title>
+			<section id="">
+				<title>Ether币的基本单位</title>
+				<para>Ether币最小的单位是Wei，也是命令行默认的单位, 然后每1000个进一个单位，依次是</para>
+				<literallayout>
+					<![CDATA[
+kwei (1000 Wei)
+mwei (1000 KWei)
+gwei (1000 mwei)
+szabo (1000 gwei)
+finney (1000 szabo)
+ether (1000 finney)
+					]]>
+				</literallayout>
+				<para>如何进行ether 和 Wei之间的转换，简单地说就是就是1 以太币 = 1000000000000000000 Wei
+					（这就是上一站章中为何我们转移0.01个以太币，结果却显示很长的原因）</para>
+				<para>单位转换</para>
+				<screen>
+					<![CDATA[
+> web3.fromWei(10000000000000000,"ether")
+"0.01"				
+					]]>
+				</screen>
+
+				<section id="web3.toWei">
+					<title>web3.toWei</title>
+					<screen>
+						<![CDATA[
+Ether–> Wei
+
+> web3.toWei(1)
+"1000000000000000000"
+> web3.toWei(1.3423423)
+"1342342300000000000"
+> web3.toWei(0.00034)
+"340000000000000"						
+						]]>
+					</screen>
+				</section>
+				<section id="web3.fromWei">
+					<title>web3.fromWei</title>
+					<screen>
+						<![CDATA[
+Wei –> Ether
+
+> web3.fromWei(10000000000000000)
+"0.01"
+> web3.fromWei(1000000000000000000)
+"1"
+>
+						]]>
+					</screen>
+				</section>
+			</section>
+
+		</section>
 		<section id="admin">
 			<title>admin 管理</title>
+			<section id="">
+				<title>节点管理</title>
+				<para>可以通过admin.addPeer()方法连接到其他节点，两个节点要想联通，必须保证网络是相通的，并且要指定相同的networkid</para>
 
-			<section id="admin.nodeInfo">
-				<title>显示节点</title>
-				<para>显示当前节点信息</para>
-				<screen>
+
+				<section id="admin.nodeInfo">
+					<title>显示节点</title>
+					<para>显示当前节点信息</para>
+					<screen>
 				<![CDATA[
 > admin.nodeInfo
 {
@@ -730,34 +894,45 @@ null
 > 
 
 				]]>
-				</screen>
-				<para>节点地址</para>
-				<screen>
-				<![CDATA[
-enode://9f6490ffb5236f2ddc5710ae73d47c740e0a3644bbd2d67029cf4a6c4693d2f470b642fd2cc3507f7e851df60aaeb730a1270b7a477f91ec5b6b17a8a4b40527@[::]:30303?discport=0				
-				]]>
-				</screen>
-				<para>[::] 是 ipv6 地址，可以改为 ipv4 地址。</para>
-			</section>
-			<section id="admin.peers">
-				<title>查看池</title>
-				<screen>
-				<![CDATA[
+					</screen>
+					<para>节点地址</para>
+					<screen>
+					<![CDATA[
+> admin.nodeInfo.enode 
+"enode://9f6490ffb5236f2ddc5710ae73d47c740e0a3644bbd2d67029cf4a6c4693d2f470b642fd2cc3507f7e851df60aaeb730a1270b7a477f91ec5b6b17a8a4b40527@[::]:30303?discport=0"
+					]]>
+					</screen>
+					<para>[::] 是 ipv6 地址，可以改为 ipv4 地址。</para>
+				</section>
+				<section id="admin.peers">
+					<title>查看节点</title>
+					<para>查看节点数量</para>
+					<screen>
+					<![CDATA[
+> net.peerCount
+0					
+					]]>
+					</screen>
+					<para>查看节点地址</para>
+					<screen>
+					<![CDATA[
 > admin.peers
 []				
-				]]>
-				</screen>
-			</section>
-			<section id="admin.addPeer">
-				<title>添加节点</title>
-				<screen>
+					]]>
+					</screen>
+					
+				</section>
+				<section id="admin.addPeer">
+					<title>添加节点</title>
+					<screen>
 				<![CDATA[
 > admin.addPeer('enode://9f6490ffb5236f2ddc5710ae73d47c740e0a3644bbd2d67029cf4a6c4693d2f470b642fd2cc3507f7e851df60aaeb730a1270b7a477f91ec5b6b17a8a4b40527@172.16.0.1:30303')				
 				]]>
-				</screen>
+					</screen>
+				</section>
 			</section>
 		</section>
-		
+
 		<section id="miner">
 			<title>miner 挖矿管理</title>
 			<section id="miner.start">
@@ -784,6 +959,47 @@ null
 > miner.stop()
 true
 >
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section id="txpool.status ">
+			<title>txpool 管理</title>
+			<section id="">
+				<title>txpool.status</title>
+				<para>查看状态</para>
+				<screen>
+				<![CDATA[
+> txpool.status 
+{
+  pending: 0,
+  queued: 0
+}
+				]]>
+				</screen>
+				<para>例如做一笔转账</para>
+				<screen>
+				<![CDATA[
+> amount = web3.toWei(5,'ether')  
+"5000000000000000000"  
+> eth.sendTransaction({from:eth.accounts[0],to:eth.accounts[1],value:amount})	
+
+> txpool.status 
+{
+  pending: 1,
+  queued: 0
+}
+
+> miner.start(1);admin.sleepBlocks(1);miner.stop(); 
+
+> txpool.status 
+{
+  pending: 0,
+  queued: 0
+}
+
+> web3.fromWei(eth.getBalance(eth.accounts[1]),'ether')  
+5  
 				]]>
 				</screen>
 			</section>
