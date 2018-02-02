@@ -101,8 +101,10 @@ Version: 0.4.19+commit.c4cbbb05.Linux.g++
 			<title>Mac OS</title>
 			<screen>
 				<![CDATA[
+brew update
+brew upgrade				
 brew tap ethereum/ethereum
-brew install ethereum				
+brew install ethereum
 				]]>
 			</screen>
 		</section>
@@ -435,6 +437,7 @@ true
 		<title>geth 命令</title>
 		<section id="geth.console">
 			<title>控制台</title>
+			<subtitle>Geth JavaScript console</subtitle>
 			<screen>
 			<![CDATA[
 neo@netkiller ~/ethereum % geth  --networkid 123456 console
@@ -533,6 +536,22 @@ $ echo "abc123" > password
 $ geth --password /path/to/password account new
 				]]>
 				</screen>
+				<para>账号创建在 ~/.ethereum/keystore 目录下</para>
+				<screen>
+				<![CDATA[
+Mac: ~/Library/Ethereum/keystore
+Linux: ~/.ethereum/keystore
+Windows: %APPDATA%/Ethereum/keystore				
+				]]>
+				</screen>
+				<programlisting>
+				<![CDATA[
+neo@netkiller ~/.ethereum/keystore % ll
+total 8.0K
+-rw------- 1 neo neo 491 Jan 19 18:04 UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6
+-rw------- 1 neo neo 491 Jan 19 20:11 UTC--2018-01-20T06-11-23.608902164Z--e8abf98484325fd6afc59b804ac15804b978e607				
+				]]>
+				</programlisting>
 			</section>
 			<section id="list">
 				<title>查看账号</title>
@@ -547,12 +566,27 @@ Account #1: {e8abf98484325fd6afc59b804ac15804b978e607} keystore:///home/neo/.eth
 
 		</section>
 		<section id="rpc">
-			<title>api</title>
+			<title>rpc 相关参数</title>
 			<para>rpcapi 启动后允许连接到系统的API协议</para>
 			<screen>
 			<![CDATA[
-geth --networkid 100000 --rpc --rpcapi "db,eth,net,web3" --rpccorsdomain "*" --datadir "/app/chain" --port "30303" console			
+geth --networkid 100000 --rpc --rpcapi "db,eth,net,web3" --rpccorsdomain "*" --datadir "/app/chain" --port "30303" console	
 			]]>
+			</screen>
+			
+			<para>系统默认监听 127.0.0.1 如果希望外部访问本机，需要通过--rpcaddr指定监听地址。</para>
+			<screen>
+			<![CDATA[
+geth --networkid 123456 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --nodiscover		
+			]]>
+			</screen>
+			
+			<para>--rpcapi 可以控制访问内容</para>
+			<screen>
+			<![CDATA[
+$ geth --rpcapi personal,db,eth,net,web3 --rpc --rinkeby	
+			]]>
+			
 			</screen>
 		</section>
 		<section id="password">
@@ -681,6 +715,48 @@ balance = web3.fromWei(eth.getBalance(primary), "ether");
 "0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6"
 > balance = web3.fromWei(eth.getBalance(primary), "ether");
 70			
+					]]>
+					</screen>
+				</section>
+				<section id="">
+					<title>一次检查所有账号余额</title>
+					<para>定义函数</para>
+					<programlisting>
+					<![CDATA[
+function checkAllBalances() {
+  web3.eth.getAccounts(function(err, accounts) {
+   accounts.forEach(function(id) {
+    web3.eth.getBalance(id, function(err, balance) {
+     console.log("" + id + ":\tbalance: " + web3.fromWei(balance, "ether") + " ether");
+   });
+  });
+ });
+};					
+					]]>
+					</programlisting>
+					<para>运行函数</para>
+					<screen>
+					<![CDATA[
+checkAllBalances()					
+					]]>
+					</screen>
+					<para>输出演示</para>
+					<screen>
+					<![CDATA[
+> function checkAllBalances() {
+...   web3.eth.getAccounts(function(err, accounts) {
+.........    accounts.forEach(function(id) {
+...............     web3.eth.getBalance(id, function(err, balance) {
+.....................      console.log("" + id + ":\tbalance: " + web3.fromWei(balance, "ether") + " ether");
+.....................    });
+...............   });
+.........  });
+... };
+undefined
+> checkAllBalances()
+0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6:	balance: 929 ether
+0xe8abf98484325fd6afc59b804ac15804b978e607:	balance: 11 ether
+undefined					
 					]]>
 					</screen>
 				</section>
@@ -920,7 +996,7 @@ Wei –> Ether
 []				
 					]]>
 					</screen>
-					
+
 				</section>
 				<section id="admin.addPeer">
 					<title>添加节点</title>
@@ -1003,6 +1079,244 @@ true
 				]]>
 				</screen>
 			</section>
+		</section>
+	</section>
+	<section id="solidity">
+		<title>智能合约</title>
+		<para>Solidity是什么？Solidity是以太坊智能合约的编程语言。</para>
+		<section id="">
+			<title>browser-solidity</title>
+			<ulink url="https://ethereum.github.io/browser-solidity/">https://ethereum.github.io/browser-solidity/</ulink>
+		</section>
+
+
+
+	</section>
+	<section id="web3j">
+		<title>Jave Client</title>
+		<para>Java 客户端与 Server 之间采用json-rpc协议连接。</para>
+		<para>首先启动服务</para>
+		<screen>
+		<![CDATA[
+neo@netkiller ~ % geth --networkid 123456 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --nodiscover 
+INFO [02-01|23:35:12] Starting peer-to-peer node               instance=Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1
+INFO [02-01|23:35:12] Allocated cache and file handles         database=/home/neo/.ethereum/geth/chaindata cache=128 handles=1024
+INFO [02-01|23:35:12] Initialised chain configuration          config="{ChainID: 15 Homestead: 0 DAO: <nil> DAOSupport: false EIP150: <nil> EIP155: 0 EIP158: 0 Byzantium: <nil> Engine: unknown}"
+INFO [02-01|23:35:12] Disk storage enabled for ethash caches   dir=/home/neo/.ethereum/geth/ethash count=3
+INFO [02-01|23:35:12] Disk storage enabled for ethash DAGs     dir=/home/neo/.ethash               count=2
+INFO [02-01|23:35:12] Initialising Ethereum protocol           versions="[63 62]" network=123456
+INFO [02-01|23:35:12] Loaded most recent local header          number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded most recent local full block      number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded most recent local fast block      number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded local transaction journal         transactions=0 dropped=0
+INFO [02-01|23:35:12] Regenerated local transaction journal    transactions=0 accounts=0
+WARN [02-01|23:35:12] Blockchain not empty, fast sync disabled 
+INFO [02-01|23:35:12] Starting P2P networking 
+INFO [02-01|23:35:12] RLPx listener up                         self="enode://9f6490ffb5236f2ddc5710ae73d47c740e0a3644bbd2d67029cf4a6c4693d2f470b642fd2cc3507f7e851df60aaeb730a1270b7a477f91ec5b6b17a8a4b40527@[::]:30303?discport=0"
+INFO [02-01|23:35:12] IPC endpoint opened: /home/neo/.ethereum/geth.ipc 
+INFO [02-01|23:35:12] HTTP endpoint opened: http://0.0.0.0:8545 
+INFO [02-01|23:35:15] Mapped network port                      proto=tcp extport=30303 intport=30303 interface="UPNP IGDv1-IP1"		
+		]]>
+		</screen>
+		<section id="pom.xml">
+			<title>Maven pom.xml 文件</title>
+			<screen>
+			<![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>cn.netkiller</groupId>
+	<artifactId>ethereum</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>ethereum</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.web3j</groupId>
+			<artifactId>core</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+	</dependencies>
+</project>
+			
+			]]>
+			</screen>
+		</section>
+		<section id="connect">
+			<title>连接到服务器获取版本号</title>
+			<programlisting>
+			<![CDATA[
+package cn.netkiller.ethereum;
+
+import java.io.IOException;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.Web3ClientVersion;
+import org.web3j.protocol.http.HttpService;
+
+public class Web3JClient {
+	// TODO Auto-generated method stub
+
+	public static void main(String[] args) {
+		String url = "http://172.16.0.1:8545/";
+		Web3j web3j = Web3j.build(new HttpService(url)); // defaults to http://localhost:8545/
+
+		try {
+			Web3ClientVersion web3ClientVersion = web3j.web3ClientVersion().send();
+			String clientVersion = web3ClientVersion.getWeb3ClientVersion();
+			System.out.println(clientVersion);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+			]]>
+			</programlisting>
+			<para>运行结果</para>
+			<screen>
+			<![CDATA[
+Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1			
+			]]>
+			</screen>
+			<para>除了 TCP 方式连接，还支持 IPC 方式。这种方式比较少用，可以使用 localhost 替代。</para>
+			<programlisting>
+			<![CDATA[
+// OS X/Linux/Unix:
+Web3j web3 = Web3j.build(new UnixIpcService("/path/to/socketfile"));
+...
+
+// Windows
+Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
+...			
+			]]>
+			</programlisting>
+		</section>
+		<section id="account">
+			<title></title>
+			<section id="">
+				<title>获得账号列表</title>
+				<programlisting>
+				<![CDATA[
+	public List<String> getAccountlist() {
+
+		try {
+			return web3j.ethAccounts().send().getAccounts();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}				
+				]]>
+				</programlisting>
+			</section>
+			<section id="">
+				<title>获得账号信息</title>
+				<programlisting>
+				<![CDATA[
+	public String getAccount(int index) {
+		String account = null;
+
+		try {
+			account = web3j.ethAccounts().send().getAccounts().get(index);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return account;
+	}				
+				]]>
+				
+				</programlisting>
+			</section>
+			<section id="">
+				<title>获取余额</title>
+				<programlisting>
+				<![CDATA[
+	public BigInteger getBalance(String account) throws IOException {
+
+		EthGetBalance ethGetBalance = web3j.ethGetBalance(account, DefaultBlockParameterName.LATEST).send();
+		BigInteger balance = ethGetBalance.getBalance();
+		return balance;
+
+	}				
+				]]>
+				</programlisting>
+			</section>
+			<section id="">
+				<title></title>
+				<programlisting>
+				<![CDATA[
+	public void transfer(String account, float coin)
+			throws InterruptedException, IOException, TransactionException, Exception {
+		String password = "";
+		String walletfile = "/Users/neo/netkiller/UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6";
+		Credentials credentials = WalletUtils.loadCredentials(password, walletfile);
+		TransactionReceipt transactionReceipt = Transfer
+				.sendFunds(web3j, credentials, account, BigDecimal.valueOf(coin), Unit.ETHER).send();
+		System.out.println(transactionReceipt.getStatus());
+	}
+				]]>
+				</programlisting>
+			</section>
+			<section id="web3j.account.example">
+				<title>例子</title>
+			</section>
+		</section>
+		<section id="Credentials">
+			<title>Credentials</title>
+			<programlisting>
+			<![CDATA[
+package cn.netkiller.ethereum.credentials;
+
+import java.io.IOException;
+import java.math.BigInteger;
+
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
+
+public class CredentialsTest {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		String url = "http://172.16.0.1:8545/";
+		Web3j web3j = Web3j.build(new HttpService(url)); // defaults to http://localhost:8545/
+
+		try {
+			String account = web3j.ethAccounts().send().getAccounts().get(0);
+			Credentials credentials = Credentials.create(account);
+			ECKeyPair keyPair = credentials.getEcKeyPair();
+			BigInteger privateKey = keyPair.getPrivateKey();
+			BigInteger publicKey = keyPair.getPublicKey();
+
+			System.out.println(privateKey);
+			System.out.println("---");
+			System.out.println(publicKey);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+			
+			]]>
+			</programlisting>
 		</section>
 	</section>
 	<section id="summary">
