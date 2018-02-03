@@ -152,7 +152,7 @@ make geth
 				]]>
 			</screen>
 		</section>
-		<section id="">
+		<section>
 			<title>Netkiller OSCM 一键安装</title>
 			<para>适用于 CentOS 7</para>
 			<screen>
@@ -853,7 +853,7 @@ personal.newAccount("123")
 70000000000000000000
 				]]>
 				</screen>
-				<section id="">
+				<section>
 					<title>单位转换</title>
 					<para>eth.getBalance()返回的余额是以太币的最小面额wei，将wei转换为以太币ether。</para>
 					<programlisting>
@@ -872,7 +872,7 @@ balance = web3.fromWei(eth.getBalance(primary), "ether");
 					]]>
 					</screen>
 				</section>
-				<section id="">
+				<section>
 					<title>一次检查所有账号余额</title>
 					<para>定义函数</para>
 					<programlisting>
@@ -1135,7 +1135,7 @@ Wei –> Ether
 		</section>
 		<section id="admin">
 			<title>admin 管理</title>
-			<section id="">
+			<section>
 				<title>看看 networkid</title>
 				<screen>
 				<![CDATA[
@@ -1147,7 +1147,9 @@ Wei –> Ether
 			<section id="admin.node">
 				<title>节点管理</title>
 				<para>可以通过admin.addPeer()方法连接到其他节点，两个节点要想联通，必须保证网络是相通的，并且要指定相同的networkid</para>
-				<tip><para>注意去掉 --nodiscover 参数</para></tip>
+				<tip>
+					<para>注意去掉 --nodiscover 参数</para>
+				</tip>
 				<para>确保网络可用</para>
 				<screen>
 				<![CDATA[
@@ -1233,7 +1235,7 @@ admin.peers.forEach(function(p) {console.log(p.network.remoteAddress);})
 					]]>
 					</screen>
 				</section>
-				
+
 			</section>
 		</section>
 
@@ -1296,7 +1298,7 @@ true
 		</section>
 		<section id="txpool.status ">
 			<title>txpool 管理</title>
-			<section id="">
+			<section>
 				<title>txpool.status</title>
 				<para>查看状态</para>
 				<screen>
@@ -1480,7 +1482,7 @@ output/HelloWorld.abi
 			]]>
 			</screen>
 		</section>
-		<section id="">
+		<section>
 			<title></title>
 		</section>
 	</section>
@@ -1596,7 +1598,7 @@ Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
 		</section>
 		<section id="account">
 			<title>账号管理</title>
-			<section id="">
+			<section>
 				<title>获得账号列表</title>
 				<programlisting>
 				<![CDATA[
@@ -1612,7 +1614,7 @@ Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
 				]]>
 				</programlisting>
 			</section>
-			<section id="">
+			<section>
 				<title>获得账号信息</title>
 				<programlisting>
 				<![CDATA[
@@ -1632,7 +1634,7 @@ Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
 
 				</programlisting>
 			</section>
-			<section id="">
+			<section>
 				<title>获取余额</title>
 				<programlisting>
 				<![CDATA[
@@ -1646,7 +1648,7 @@ Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
 				]]>
 				</programlisting>
 			</section>
-			<section id="">
+			<section>
 				<title>转账</title>
 				<programlisting>
 				<![CDATA[
@@ -1713,7 +1715,7 @@ public class CredentialsTest {
 	</section>
 	<section id="summary">
 		<title>总结</title>
-		<section id="">
+		<section>
 			<title>单机多实例演示</title>
 			<para>在没有条件安装虚拟机也没有多台服务器的情况下我们可以使用一台服务器运行多个实例的方法也可以实现多个节点运行环境。</para>
 			<screen>
@@ -1746,12 +1748,12 @@ mkdir data{1,2}
 }			
 			]]>
 			</screen>
-			<section id="">
+			<section>
 				<title>实例一</title>
 				<screen>
 				<![CDATA[
 geth --datadir ~/ethereum/data1 init genesis.json
-geth --datadir="~/ethereum/data1" --networkid 123456 --ipcdisable --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8541		
+geth --datadir="~/ethereum/data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8541		
 				]]>
 				</screen>
 				<para>启动后终端输出</para>
@@ -1766,40 +1768,40 @@ INFO [02-02|22:09:56] Allocated cache and file handles         database=/home/ne
 INFO [02-02|22:09:57] Writing custom genesis block 
 INFO [02-02|22:09:57] Successfully wrote genesis state         database=lightchaindata                               hash=611596…424d04
 
-neo@netkiller ~ % geth --datadir="~/ethereum/data1" --networkid 123456 --ipcdisable --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8541
-WARN [02-02|22:11:10] No etherbase set and no accounts found as default 
-INFO [02-02|22:11:10] Starting peer-to-peer node               instance=Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1
-INFO [02-02|22:11:10] Allocated cache and file handles         database=/home/neo/ethereum/data1/geth/chaindata cache=128 handles=1024
-WARN [02-02|22:11:10] Upgrading database to use lookup entries 
-INFO [02-02|22:11:10] Initialised chain configuration          config="{ChainID: 15 Homestead: 0 DAO: <nil> DAOSupport: false EIP150: <nil> EIP155: 0 EIP158: 0 Byzantium: <nil> Engine: unknown}"
-INFO [02-02|22:11:10] Disk storage enabled for ethash caches   dir=/home/neo/ethereum/data1/geth/ethash count=3
-INFO [02-02|22:11:10] Disk storage enabled for ethash DAGs     dir=/home/neo/.ethash                    count=2
-INFO [02-02|22:11:10] Initialising Ethereum protocol           versions="[63 62]" network=123456
-INFO [02-02|22:11:10] Database deduplication successful        deduped=0
-INFO [02-02|22:11:10] Loaded most recent local header          number=0 hash=611596…424d04 td=131072
-INFO [02-02|22:11:10] Loaded most recent local full block      number=0 hash=611596…424d04 td=131072
-INFO [02-02|22:11:10] Loaded most recent local fast block      number=0 hash=611596…424d04 td=131072
-INFO [02-02|22:11:10] Regenerated local transaction journal    transactions=0 accounts=0
-INFO [02-02|22:11:10] Starting P2P networking 
-INFO [02-02|22:11:12] UDP listener up                          self=enode://53433417f11d1d9a17f155cbaad2c4ec375af7b141e2989f049b572fc3f856d78f254e58fa82ed6eab48a16b7d625527214522ec0fd3e3af030b5b8dfdadc062@14.103.209.119:30301
-INFO [02-02|22:11:12] HTTP endpoint opened: http://0.0.0.0:8541 
-INFO [02-02|22:11:12] RLPx listener up                         self=enode://53433417f11d1d9a17f155cbaad2c4ec375af7b141e2989f049b572fc3f856d78f254e58fa82ed6eab48a16b7d625527214522ec0fd3e3af030b5b8dfdadc062@14.103.209.119:30301
-INFO [02-02|22:11:13] Mapped network port                      proto=udp extport=30301 intport=30301 interface="UPNP IGDv1-IP1"
-INFO [02-02|22:11:14] Mapped network port                      proto=tcp extport=30301 intport=30301 interface="UPNP IGDv1-IP1"
+neo@netkiller ~ % geth --datadir="~/ethereum/data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8541             
+WARN [02-02|22:36:02] No etherbase set and no accounts found as default 
+INFO [02-02|22:36:02] Starting peer-to-peer node               instance=Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1
+INFO [02-02|22:36:02] Allocated cache and file handles         database=/home/neo/ethereum/data1/geth/chaindata cache=128 handles=1024
+INFO [02-02|22:36:02] Initialised chain configuration          config="{ChainID: 15 Homestead: 0 DAO: <nil> DAOSupport: false EIP150: <nil> EIP155: 0 EIP158: 0 Byzantium: <nil> Engine: unknown}"
+INFO [02-02|22:36:02] Disk storage enabled for ethash caches   dir=/home/neo/ethereum/data1/geth/ethash count=3
+INFO [02-02|22:36:02] Disk storage enabled for ethash DAGs     dir=/home/neo/.ethash                    count=2
+INFO [02-02|22:36:02] Initialising Ethereum protocol           versions="[63 62]" network=123456
+INFO [02-02|22:36:02] Loaded most recent local header          number=0 hash=611596…424d04 td=131072
+INFO [02-02|22:36:02] Loaded most recent local full block      number=0 hash=611596…424d04 td=131072
+INFO [02-02|22:36:02] Loaded most recent local fast block      number=0 hash=611596…424d04 td=131072
+INFO [02-02|22:36:02] Loaded local transaction journal         transactions=0 dropped=0
+INFO [02-02|22:36:02] Regenerated local transaction journal    transactions=0 accounts=0
+INFO [02-02|22:36:02] Starting P2P networking 
+INFO [02-02|22:36:05] UDP listener up                          self=enode://53433417f11d1d9a17f155cbaad2c4ec375af7b141e2989f049b572fc3f856d78f254e58fa82ed6eab48a16b7d625527214522ec0fd3e3af030b5b8dfdadc062@14.103.209.119:30301
+INFO [02-02|22:36:05] HTTP endpoint opened: http://0.0.0.0:8541 
+INFO [02-02|22:36:05] IPC endpoint opened: /home/neo/ethereum/data1/geth.ipc 
+INFO [02-02|22:36:05] RLPx listener up                         self=enode://53433417f11d1d9a17f155cbaad2c4ec375af7b141e2989f049b572fc3f856d78f254e58fa82ed6eab48a16b7d625527214522ec0fd3e3af030b5b8dfdadc062@14.103.209.119:30301
+INFO [02-02|22:36:05] Mapped network port                      proto=udp extport=30301 intport=30301 interface="UPNP IGDv1-IP1"
+INFO [02-02|22:36:07] Mapped network port                      proto=tcp extport=30301 intport=30301 interface="UPNP IGDv1-IP1"
 				]]>
 				</screen>
 			</section>
-			<section id="">
+			<section>
 				<title>实例二</title>
 				<screen>
 				<![CDATA[
 geth --datadir ~/ethereum/data2 init genesis.json
-geth --datadir="~/ethereum/data2" --networkid 123456 --ipcdisable --port 30302 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8542		
+geth --datadir="~/ethereum/data2" --networkid 123456 --port 30302 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8542		
 				]]>
 				</screen>
 				<para>启动后控制台输出与实例一类似</para>
 			</section>
-			<section id="">
+			<section>
 				<title>添加节点</title>
 				<para>开启一个新终端窗口，运行下面命令查看节点一的 enode 字符串</para>
 				<screen>
@@ -1856,7 +1858,7 @@ true
 				</screen>
 				<para>退出</para>
 			</section>
-			<section id="">
+			<section>
 				<title>节点测试</title>
 				<para>这里我们实现两个节点间的用户转账。</para>
 				<para>现在两个节点上都没有任何账号</para>
@@ -1952,7 +1954,7 @@ true
 > exit				
 				]]>
 				</screen>
-				<para>现在查看节点二上的第二个普通账号余额</para>		
+				<para>现在查看节点二上的第二个普通账号余额</para>
 				<screen>
 				<![CDATA[
 neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/data2/geth.ipc
@@ -1998,7 +2000,7 @@ true
 []			
 			]]>
 			</screen>
-			
+
 			<para>查看节点，如果发现 ip: "::" 同时 discovery: 0</para>
 			<screen>
 			<![CDATA[
@@ -2025,7 +2027,7 @@ true
 > 
 			]]>
 			</screen>
-	
+
 			<para>解决方案启动时可能增加了 --nodiscover 参数，去掉参数后可以解决。</para>
 
 			<para>有三种方法新增节点</para>
