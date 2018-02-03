@@ -1715,7 +1715,7 @@ public class CredentialsTest {
 	</section>
 	<section id="summary">
 		<title>总结</title>
-		<section>
+		<section id="example.single">
 			<title>单机多实例演示</title>
 			<para>在没有条件安装虚拟机也没有多台服务器的情况下我们可以使用一台服务器运行多个实例的方法也可以实现多个节点运行环境。</para>
 			<screen>
@@ -1860,7 +1860,7 @@ true
 			</section>
 			<section>
 				<title>节点测试</title>
-				<para>这里我们实现两个节点间的用户转账。</para>
+				<para>这里我们实现两个节点间的以太币转账。</para>
 				<para>现在两个节点上都没有任何账号</para>
 				<screen>
 				<![CDATA[
@@ -1870,11 +1870,19 @@ neo@netkiller ~ % geth --exec 'personal.listAccounts' attach ethereum/data2/geth
 []
 				]]>
 				</screen>
-				<para>在两个节点上分别创建账号,节点一上面创建一个矿工账号；节点二上面创建两个账号，一个是矿工账号，另一个是普通账号。</para>
+				<para>在两个节点上分别创建两个账号，一个是矿工账号，另一个是普通账号。</para>
 				<screen>
 				<![CDATA[
 neo@netkiller ~ % geth --exec 'personal.newAccount("abc123")' attach ethereum/data1/geth.ipc
 "0x5ad227e8d7e460713c78eebbe558473571edae72"
+
+neo@netkiller ~ % geth --exec 'personal.newAccount("abc123")' attach ethereum/data1/geth.ipc
+"0x3e822e05ee975e02be3f15f32b0fddced8d5bdd0"
+
+neo@netkiller ~ % geth --exec 'personal.listAccounts' attach ethereum/data1/geth.ipc 
+["0x5ad227e8d7e460713c78eebbe558473571edae72", "0x3e822e05ee975e02be3f15f32b0fddced8d5bdd0"]
+
+
 
 neo@netkiller ~ % geth --exec 'personal.newAccount("abc123")' attach ethereum/data2/geth.ipc
 "0xa6df3e3c141e27726f4aeb21a5dab2e5c76c9565"
@@ -1893,11 +1901,14 @@ geth --exec 'miner.start(1)' attach ethereum/data1/geth.ipc
 geth --exec 'miner.start(1)' attach ethereum/data2/geth.ipc 
 				]]>
 				</screen>
-				<para>如果正常运行，两个节点上的矿工账号都会有一定的以太币。节点二上的普通账号额度应该为零。</para>
+				<para>如果正常运行，两个节点上的矿工账号都会有一定的以太币。而普通账号额度应该为零。</para>
 				<screen>
 				<![CDATA[
 neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[0])' attach ethereum/data1/geth.ipc
 299438256000000000000
+
+neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/data1/geth.ipc
+0
 
 neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/data1/geth.ipc
 298000056000000000000
@@ -1962,6 +1973,38 @@ neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/
 				]]>
 				</screen>
 				<para>转账成功</para>
+				
+				<screen>
+				<![CDATA[
+neo@netkiller ~ % geth attach ethereum/data2/geth.ipc                                        
+Welcome to the Geth JavaScript console!
+
+instance: Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1
+coinbase: 0xa6df3e3c141e27726f4aeb21a5dab2e5c76c9565
+at block: 319 (Fri, 02 Feb 2018 23:50:07 HST)
+ datadir: /home/neo/ethereum/data2
+ modules: admin:1.0 debug:1.0 eth:1.0 miner:1.0 net:1.0 personal:1.0 rpc:1.0 txpool:1.0 web3:1.0
+
+> personal.unlockAccount(eth.accounts[1], "abc123")
+true
+
+> eth.sendTransaction({from: "0xa66c7b8b1c26856d284a0b962385babe02caa51d", to: "0x3e822e05ee975e02be3f15f32b0fddced8d5bdd0", value: web3.toWei(0.1, "ether")})
+"0x951bd161dfd000ff825379cb0644c4acd4afd4d3e1ac4f4c1c6009b3c2a1d366"
+
+> eth.pendingTransactions
+[]
+> exit		
+				]]>
+				</screen>
+				<para>查看两个普通账号的余额</para>
+				<screen>
+				<![CDATA[
+neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/data1/geth.ipc
+100000000000000000
+neo@netkiller ~ % geth --exec 'eth.getBalance(eth.accounts[1])' attach ethereum/data2/geth.ipc
+899622000000000000
+				]]>
+				</screen>				
 			</section>
 		</section>
 	</section>
