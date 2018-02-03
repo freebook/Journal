@@ -876,6 +876,19 @@ null
 				]]>
 				</screen>
 			</section>
+			<section id="eth.compile">
+				<title>显示智能合约编译器</title>
+				<screen>
+				<![CDATA[
+> eth.compile
+{
+  lll: function(),
+  serpent: function(),
+  solidity: function()
+}				
+				]]>
+				</screen>
+			</section>
 		</section>
 
 		<section id="web3">
@@ -1084,13 +1097,136 @@ true
 	<section id="solidity">
 		<title>智能合约</title>
 		<para>Solidity是什么？Solidity是以太坊智能合约的编程语言。</para>
-		<section id="">
+		<section id="browser-solidity">
 			<title>browser-solidity</title>
 			<ulink url="https://ethereum.github.io/browser-solidity/">https://ethereum.github.io/browser-solidity/</ulink>
 		</section>
+		<section id="">
+			<title>智能合约入门演示</title>
+			<para>这里我们先做一个 Helloword 演示，让你初步对智能合约有一个大概的认识。</para>
+			<tip><para>需要注意的是，你在网上会看到很多例子，对照这例子一步一步操作，始终无法成功，这根Solidity的版本有很大关系。</para></tip>
+			
+			<para>将下面代码粘贴到 </para>
+			<programlisting>
+			<![CDATA[
+pragma solidity ^0.4.19;
 
+contract HelloWorld
+{
+    string tmp;
 
+    function HelloWorld() public
+    {
 
+    }
+
+    function get() public constant returns (string)
+    {
+        return tmp;
+    }
+
+    function set(string _tmp) public
+    {
+        tmp = _tmp;
+    }
+
+}
+			]]>
+			</programlisting>
+			<para>Compile - Details - WEB3DEPLOY</para>
+			<programlisting>
+			<![CDATA[
+var helloworldContract = web3.eth.contract([{"constant":false,"inputs":[{"name":"_tmp","type":"string"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]);
+var helloworld = helloworldContract.new(
+   {
+     from: web3.eth.accounts[0], 
+     data: '0x6060604052341561000f57600080fd5b6102e38061001e6000396000f30060606040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680634ed3885e146100515780636d4ce63c146100ae575b600080fd5b341561005c57600080fd5b6100ac600480803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509190505061013c565b005b34156100b957600080fd5b6100c1610156565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156101015780820151818401526020810190506100e6565b50505050905090810190601f16801561012e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b80600090805190602001906101529291906101fe565b5050565b61015e61027e565b60008054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156101f45780601f106101c9576101008083540402835291602001916101f4565b820191906000526020600020905b8154815290600101906020018083116101d757829003601f168201915b5050505050905090565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061023f57805160ff191683800117855561026d565b8280016001018555821561026d579182015b8281111561026c578251825591602001919060010190610251565b5b50905061027a9190610292565b5090565b602060405190810160405280600081525090565b6102b491905b808211156102b0576000816000905550600101610298565b5090565b905600a165627a7a72305820ea826c30d131f20a4d3a8e3fb059ffa95f4c222a5b099029750e4c1937b46e5b0029', 
+     gas: '4700000'
+   }, function (e, contract){
+    console.log(e, contract);
+    if (typeof contract.address !== 'undefined') {
+         console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+    }
+ })
+			]]>
+			</programlisting>
+			
+			<para>部署智能合约需要消耗 gas 所以你要先解锁账号。</para>
+			<screen>
+			<![CDATA[
+> personal.unlockAccount("0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6", "", 300)
+true			
+			]]>
+			</screen>
+			
+			<screen>
+			<![CDATA[
+> var helloworldContract = web3.eth.contract([{"constant":false,"inputs":[{"name":"_tmp","type":"string"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]);
+undefined
+> var helloworld = helloworldContract.new(
+...    {
+......      from: web3.eth.accounts[0], 
+......      data: '0x6060604052341561000f57600080fd5b6102e38061001e6000396000f30060606040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680634ed3885e146100515780636d4ce63c146100ae575b600080fd5b341561005c57600080fd5b6100ac600480803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509190505061013c565b005b34156100b957600080fd5b6100c1610156565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156101015780820151818401526020810190506100e6565b50505050905090810190601f16801561012e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b80600090805190602001906101529291906101fe565b5050565b61015e61027e565b60008054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156101f45780601f106101c9576101008083540402835291602001916101f4565b820191906000526020600020905b8154815290600101906020018083116101d757829003601f168201915b5050505050905090565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061023f57805160ff191683800117855561026d565b8280016001018555821561026d579182015b8281111561026c578251825591602001919060010190610251565b5b50905061027a9190610292565b5090565b602060405190810160405280600081525090565b6102b491905b808211156102b0576000816000905550600101610298565b5090565b905600a165627a7a72305820ea826c30d131f20a4d3a8e3fb059ffa95f4c222a5b099029750e4c1937b46e5b0029', 
+......      gas: '4700000'
+......    }, function (e, contract){
+......     console.log(e, contract);
+......     if (typeof contract.address !== 'undefined') {
+.........          console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+.........     }
+......  })
+null [object Object]
+undefined
+			]]>
+			</screen>
+			<para>helloworld 智能合约已经创建完毕</para>
+			<screen>
+			<![CDATA[
+> helloworld
+{
+  abi: [{
+      constant: false,
+      inputs: [{...}],
+      name: "set",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function"
+  }, {
+      constant: true,
+      inputs: [],
+      name: "get",
+      outputs: [{...}],
+      payable: false,
+      stateMutability: "view",
+      type: "function"
+  }, {
+      inputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "constructor"
+  }],
+  address: undefined,
+  transactionHash: "0x466c9ad9db8f37ed5b65bc261210da92f51364ebab1dcbd3759bfc3e16ad6502"
+}
+			
+			]]>
+			</screen>
+		</section>
+		<section id="solc">
+			<title>使用 solc 编译 *.sol 代码</title>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/solidity % solc --bin --abi --optimize -o ./output helloworld.sol
+neo@netkiller ~/ethereum/solidity % find output         
+output
+output/HelloWorld.bin
+output/HelloWorld.abi			
+			]]>
+			</screen>
+		</section>
+		<section id="">
+			<title></title>
+		</section>
 	</section>
 	<section id="web3j">
 		<title>Jave Client</title>
