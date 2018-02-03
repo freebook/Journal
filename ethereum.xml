@@ -19,10 +19,10 @@
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
-			<keyword></keyword>
-			<keyword></keyword>
-			<keyword></keyword>
-			<keyword></keyword>
+			<keyword>ethereum</keyword>
+			<keyword>geth</keyword>
+			<keyword>browser-solidity</keyword>
+			<keyword>solidity</keyword>
 		</keywordset>
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
@@ -822,6 +822,20 @@ personal.newAccount("123")
 				</screen>
 
 			</section>
+			<section id="personal.unlockAccount">
+				<title>解锁账号</title>
+				<screen>
+				<![CDATA[
+ > personal.unlockAccount(eth.accounts[0],"password")						
+				]]>
+				</screen>
+				<para>指定过期时间，单位是毫秒，下面例子是 20 分钟</para>
+				<screen>
+				<![CDATA[
+> personal.unlockAccount(eth.accounts[0],"password", 1000*60*20)				
+				]]>
+				</screen>
+			</section>
 		</section>
 		<section id="eth">
 			<title>eth 管理</title>
@@ -1370,14 +1384,33 @@ remixd -S "/home/ethereum/codebase/blocks/contracts"
 				</screen>
 				<para>安装 browser-solidity </para>
 				<screen>
-			<![CDATA[
+				<![CDATA[
 git clone https://github.com/ethereum/browser-solidity 
 cd browser-solidity 
 npm install 
 npm run prepublish
 npm start
-			]]>
+				]]>
 				</screen>
+				<para>
+					启动后浏览器中输入
+					<ulink url="http://localhost:8080">http://localhost:8080</ulink>
+					可以看到 Remix 界面
+				</para>
+				<note>
+					<title>Web3 Provider</title>
+					<para>Remix 提供三种运行环境,常用的有 JavaScript VM 和 Web3 Provider (连接到 --rpc
+						--rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8545)</para>
+					<para>Web3 Provider 方式需要解锁账号和启动挖矿</para>
+					<screen>
+					<![CDATA[
+> personal.unlockAccount(eth.accounts[0],"");
+> miner.start(2); admin.sleepBlocks(1); miner.stop();			
+					]]>
+					</screen>
+				</note>
+
+
 			</section>
 		</section>
 		
@@ -1527,7 +1560,7 @@ contract Purchase {
 				]]>
 				</programlisting>
 			</section>
-			<section id="">
+			<section >
 				<title>结构体</title>
 				<para>定义结构体</para>
 				<screen>
@@ -1548,7 +1581,7 @@ contract Purchase {
 				</screen>
 			</section>
 		</section>
-		<section id="">
+		<section >
 			<title>变量</title>
 			<programlisting>
 			<![CDATA[
@@ -1561,32 +1594,60 @@ int num;
 		
 		<section id="solidity.function">
 			<title>函数</title>
-			<para>没有返回值</para>
-			<programlisting>
-			<![CDATA[
+			<section>
+				<title>构造方法</title>
+				<para>构造方法的定义是 contract 与 function 相同</para>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.18;
+
+contract MyContractByNetkiller {
+    /* Constructor */
+
+    function MyContractByNetkiller() public{
+
+    }
+}
+				]]>
+				</programlisting>
+			</section>
+			<section >
+				<title>定义函数</title>
+				<para>没有返回值</para>
+				<programlisting>
+				<![CDATA[
 	function setName(string _name) public{
         name = _name;
     }			
-			]]>
-			</programlisting>
-			<para>有返回值</para>
-			<programlisting>
-			<![CDATA[
+				]]>
+				</programlisting>
+			</section>
+			<section >
+				<title>函数返回值</title>
+				<para>有返回值</para>
+				<programlisting>
+				<![CDATA[
 	function getName() public view returns(string){
         return name;
     }
-			]]>
-			</programlisting>
-			<para>完整的例子</para>
-			<programlisting>
-			<![CDATA[
+				]]>
+				</programlisting>
+			</section>
+			
+			<section >
+				<title>函数的例子</title>
+			
+			
+				<para>完整的例子</para>
+				<programlisting>
+				<![CDATA[
 pragma solidity ^0.4.18;
 
 contract MyContractByNetkiller {
     /* Constructor */
     string name;
     int num;
-    function MyContract() public{
+    function MyContractByNetkiller() public{
         name = "default";
         num = 1;
     }
@@ -1603,8 +1664,9 @@ contract MyContractByNetkiller {
         res = m + num;
     }
 }
-			]]>
-			</programlisting>
+				]]>
+				</programlisting>
+			</section>
 		</section>
 		<section id="solidity.event">
 			<title>事件</title>
@@ -1614,13 +1676,6 @@ contract MyContractByNetkiller {
 	event Sent(address from, address to, uint amount);			
 			]]>
 			</programlisting>
-			
-			<screen>
-			<![CDATA[
-> personal.unlockAccount(eth.accounts[0],"");
-> miner.start(2); admin.sleepBlocks(1); miner.stop();			
-			]]>
-			</screen>
 			
 		</section>
 	</section>
@@ -2010,7 +2065,7 @@ mkdir data{1,2}
 				<screen>
 				<![CDATA[
 geth --datadir ~/ethereum/data1 init genesis.json
-geth --datadir="~/ethereum/data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8541		
+geth --datadir="~/ethereum/data1" --networkid 123456 --port 30301 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8541		
 				]]>
 				</screen>
 				<para>启动后终端输出</para>
@@ -2053,7 +2108,7 @@ INFO [02-02|22:36:07] Mapped network port                      proto=tcp extport
 				<screen>
 				<![CDATA[
 geth --datadir ~/ethereum/data2 init genesis.json
-geth --datadir="~/ethereum/data2" --networkid 123456 --port 30302 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" -rpcport 8542		
+geth --datadir="~/ethereum/data2" --networkid 123456 --port 30302 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8542		
 				]]>
 				</screen>
 				<para>启动后控制台输出与实例一类似</para>
