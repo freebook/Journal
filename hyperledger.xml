@@ -140,7 +140,7 @@ hyperledger/fabric-peer            Fabric Peer docker image for Hyperledger Pro�
 [root@localhost ~]# docker pull hyperledger/fabric-peer:latest
 Error response from daemon: manifest for hyperledger/fabric-peer:latest not found
 
-不清楚什么原因，可以 search 到的镜像 pull 不了，所以只能安装 yeasy 这个人的镜像。				
+不清楚什么原因，可以 search 到的镜像 pull 不了，所以只能安装 yeasy 这个人的镜像。	
 				]]>
 				</screen>
 			</section>
@@ -332,7 +332,7 @@ peer chaincode deploy -n test_cc -p github.com/hyperledger/fabric/examples/chain
 peer chaincode invoke -n test_cc -c '{"Args":["query","a"]}'
 peer chaincode invoke -n test_cc -c '{"Args":["query","b"]}'
 交易，a向b转账10元，如下：
-peer chaincode invoke -n test_cc -c '{"Args":["invoke","a","b","10"]}'				
+peer chaincode invoke -n test_cc -c '{"Args":["invoke","a","b","10"]}'			
 				]]>
 				</screen>
 			</section>

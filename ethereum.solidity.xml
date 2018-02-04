@@ -27,157 +27,6 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-	<section id="background">
-		<title>背景</title>
-		<para>区块链是什么？一句话，它是一种特殊的（非关系型）分布式数据库，这种数据库只能做插入和查找操作，并且没有管理员。</para>
-		<para>首先，区块链的主要作用是储存信息。任何需要保存的信息，都可以写入区块链，也可以从里面读取，所以它是数据库。</para>
-		<para>其次，任何人都可以架设服务器，加入区块链网络，成为一个节点。区块链的世界里面，没有中心节点，每个节点都是平等的，都保存着整个数据库。你可以向任何一个节点，写入/读取数据，因为所有节点最后都会同步，保证区块链一致。</para>
-	</section>
-
-	<section id="overview">
-		<title>软件安装与配置</title>
-		<section id="ubuntu">
-			<title>Ubuntu</title>
-			<section id="ubuntu.geth">
-				<title>安装 geth</title>
-				<para>安装环境</para>
-				<literallayout>
-				<![CDATA[
-Ubuntu 17.10				
-				]]>
-				</literallayout>
-				<screen>
-				<![CDATA[
-sudo apt upgrade -y				
-sudo apt install software-properties-common
-sudo add-apt-repository -y ppa:ethereum/ethereum
-sudo apt update
-sudo apt install ethereum			
-				]]>
-				</screen>
-				<screen>
-				<![CDATA[
-neo@netkiller ~ % geth version
-Geth
-Version: 1.7.3-stable
-Git Commit: 4bb3c89d44e372e6a9ab85a8be0c9345265c763a
-Architecture: amd64
-Protocol Versions: [63 62]
-Network Id: 1
-Go Version: go1.9.1
-Operating System: linux
-GOPATH=
-GOROOT=/usr/lib/go-1.9
-				]]>
-				</screen>
-
-			</section>
-			<section id="ubuntu.solc">
-				<title>安装 solc</title>
-				<screen>
-				<![CDATA[
-sudo apt install solc -y
-				]]>
-				</screen>
-				<screen>
-				<![CDATA[
-neo@netkiller ~ % solc --version
-solc, the solidity compiler commandline interface
-Version: 0.4.19+commit.c4cbbb05.Linux.g++				
-				]]>
-				</screen>
-			</section>
-		</section>
-		<section id="centos">
-			<title>CentOS 7</title>
-			<screen>
-			<![CDATA[
-yum update -y
-yum install git wget bzip2 -y	
-yum install golang -y
-
-cd /usr/local/src
-git clone https://github.com/ethereum/go-ethereum.git
-cd go-ethereum/
-gmake all
-mv build /srv/go-ethereum
-
-echo "export PATH=$PATH:$PWD/build/bin" >> /etc/profile
-source /etc/profile		
-			]]>
-			</screen>
-			<para>
-				上面安装版本是 unstable 版本，如果是生产环境请使用 Release 版本
-				<ulink url="https://github.com/ethereum/go-ethereum/tags">https://github.com/ethereum/go-ethereum/tags</ulink>
-			</para>
-			<screen>
-			<![CDATA[
-wget https://github.com/ethereum/go-ethereum/archive/v1.7.3.tar.gz
-tar zxvf v1.7.3.tar.gz
-cd go-ethereum-1.7.3/
-gmake all
-
-mv build /srv/go-ethereum-1.7.3
-			]]>
-			</screen>
-		</section>
-		<section id="windows">
-			<title>Windows</title>
-			<screen>
-				<![CDATA[
-访问 https://geth.ethereum.org/downloads/
-下载并安装 Geth for Windows				
-				]]>
-			</screen>
-		</section>
-		<section id="mac">
-			<title>Mac OS</title>
-			<screen>
-				<![CDATA[
-brew update
-brew upgrade				
-brew tap ethereum/ethereum
-brew install ethereum
-				]]>
-			</screen>
-		</section>
-		<section id="make">
-			<title>编译安装</title>
-			<screen>
-				<![CDATA[
-git clone https://github.com/ethereum/go-ethereum
-sudo apt-get install -y build-essential golang
-cd go-ethereum
-make geth
-				]]>
-			</screen>
-		</section>
-		<section>
-			<title>Netkiller OSCM 一键安装</title>
-			<para>适用于 CentOS 7</para>
-			<screen>
-			<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/blockchain/ethereum/centos/go-ethereum-1.7.3.sh | bash			
-			]]>
-			</screen>
-			<para>安装完成后使用下面命令进入控制台</para>
-			<screen>
-			<![CDATA[
-[root@localhost ~]# su - ethereum
-Last login: Sat Feb  3 00:23:52 EST 2018 on pts/0
-			
-[ethereum@localhost ~]$ geth attach
-Welcome to the Geth JavaScript console!
-
-instance: Geth/v1.7.3-stable/linux-amd64/go1.8.3
- modules: admin:1.0 debug:1.0 eth:1.0 miner:1.0 net:1.0 personal:1.0 rpc:1.0 txpool:1.0 web3:1.0
-
-> 
-			]]>
-			</screen>
-			<para></para>
-		</section>
-	</section>
 
 	<section id="truffle">
 		<title>Truffle</title>
@@ -298,26 +147,24 @@ Network up to date.
 			]]>
 			</screen>
 		</section>
-	</section><section id="solidity">
-		<title>智能合约</title>
-		<para>Solidity是什么？Solidity是以太坊智能合约的编程语言。</para>
-		<section id="browser-solidity">
-			<title>browser-solidity</title>
-			<para>在线使用 browser-solidity</para>
-			<ulink url="https://ethereum.github.io/browser-solidity/">https://ethereum.github.io/browser-solidity/</ulink>
-			<ulink url="https://remix.ethereum.org/">https://remix.ethereum.org/</ulink>
-			<para>国内网络有时不给力，建议将 Remix 安装到本地目录。</para>
-			<section id="remix">
-				<title>将 Remix(browser-solidity) 安装到本地</title>
-				<para>共享合约目录</para>
-				<screen>
+	</section>
+	<section id="browser-solidity">
+		<title>browser-solidity</title>
+		<para>在线使用 browser-solidity</para>
+		<ulink url="https://ethereum.github.io/browser-solidity/">https://ethereum.github.io/browser-solidity/</ulink>
+		<ulink url="https://remix.ethereum.org/">https://remix.ethereum.org/</ulink>
+		<para>国内网络有时不给力，建议将 Remix 安装到本地目录。</para>
+		<section id="remix">
+			<title>将 Remix(browser-solidity) 安装到本地</title>
+			<para>共享合约目录</para>
+			<screen>
 			<![CDATA[
 npm install -g remixd
 remixd -S "/home/ethereum/codebase/blocks/contracts"		
 			]]>
-				</screen>
-				<para>安装 browser-solidity </para>
-				<screen>
+			</screen>
+			<para>安装 browser-solidity </para>
+			<screen>
 				<![CDATA[
 git clone https://github.com/ethereum/browser-solidity 
 cd browser-solidity 
@@ -328,28 +175,32 @@ sudo chown -R $USER:$(id -gn $USER) /home/neo/.config
 
 npm start
 				]]>
-				</screen>
-				<para>
-					启动后浏览器中输入
-					<ulink url="http://localhost:8080">http://localhost:8080</ulink>
-					可以看到 Remix 界面
-				</para>
-				<note>
-					<title>Web3 Provider</title>
-					<para>Remix 提供三种运行环境,常用的有 JavaScript VM 和 Web3 Provider (连接到 --rpc
-						--rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8545)</para>
-					<para>Web3 Provider 方式需要解锁账号和启动挖矿</para>
-					<screen>
+			</screen>
+			<para>
+				启动后浏览器中输入
+				<ulink url="http://localhost:8080">http://localhost:8080</ulink>
+				可以看到 Remix 界面
+			</para>
+			<note>
+				<title>Web3 Provider</title>
+				<para>Remix 提供三种运行环境,常用的有 JavaScript VM 和 Web3 Provider (连接到 --rpc
+					--rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8545)</para>
+				<para>Web3 Provider 方式需要解锁账号和启动挖矿</para>
+				<screen>
 					<![CDATA[
 > personal.unlockAccount(eth.accounts[0],"");
 > miner.start(2); admin.sleepBlocks(1); miner.stop();			
 					]]>
-					</screen>
-				</note>
+				</screen>
+			</note>
 
 
-			</section>
 		</section>
+	</section>
+	<section id="solidity">
+		<title>智能合约语言 Solidity</title>
+		<para>Solidity 是什么？Solidity是以太坊智能合约的编程语言。</para>
+		
 
 		<section id="solidity.Getting.Started">
 			<title>智能合约入门演示</title>
@@ -484,7 +335,17 @@ uint 无符号整形（256bits 无符号整数）
 string 字符串类型	
 			]]>
 			</literallayout>
-
+			<section id="">
+				<title>数组</title>
+				<programlisting>
+				<![CDATA[
+	//创建一个memory的数组
+	uint[] memory a = new uint[](7);
+	
+	uint[] x = [uint(1), 3, 4];
+				]]>
+				</programlisting>
+			</section>
 			<section id="solidity.enum">
 				<title>枚举类型</title>
 				<programlisting>
@@ -497,7 +358,7 @@ contract Purchase {
 				]]>
 				</programlisting>
 			</section>
-			<section>
+			<section id="solidity.struct">
 				<title>结构体</title>
 				<para>定义结构体</para>
 				<screen>
@@ -525,6 +386,41 @@ contract Purchase {
 address public minter;
 string name;
 int num;	
+
+    uint constant x = 32**22 + 8;
+    string constant text = "abc";
+    bytes32 constant myHash = keccak256("abc");
+			]]>
+			</programlisting>
+			<para>变量赋值</para>
+			<programlisting>
+			<![CDATA[
+pragma solidity ^0.4.19;
+
+contract C {
+    uint[] data;
+
+    function f() public view returns (uint, bool, uint) {
+        return (7, true, 2);
+    }
+
+    function g() public {
+        // 声明和分配变量。 明确指定类型是不可能的。
+        var (x, b, y) = f();
+        // 分配给一个预先存在的变量。
+        (x, y) = (2, 7);
+        // 互换值的常用技巧对于非价值存储类型不起作用。
+        (x, y) = (y, x);
+        // 组件可以省略（也可以用于变量声明）。
+        // 如果元组以空组件结束，其余的值将被丢弃。
+        (data.length,) = f(); // 设置长度为 7
+        // 在左边也可以做同样的事情。
+        (,data[3]) = f(); // Sets data[3] to 2
+        // 组件只能在作业的左侧排除，但有一个例外：
+        (x,) = (1,);
+        // (1,) 是指定1元组元的唯一方法，因为（1）等于1。
+    }
+}			
 			]]>
 			</programlisting>
 		</section>
@@ -570,7 +466,26 @@ contract MyContractByNetkiller {
 				]]>
 				</programlisting>
 			</section>
+			<section id="solidity.func.param">
+				<title>参数传递</title>
+				<para>除了 f(2,3) 这样传递参数，还可以使用类似字典或Map的方式 f({value: 2, key: 3});</para>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.0;
 
+contract C {
+    function f(uint key, uint value) {
+        // ...
+    }
+
+    function g() {
+        // named arguments
+        f({value: 2, key: 3});
+    }
+}				
+				]]>
+				</programlisting>
+			</section>
 			<section>
 				<title>函数的例子</title>
 
@@ -616,7 +531,7 @@ contract MyContractByNetkiller {
 
 		</section>
 	</section>
-	
+
 	<section id="web3j">
 		<title>Jave Client</title>
 		<para>Java 客户端与 Server 之间采用json-rpc协议连接。</para>
