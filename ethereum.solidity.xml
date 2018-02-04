@@ -224,7 +224,6 @@ output/HelloWorld.abi
 		<title>智能合约语言 Solidity</title>
 		<para>Solidity 是什么？Solidity是以太坊智能合约的编程语言。</para>
 
-
 		<section id="solidity.Getting.Started">
 			<title>智能合约入门演示</title>
 			<para>这里我们先做一个 Helloword 演示，让你初步对智能合约有一个大概的认识。</para>
@@ -340,7 +339,7 @@ undefined
 		</section>
 
 		<section id="solidity.type.public">
-			<title></title>
+			<title>修饰符</title>
 			<screen>
 			<![CDATA[
 public ： 函数可见性
@@ -887,7 +886,7 @@ System.out.println(transaction.getResult());
 			</section>
 		</section>
 		<section id="web3j.walletutils">
-			<title></title>
+			<title>钱包</title>
 			<section id="WalletUtils.generateFullNewWalletFile">
 				<title>创建钱包</title>
 				<programlisting>
@@ -944,7 +943,7 @@ neo@MacBook-Pro ~ % cat /tmp/ethereum/keystore/UTC--2018-02-04T10-30-58.47600000
 				</screen>
 			</section>
 			<section id="WalletUtils.loadCredentials">
-				<title></title>
+				<title>从钱包取出账号</title>
 				<programlisting>
 				<![CDATA[
 package cn.netkiller.ethereum.wallet;
@@ -993,7 +992,8 @@ public class WalletMain {
 				</screen>
 				
 			</section>
-		</section><section id="web3j.contract">
+		</section>
+		<section id="web3j.contract">
 			<title>智能合约</title>
 			<programlisting>
 			<![CDATA[
