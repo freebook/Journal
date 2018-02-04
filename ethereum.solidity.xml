@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN" "/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
+	xml:lang="zh-cn">
+	<articleinfo>
+		<title>以太坊智能合约入门</title>
+		<subtitle>本文作者最近在找工作，有意向致电 13113668890</subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+			<para>本文采用碎片化写作，原文会不定期更新，请尽量阅读原文。</para>
+			<para>
+				<ulink url="http://www.netkiller.cn/journal/ethereum.solidity.html">http://www.netkiller.cn/journal/ethereum.solidity.html</ulink>
+			</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword>ethereum</keyword>
+			<keyword>geth</keyword>
+			<keyword>browser-solidity</keyword>
+			<keyword>solidity</keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="background">
+		<title>背景</title>
+		<para>区块链是什么？一句话，它是一种特殊的（非关系型）分布式数据库，这种数据库只能做插入和查找操作，并且没有管理员。</para>
+		<para>首先，区块链的主要作用是储存信息。任何需要保存的信息，都可以写入区块链，也可以从里面读取，所以它是数据库。</para>
+		<para>其次，任何人都可以架设服务器，加入区块链网络，成为一个节点。区块链的世界里面，没有中心节点，每个节点都是平等的，都保存着整个数据库。你可以向任何一个节点，写入/读取数据，因为所有节点最后都会同步，保证区块链一致。</para>
+	</section>
+
+	<section id="overview">
+		<title>软件安装与配置</title>
+		<section id="ubuntu">
+			<title>Ubuntu</title>
+			<section id="ubuntu.geth">
+				<title>安装 geth</title>
+				<para>安装环境</para>
+				<literallayout>
+				<![CDATA[
+Ubuntu 17.10				
+				]]>
+				</literallayout>
+				<screen>
+				<![CDATA[
+sudo apt upgrade -y				
+sudo apt install software-properties-common
+sudo add-apt-repository -y ppa:ethereum/ethereum
+sudo apt update
+sudo apt install ethereum			
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+neo@netkiller ~ % geth version
+Geth
+Version: 1.7.3-stable
+Git Commit: 4bb3c89d44e372e6a9ab85a8be0c9345265c763a
+Architecture: amd64
+Protocol Versions: [63 62]
+Network Id: 1
+Go Version: go1.9.1
+Operating System: linux
+GOPATH=
+GOROOT=/usr/lib/go-1.9
+				]]>
+				</screen>
+
+			</section>
+			<section id="ubuntu.solc">
+				<title>安装 solc</title>
+				<screen>
+				<![CDATA[
+sudo apt install solc -y
+				]]>
+				</screen>
+				<screen>
+				<![CDATA[
+neo@netkiller ~ % solc --version
+solc, the solidity compiler commandline interface
+Version: 0.4.19+commit.c4cbbb05.Linux.g++				
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section id="centos">
+			<title>CentOS 7</title>
+			<screen>
+			<![CDATA[
+yum update -y
+yum install git wget bzip2 -y	
+yum install golang -y
+
+cd /usr/local/src
+git clone https://github.com/ethereum/go-ethereum.git
+cd go-ethereum/
+gmake all
+mv build /srv/go-ethereum
+
+echo "export PATH=$PATH:$PWD/build/bin" >> /etc/profile
+source /etc/profile		
+			]]>
+			</screen>
+			<para>
+				上面安装版本是 unstable 版本，如果是生产环境请使用 Release 版本
+				<ulink url="https://github.com/ethereum/go-ethereum/tags">https://github.com/ethereum/go-ethereum/tags</ulink>
+			</para>
+			<screen>
+			<![CDATA[
+wget https://github.com/ethereum/go-ethereum/archive/v1.7.3.tar.gz
+tar zxvf v1.7.3.tar.gz
+cd go-ethereum-1.7.3/
+gmake all
+
+mv build /srv/go-ethereum-1.7.3
+			]]>
+			</screen>
+		</section>
+		<section id="windows">
+			<title>Windows</title>
+			<screen>
+				<![CDATA[
+访问 https://geth.ethereum.org/downloads/
+下载并安装 Geth for Windows				
+				]]>
+			</screen>
+		</section>
+		<section id="mac">
+			<title>Mac OS</title>
+			<screen>
+				<![CDATA[
+brew update
+brew upgrade				
+brew tap ethereum/ethereum
+brew install ethereum
+				]]>
+			</screen>
+		</section>
+		<section id="make">
+			<title>编译安装</title>
+			<screen>
+				<![CDATA[
+git clone https://github.com/ethereum/go-ethereum
+sudo apt-get install -y build-essential golang
+cd go-ethereum
+make geth
+				]]>
+			</screen>
+		</section>
+		<section>
+			<title>Netkiller OSCM 一键安装</title>
+			<para>适用于 CentOS 7</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/blockchain/ethereum/centos/go-ethereum-1.7.3.sh | bash			
+			]]>
+			</screen>
+			<para>安装完成后使用下面命令进入控制台</para>
+			<screen>
+			<![CDATA[
+[root@localhost ~]# su - ethereum
+Last login: Sat Feb  3 00:23:52 EST 2018 on pts/0
+			
+[ethereum@localhost ~]$ geth attach
+Welcome to the Geth JavaScript console!
+
+instance: Geth/v1.7.3-stable/linux-amd64/go1.8.3
+ modules: admin:1.0 debug:1.0 eth:1.0 miner:1.0 net:1.0 personal:1.0 rpc:1.0 txpool:1.0 web3:1.0
+
+> 
+			]]>
+			</screen>
+			<para></para>
+		</section>
+	</section>
+
+	<section id="truffle">
+		<title>Truffle</title>
+		<para>Truffle 是 solidity 开发框架</para>
+		<section id="truffle.setup">
+			<title>安装 Truffle</title>
+			<screen>
+			<![CDATA[
+# 安装 Nodejs
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get install -y nodejs
+			
+# 安装truffle
+sudo npm install -g truffle
+
+# 安装testrpc
+sudo npm install -g ethereumjs-testrpc
+			]]>
+			</screen>
+		</section>
+		<section id="truffle.init">
+			<title>创建项目</title>
+			<screen>
+			<![CDATA[
+cd ~/ethereum
+mkdir truffle-project
+cd truffle-project 
+truffle init			
+			]]>
+			</screen>
+			<para>操作演示</para>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project % truffle init
+Downloading...
+Unpacking...
+Setting up...
+Unbox successful. Sweet!
+
+Commands:
+
+  Compile:        truffle compile
+  Migrate:        truffle migrate
+  Test contracts: truffle test
+  
+neo@netkiller ~/ethereum/truffle-project % tree 
+.
+|-- contracts
+|   `-- Migrations.sol
+|-- migrations
+|   `-- 1_initial_migration.js
+|-- test
+|-- truffle-config.js
+`-- truffle.js
+
+3 directories, 4 files			
+			]]>
+			</screen>
+		</section>
+		<section id="truffle.js">
+			<title>配置 Truffle</title>
+			<para>打开文件 truffle.js </para>
+			<programlisting>
+			<![CDATA[
+module.exports = {
+  // See <http://truffleframework.com/docs/advanced/configuration>
+  // to customize your Truffle configuration!
+};			
+			]]>
+			</programlisting>
+			<para>修改为</para>
+			<screen>
+			<![CDATA[
+module.exports = {
+  // See <http://truffleframework.com/docs/advanced/configuration>
+  // to customize your Truffle configuration!
+			
+  networks: {
+    development: {
+      host: "localhost",
+      port: 8545,
+      network_id: "*" // Match any network id
+    }
+  }	
+  		
+};	
+			]]>
+			</screen>
+		</section>
+		<section id="truffle.compile">
+			<title>编译智能合约</title>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project % truffle compile
+Compiling ./contracts/Migrations.sol...
+Writing artifacts to ./build/contracts
+			]]>
+			</screen>
+			<para>truffle默认只会编译最后一次修改过的合约文件, 这是为了减少比重复编译。"--all"选项,可以强制编译所有文件。</para>
+			<para>编译结果</para>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project % find build 
+build
+build/contracts
+build/contracts/Migrations.json			
+			]]>
+			</screen>
+		</section>
+		<section id="truffle.migrate">
+			<title>部署智能合约</title>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project % truffle migrate      
+Using network 'development'.
+
+Network up to date.			
+			]]>
+			</screen>
+		</section>
+	</section><section id="solidity">
+		<title>智能合约</title>
+		<para>Solidity是什么？Solidity是以太坊智能合约的编程语言。</para>
+		<section id="browser-solidity">
+			<title>browser-solidity</title>
+			<para>在线使用 browser-solidity</para>
+			<ulink url="https://ethereum.github.io/browser-solidity/">https://ethereum.github.io/browser-solidity/</ulink>
+			<ulink url="https://remix.ethereum.org/">https://remix.ethereum.org/</ulink>
+			<para>国内网络有时不给力，建议将 Remix 安装到本地目录。</para>
+			<section id="remix">
+				<title>将 Remix(browser-solidity) 安装到本地</title>
+				<para>共享合约目录</para>
+				<screen>
+			<![CDATA[
+npm install -g remixd
+remixd -S "/home/ethereum/codebase/blocks/contracts"		
+			]]>
+				</screen>
+				<para>安装 browser-solidity </para>
+				<screen>
+				<![CDATA[
+git clone https://github.com/ethereum/browser-solidity 
+cd browser-solidity 
+npm install 
+npm run prepublish
+
+sudo chown -R $USER:$(id -gn $USER) /home/neo/.config
+
+npm start
+				]]>
+				</screen>
+				<para>
+					启动后浏览器中输入
+					<ulink url="http://localhost:8080">http://localhost:8080</ulink>
+					可以看到 Remix 界面
+				</para>
+				<note>
+					<title>Web3 Provider</title>
+					<para>Remix 提供三种运行环境,常用的有 JavaScript VM 和 Web3 Provider (连接到 --rpc
+						--rpcaddr="0.0.0.0" --rpccorsdomain "*" --rpcport 8545)</para>
+					<para>Web3 Provider 方式需要解锁账号和启动挖矿</para>
+					<screen>
+					<![CDATA[
+> personal.unlockAccount(eth.accounts[0],"");
+> miner.start(2); admin.sleepBlocks(1); miner.stop();			
+					]]>
+					</screen>
+				</note>
+
+
+			</section>
+		</section>
+
+		<section id="solidity.Getting.Started">
+			<title>智能合约入门演示</title>
+			<para>这里我们先做一个 Helloword 演示，让你初步对智能合约有一个大概的认识。</para>
+			<tip>
+				<para>需要注意的是，你在网上会看到很多例子，对照这例子一步一步操作，始终无法成功，这根Solidity的版本有很大关系。</para>
+			</tip>
+
+			<para>将下面代码粘贴到 </para>
+			<programlisting>
+			<![CDATA[
+pragma solidity ^0.4.19;
+
+contract HelloWorld
+{
+    string tmp;
+
+    function HelloWorld() public
+    {
+
+    }
+
+    function get() public constant returns (string)
+    {
+        return tmp;
+    }
+
+    function set(string _tmp) public
+    {
+        tmp = _tmp;
+    }
+
+}
+			]]>
+			</programlisting>
+			<para>Compile - Details - WEB3DEPLOY</para>
+			<programlisting>
+			<![CDATA[
+var helloworldContract = web3.eth.contract([{"constant":false,"inputs":[{"name":"_tmp","type":"string"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]);
+var helloworld = helloworldContract.new(
+   {
+     from: web3.eth.accounts[0], 
+     data: '0x6060604052341561000f57600080fd5b6102e38061001e6000396000f30060606040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680634ed3885e146100515780636d4ce63c146100ae575b600080fd5b341561005c57600080fd5b6100ac600480803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509190505061013c565b005b34156100b957600080fd5b6100c1610156565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156101015780820151818401526020810190506100e6565b50505050905090810190601f16801561012e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b80600090805190602001906101529291906101fe565b5050565b61015e61027e565b60008054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156101f45780601f106101c9576101008083540402835291602001916101f4565b820191906000526020600020905b8154815290600101906020018083116101d757829003601f168201915b5050505050905090565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061023f57805160ff191683800117855561026d565b8280016001018555821561026d579182015b8281111561026c578251825591602001919060010190610251565b5b50905061027a9190610292565b5090565b602060405190810160405280600081525090565b6102b491905b808211156102b0576000816000905550600101610298565b5090565b905600a165627a7a72305820ea826c30d131f20a4d3a8e3fb059ffa95f4c222a5b099029750e4c1937b46e5b0029', 
+     gas: '4700000'
+   }, function (e, contract){
+    console.log(e, contract);
+    if (typeof contract.address !== 'undefined') {
+         console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+    }
+ })
+			]]>
+			</programlisting>
+
+			<para>部署智能合约需要消耗 gas 所以你要先解锁账号。</para>
+			<screen>
+			<![CDATA[
+> personal.unlockAccount("0x83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6", "", 300)
+true			
+			]]>
+			</screen>
+
+			<screen>
+			<![CDATA[
+> var helloworldContract = web3.eth.contract([{"constant":false,"inputs":[{"name":"_tmp","type":"string"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]);
+undefined
+> var helloworld = helloworldContract.new(
+...    {
+......      from: web3.eth.accounts[0], 
+......      data: '0x6060604052341561000f57600080fd5b6102e38061001e6000396000f30060606040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680634ed3885e146100515780636d4ce63c146100ae575b600080fd5b341561005c57600080fd5b6100ac600480803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509190505061013c565b005b34156100b957600080fd5b6100c1610156565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156101015780820151818401526020810190506100e6565b50505050905090810190601f16801561012e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b80600090805190602001906101529291906101fe565b5050565b61015e61027e565b60008054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156101f45780601f106101c9576101008083540402835291602001916101f4565b820191906000526020600020905b8154815290600101906020018083116101d757829003601f168201915b5050505050905090565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061023f57805160ff191683800117855561026d565b8280016001018555821561026d579182015b8281111561026c578251825591602001919060010190610251565b5b50905061027a9190610292565b5090565b602060405190810160405280600081525090565b6102b491905b808211156102b0576000816000905550600101610298565b5090565b905600a165627a7a72305820ea826c30d131f20a4d3a8e3fb059ffa95f4c222a5b099029750e4c1937b46e5b0029', 
+......      gas: '4700000'
+......    }, function (e, contract){
+......     console.log(e, contract);
+......     if (typeof contract.address !== 'undefined') {
+.........          console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+.........     }
+......  })
+null [object Object]
+undefined
+			]]>
+			</screen>
+			<para>helloworld 智能合约已经创建完毕</para>
+			<screen>
+			<![CDATA[
+> helloworld
+{
+  abi: [{
+      constant: false,
+      inputs: [{...}],
+      name: "set",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function"
+  }, {
+      constant: true,
+      inputs: [],
+      name: "get",
+      outputs: [{...}],
+      payable: false,
+      stateMutability: "view",
+      type: "function"
+  }, {
+      inputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "constructor"
+  }],
+  address: undefined,
+  transactionHash: "0x466c9ad9db8f37ed5b65bc261210da92f51364ebab1dcbd3759bfc3e16ad6502"
+}
+			
+			]]>
+			</screen>
+		</section>
+		<section id="solc">
+			<title>使用 solc 编译 *.sol 代码</title>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/solidity % solc --bin --abi --optimize -o ./output helloworld.sol
+neo@netkiller ~/ethereum/solidity % find output         
+output
+output/HelloWorld.bin
+output/HelloWorld.abi			
+			]]>
+			</screen>
+		</section>
+		<section id="solidity.type">
+			<title>数据类型</title>
+			<literallayout>
+			<![CDATA[
+uint 无符号整形（256bits 无符号整数）
+string 字符串类型	
+			]]>
+			</literallayout>
+
+			<section id="solidity.enum">
+				<title>枚举类型</title>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.0;
+
+contract Purchase {
+    enum State { Created, Locked, Inactive } // Enum
+}				
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>结构体</title>
+				<para>定义结构体</para>
+				<screen>
+				<![CDATA[
+	struct Voter {
+        uint weight; // weight is accumulated by delegation
+        bool voted;  // if true, that person already voted
+        address delegate; // person delegated to
+        uint vote;   // index of the voted proposal
+    }
+
+    // This is a type for a single proposal.
+    struct Proposal {
+        bytes32 name;   // short name (up to 32 bytes)
+        uint voteCount; // number of accumulated votes
+    }			
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section id="solidity.variable">
+			<title>变量</title>
+			<programlisting>
+			<![CDATA[
+address public minter;
+string name;
+int num;	
+			]]>
+			</programlisting>
+		</section>
+
+		<section id="solidity.function">
+			<title>函数</title>
+			<section>
+				<title>构造方法</title>
+				<para>构造方法的定义是 contract 与 function 相同</para>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.18;
+
+contract MyContractByNetkiller {
+    /* Constructor */
+
+    function MyContractByNetkiller() public{
+
+    }
+}
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>定义函数</title>
+				<para>没有返回值</para>
+				<programlisting>
+				<![CDATA[
+	function setName(string _name) public{
+        name = _name;
+    }			
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>函数返回值</title>
+				<para>有返回值</para>
+				<programlisting>
+				<![CDATA[
+	function getName() public view returns(string){
+        return name;
+    }
+				]]>
+				</programlisting>
+			</section>
+
+			<section>
+				<title>函数的例子</title>
+
+
+				<para>完整的例子</para>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.18;
+
+contract MyContractByNetkiller {
+    /* Constructor */
+    string name;
+    int num;
+    function MyContractByNetkiller() public{
+        name = "default";
+        num = 1;
+    }
+    function setName(string _name) public{
+        name = _name;
+    }
+    function getName() public view returns(string){
+        return name;
+    }
+    function setNum(int n) public{
+        num = n;
+    }
+    function addNum(int m) public view returns(int res){
+        res = m + num;
+    }
+}
+				]]>
+				</programlisting>
+			</section>
+		</section>
+		<section id="solidity.event">
+			<title>事件</title>
+
+			<programlisting>
+			<![CDATA[
+	event Sent(address from, address to, uint amount);			
+			]]>
+			</programlisting>
+
+		</section>
+	</section>
+	
+	<section id="web3j">
+		<title>Jave Client</title>
+		<para>Java 客户端与 Server 之间采用json-rpc协议连接。</para>
+		<para>首先启动服务</para>
+		<screen>
+		<![CDATA[
+neo@netkiller ~ % geth --networkid 123456 --rpc --rpcaddr="0.0.0.0" --rpccorsdomain "*" --nodiscover 
+INFO [02-01|23:35:12] Starting peer-to-peer node               instance=Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1
+INFO [02-01|23:35:12] Allocated cache and file handles         database=/home/neo/.ethereum/geth/chaindata cache=128 handles=1024
+INFO [02-01|23:35:12] Initialised chain configuration          config="{ChainID: 15 Homestead: 0 DAO: <nil> DAOSupport: false EIP150: <nil> EIP155: 0 EIP158: 0 Byzantium: <nil> Engine: unknown}"
+INFO [02-01|23:35:12] Disk storage enabled for ethash caches   dir=/home/neo/.ethereum/geth/ethash count=3
+INFO [02-01|23:35:12] Disk storage enabled for ethash DAGs     dir=/home/neo/.ethash               count=2
+INFO [02-01|23:35:12] Initialising Ethereum protocol           versions="[63 62]" network=123456
+INFO [02-01|23:35:12] Loaded most recent local header          number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded most recent local full block      number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded most recent local fast block      number=719 hash=61330b…82786e td=108754979
+INFO [02-01|23:35:12] Loaded local transaction journal         transactions=0 dropped=0
+INFO [02-01|23:35:12] Regenerated local transaction journal    transactions=0 accounts=0
+WARN [02-01|23:35:12] Blockchain not empty, fast sync disabled 
+INFO [02-01|23:35:12] Starting P2P networking 
+INFO [02-01|23:35:12] RLPx listener up                         self="enode://9f6490ffb5236f2ddc5710ae73d47c740e0a3644bbd2d67029cf4a6c4693d2f470b642fd2cc3507f7e851df60aaeb730a1270b7a477f91ec5b6b17a8a4b40527@[::]:30303?discport=0"
+INFO [02-01|23:35:12] IPC endpoint opened: /home/neo/.ethereum/geth.ipc 
+INFO [02-01|23:35:12] HTTP endpoint opened: http://0.0.0.0:8545 
+INFO [02-01|23:35:15] Mapped network port                      proto=tcp extport=30303 intport=30303 interface="UPNP IGDv1-IP1"		
+		]]>
+		</screen>
+		<section id="pom.xml">
+			<title>Maven pom.xml 文件</title>
+			<screen>
+			<![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>cn.netkiller</groupId>
+	<artifactId>ethereum</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>ethereum</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.web3j</groupId>
+			<artifactId>core</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+	</dependencies>
+</project>
+			
+			]]>
+			</screen>
+		</section>
+		<section id="connect">
+			<title>连接到服务器获取版本号</title>
+			<programlisting>
+			<![CDATA[
+package cn.netkiller.ethereum;
+
+import java.io.IOException;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.Web3ClientVersion;
+import org.web3j.protocol.http.HttpService;
+
+public class Web3JClient {
+	// TODO Auto-generated method stub
+
+	public static void main(String[] args) {
+		String url = "http://172.16.0.1:8545/";
+		Web3j web3j = Web3j.build(new HttpService(url)); // defaults to http://localhost:8545/
+
+		try {
+			Web3ClientVersion web3ClientVersion = web3j.web3ClientVersion().send();
+			String clientVersion = web3ClientVersion.getWeb3ClientVersion();
+			System.out.println(clientVersion);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+			]]>
+			</programlisting>
+			<para>运行结果</para>
+			<screen>
+			<![CDATA[
+Geth/v1.7.3-stable-4bb3c89d/linux-amd64/go1.9.1			
+			]]>
+			</screen>
+			<para>除了 TCP 方式连接，还支持 IPC 方式。这种方式比较少用，可以使用 localhost 替代。</para>
+			<programlisting>
+			<![CDATA[
+// OS X/Linux/Unix:
+Web3j web3 = Web3j.build(new UnixIpcService("/path/to/socketfile"));
+...
+
+// Windows
+Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
+...			
+			]]>
+			</programlisting>
+		</section>
+		<section id="account">
+			<title>账号管理</title>
+			<section>
+				<title>获得账号列表</title>
+				<programlisting>
+				<![CDATA[
+	public List<String> getAccountlist() {
+
+		try {
+			return web3j.ethAccounts().send().getAccounts();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}				
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>获得账号信息</title>
+				<programlisting>
+				<![CDATA[
+	public String getAccount(int index) {
+		String account = null;
+
+		try {
+			account = web3j.ethAccounts().send().getAccounts().get(index);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return account;
+	}				
+				]]>
+
+				</programlisting>
+			</section>
+			<section>
+				<title>获取余额</title>
+				<programlisting>
+				<![CDATA[
+	public BigInteger getBalance(String account) throws IOException {
+
+		EthGetBalance ethGetBalance = web3j.ethGetBalance(account, DefaultBlockParameterName.LATEST).send();
+		BigInteger balance = ethGetBalance.getBalance();
+		return balance;
+
+	}				
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>转账</title>
+				<programlisting>
+				<![CDATA[
+	public void transfer(String account, float coin)
+			throws InterruptedException, IOException, TransactionException, Exception {
+		String password = "";
+		String walletfile = "/Users/neo/netkiller/UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6";
+		Credentials credentials = WalletUtils.loadCredentials(password, walletfile);
+		TransactionReceipt transactionReceipt = Transfer
+				.sendFunds(web3j, credentials, account, BigDecimal.valueOf(coin), Unit.ETHER).send();
+		System.out.println(transactionReceipt.getStatus());
+	}
+				]]>
+				</programlisting>
+			</section>
+			<section id="web3j.account.example">
+				<title>例子</title>
+			</section>
+		</section>
+		<section id="Credentials">
+			<title>Credentials</title>
+			<programlisting>
+			<![CDATA[
+package cn.netkiller.ethereum.credentials;
+
+import java.io.IOException;
+import java.math.BigInteger;
+
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
+
+public class CredentialsTest {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		String url = "http://172.16.0.1:8545/";
+		Web3j web3j = Web3j.build(new HttpService(url)); // defaults to http://localhost:8545/
+
+		try {
+			String account = web3j.ethAccounts().send().getAccounts().get(0);
+			Credentials credentials = Credentials.create(account);
+			ECKeyPair keyPair = credentials.getEcKeyPair();
+			BigInteger privateKey = keyPair.getPrivateKey();
+			BigInteger publicKey = keyPair.getPublicKey();
+
+			System.out.println(privateKey);
+			System.out.println("---");
+			System.out.println(publicKey);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+}
+			
+			]]>
+			</programlisting>
+		</section>
+	</section>
+	<section id="summary">
+		<title>总结</title>
+	</section>
+	<section id="faq">
+		<title>FAQ</title>
+	</section>
+</article>
+
+
