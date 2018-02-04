@@ -7,7 +7,7 @@
 <article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
 	xml:lang="zh-cn">
 	<articleinfo>
-		<title>以太坊智能合约入门</title>
+		<title>以太坊智能合约开发入门</title>
 		<subtitle>本文作者最近在找工作，有意向致电 13113668890</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
@@ -209,8 +209,8 @@ npm start
 		</section>
 	</section>
 	<section id="solc">
-			<title>使用 solc 编译 *.sol 代码</title>
-			<screen>
+		<title>使用 solc 编译 *.sol 代码</title>
+		<screen>
 			<![CDATA[
 neo@netkiller ~/ethereum/solidity % solc --bin --abi --optimize -o ./output helloworld.sol
 neo@netkiller ~/ethereum/solidity % find output         
@@ -218,8 +218,9 @@ output
 output/HelloWorld.bin
 output/HelloWorld.abi			
 			]]>
-			</screen>
-		</section><section id="solidity">
+		</screen>
+	</section>
+	<section id="solidity">
 		<title>智能合约语言 Solidity</title>
 		<para>Solidity 是什么？Solidity是以太坊智能合约的编程语言。</para>
 
@@ -337,7 +338,7 @@ undefined
 			]]>
 			</screen>
 		</section>
-		
+
 		<section id="solidity.type.public">
 			<title></title>
 			<screen>
@@ -360,7 +361,7 @@ uint 无符号整形（256bits 无符号整数）
 string 字符串类型	
 			]]>
 			</literallayout>
-			<section id="">
+			<section>
 				<title>数组</title>
 				<programlisting>
 				<![CDATA[
@@ -781,20 +782,7 @@ Web3j web3 = Web3j.build(new WindowsIpcService("/path/to/namedpipefile"));
 
 				</programlisting>
 			</section>
-			<section>
-				<title>获取余额</title>
-				<programlisting>
-				<![CDATA[
-	public BigInteger getBalance(String account) throws IOException {
-
-		EthGetBalance ethGetBalance = web3j.ethGetBalance(account, DefaultBlockParameterName.LATEST).send();
-		BigInteger balance = ethGetBalance.getBalance();
-		return balance;
-
-	}				
-				]]>
-				</programlisting>
-			</section>
+			
 			<section id="web3j.personalUnlockAccount">
 				<title>解锁账号</title>
 				<programlisting>
@@ -807,22 +795,7 @@ if (personalUnlockAccount.accountUnlocked()) {
 				]]>
 				</programlisting>
 			</section>
-			<section>
-				<title>转账</title>
-				<programlisting>
-				<![CDATA[
-	public void transfer(String account, float coin)
-			throws InterruptedException, IOException, TransactionException, Exception {
-		String password = "";
-		String walletfile = "/Users/neo/netkiller/UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6";
-		Credentials credentials = WalletUtils.loadCredentials(password, walletfile);
-		TransactionReceipt transactionReceipt = Transfer
-				.sendFunds(web3j, credentials, account, BigDecimal.valueOf(coin), Unit.ETHER).send();
-		System.out.println(transactionReceipt.getStatus());
-	}
-				]]>
-				</programlisting>
-			</section>
+			
 			<section id="web3j.account.example">
 				<title>例子</title>
 			</section>
@@ -871,7 +844,156 @@ public class CredentialsTest {
 			]]>
 			</programlisting>
 		</section>
-		<section id="web3j.contract">
+		<section id="web3j.transaction">
+			<title>交易</title><section>
+				<title>获取余额</title>
+				<programlisting>
+				<![CDATA[
+	public BigInteger getBalance(String account) throws IOException {
+
+		EthGetBalance ethGetBalance = web3j.ethGetBalance(account, DefaultBlockParameterName.LATEST).send();
+		BigInteger balance = ethGetBalance.getBalance();
+		return balance;
+
+	}				
+				]]>
+				</programlisting>
+			</section>
+			<section>
+				<title>转账</title>
+				<programlisting>
+				<![CDATA[
+	public void transfer(String account, float coin)
+			throws InterruptedException, IOException, TransactionException, Exception {
+		String password = "";
+		String walletfile = "/Users/neo/netkiller/UTC--2018-01-20T04-04-06.786586541Z--83fda0ba7e6cfa8d7319d78fa0e6b753a2bcb5a6";
+		Credentials credentials = WalletUtils.loadCredentials(password, walletfile);
+		TransactionReceipt transactionReceipt = Transfer
+				.sendFunds(web3j, credentials, account, BigDecimal.valueOf(coin), Unit.ETHER).send();
+		System.out.println(transactionReceipt.getStatus());
+	}
+				]]>
+				</programlisting>
+			</section>
+			<section >
+				<title>交易结果查询</title>
+				<programlisting>
+				<![CDATA[
+EthTransaction transaction = web3.ethGetTransactionByHash("TRANSACTION_HASH")
+                                   .sendAsync().get();
+System.out.println(transaction.getResult());				
+				]]>
+				</programlisting>
+			</section>
+		</section>
+		<section id="web3j.walletutils">
+			<title></title>
+			<section id="WalletUtils.generateFullNewWalletFile">
+				<title>创建钱包</title>
+				<programlisting>
+				<![CDATA[
+package cn.netkiller.ethereum.wallet;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.WalletUtils;
+
+public class WalletMain {
+
+	public void createWallet() throws NoSuchAlgorithmException, NoSuchProviderException,
+			InvalidAlgorithmParameterException, CipherException, IOException {
+
+		File file = new File("/tmp/ethereum/keystore");
+		String password = "passw0rd";
+		String fileName = WalletUtils.generateFullNewWalletFile(password, file);
+		System.out.println(fileName);
+
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		WalletMain wallet = new WalletMain();
+		try {
+			wallet.createWallet();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+}
+				
+				]]>
+				</programlisting>
+				<para>运行结果</para>
+				<screen>
+				<![CDATA[
+neo@MacBook-Pro ~ % mkdir -p /tmp/ethereum/keystore
+neo@MacBook-Pro ~ % ll /tmp/ethereum/keystore
+total 8
+-rw-r--r--  1 neo  wheel   491B Feb  4 18:30 UTC--2018-02-04T10-30-58.476000000Z--75d01e920d6e018445dae504058ce4d968fd2a58.json
+
+neo@MacBook-Pro ~ % cat /tmp/ethereum/keystore/UTC--2018-02-04T10-30-58.476000000Z--75d01e920d6e018445dae504058ce4d968fd2a58.json 
+{"address":"75d01e920d6e018445dae504058ce4d968fd2a58","id":"80700448-69bc-475a-aaf9-f2b836f17b13","version":3,"crypto":{"cipher":"aes-128-ctr","ciphertext":"fe86f5dbd61d15d092f9d6870e70bff7ed99a7925703ea71eef23669c8e3ec62","cipherparams":{"iv":"d058819ab660cd062080b405591ba143"},"kdf":"scrypt","kdfparams":{"dklen":32,"n":262144,"p":1,"r":8,"salt":"f69c535137b08667dbac53b8001313f5b43f81fce67a5d0e94b518c97d212d14"},"mac":"c247e34760bc838c3a4c8b2da286ccc6acec244bbc13fc6cc9ce28e88a7319d5"}}
+				]]>
+				</screen>
+			</section>
+			<section id="WalletUtils.loadCredentials">
+				<title></title>
+				<programlisting>
+				<![CDATA[
+package cn.netkiller.ethereum.wallet;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.WalletUtils;
+
+public class WalletMain {
+
+	public void walletAddress() throws IOException, CipherException {
+
+		File file = new File(
+				"/tmp/ethereum/keystore/UTC--2018-02-04T10-43-27.339000000Z--7cab470df532710d13078c5cdc0812a27f70cf51.json");
+		String password = "passw0rd";
+		Credentials credentials = WalletUtils.loadCredentials(password, file);
+		System.out.println(credentials.getAddress());
+
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		WalletMain wallet = new WalletMain();
+		try {
+			wallet.walletAddress();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+}
+				]]>
+				</programlisting>
+				<para>运行结果</para>
+				<screen>
+				<![CDATA[
+0x7cab470df532710d13078c5cdc0812a27f70cf51				
+				]]>
+				</screen>
+				
+			</section>
+		</section><section id="web3j.contract">
 			<title>智能合约</title>
 			<programlisting>
 			<![CDATA[
@@ -1005,7 +1127,19 @@ Netkiller
 INFO [02-04|00:04:43] Submitted transaction                    fullhash=0x9f70ccb600294d2dd6dda08d090362131b107d42a692f27dd4a3b7548dbaf22c recipient=0xEF872F1b344a4B7C765c7D765a3cC82b741777a9			
 			]]>
 			</screen>
+			<section id="contract.load">
+				<title>载入合约</title>
+				<programlisting>
+				<![CDATA[
+HelloWorld contract = HelloWorld.load(contractAddress,web3j,credentials, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);				
+				]]>
+				</programlisting>
+				<screen>
+				<![CDATA[]]>
+				</screen>
+			</section>
 		</section>
+		
 	</section>
 	<section id="web3.py">
 		<title>web3.py - A python interface for interacting with the Ethereum
