@@ -1364,6 +1364,11 @@ true
 			</section>
 		</section>
 	</section>
+	<section id="mist">
+		<title>Ethereum Wallet(Mist)</title>
+		<para>开始学习以太坊时阅读大量文章常常会提到 Mist 一头雾水，后来才知道 Mist 就是 Ethereum Wallet。 Ethereum Wallet 是软件名字， Mist 是项目名字。</para>
+		<para>Ethereum Wallet 可以在以太坊首页下载，如果你需要安装历史版本可以访问 <ulink url="https://github.com/ethereum/mist/releases">https://github.com/ethereum/mist/releases</ulink></para>
+	</section>
 	<section id="summary">
 		<title>总结</title>
 		<section id="example.single">
