@@ -158,6 +158,85 @@ Network up to date.
 			]]>
 			</screen>
 		</section>
+		<section id="truffle.develop">
+			<title>开发环境</title>
+			<para>truffle 自带一个开发环境</para>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project %  truffle develop
+Truffle Develop started at http://localhost:9545/
+
+Accounts:
+(0) 0x627306090abab3a6e1400e9345bc60c78a8bef57
+(1) 0xf17f52151ebef6c7334fad080c5704d77216b732
+(2) 0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef
+(3) 0x821aea9a577a9b44299b9c15c88cf3087f3b5544
+(4) 0x0d1d4e623d10f9fba5db95830f7d3839406c6af2
+(5) 0x2932b7a2355d6fecc4b5c0b6bd44cc31df247a2e
+(6) 0x2191ef87e392377ec08e7c08eb105ef5448eced5
+(7) 0x0f4f2ac550a1b4e2280d04c21cea7ebd822934b5
+(8) 0x6330a553fc93768f612722bb8c2ec78ac90b3bbc
+(9) 0x5aeda56215b167893e80b4fe645ba6d5bab767de
+
+Private Keys:
+(0) c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3
+(1) ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f
+(2) 0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1
+(3) c88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c
+(4) 388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418
+(5) 659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63
+(6) 82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8
+(7) aa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7
+(8) 0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4
+(9) 8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5
+
+Mnemonic: candy maple cake sugar pudding cream honey rich smooth crumble sweet treat
+
+truffle(develop)> 
+			
+			]]>
+			</screen>
+			<para>truffle develop 的作用于 testrpc 类似。</para>
+			<screen>
+			<![CDATA[
+neo@netkiller ~/ethereum/truffle-project % testrpc 
+EthereumJS TestRPC v6.0.3 (ganache-core: 2.0.2)
+
+Available Accounts
+==================
+(0) 0xb5fd43ee8fa5ce1db9a30a25ba385ee3bfc72966
+(1) 0xf5a732345734e1f0f49cbadb145a20d1e1a44b95
+(2) 0x834fcd8c55fdf21fd14c82e9a1ef5d3636a2fed6
+(3) 0x5aa4d047d85727309d3ca653c83c3bb0ecd18903
+(4) 0xb4db2dede86f4539e56ac4438f6e36f09c307e46
+(5) 0x8da382b1a10ab2f1dc149e19fda228a07c78935c
+(6) 0xb290297e89b52713548ff93e5fc23bc3c4183dde
+(7) 0x546183289bd4d9d33a3aee0ee663c0729926e583
+(8) 0xca58321e442533b7f827e6e8976e1905acd15214
+(9) 0xe2c0b336bbb03564204e15a2cb7744564a53efcc
+
+Private Keys
+==================
+(0) ff32f7a06e2fb26b51a745c1e428c60df92c0f9bb3301b19a5b7e0cdfaae521a
+(1) cdbfe40321b6ade8a246748df1c48a738b8a531aee4d1f60a45bfd7f941e0064
+(2) 7092117c2d7832980945e18645a60a1ed0e59261d040749f8b5202c2fc653d74
+(3) f329657c9ad808e9f794a7462a1a9c276266343d5ced263ab618b6a19d6857c1
+(4) 1221766592618add3a57ab109f00efcc70867dd8a9b10a0f7ea75c2b619edfc3
+(5) c27005d6c3581193124c84766cc0b1cc318cb201b7d00b1035f4a4c7767ba790
+(6) 6b7f43dca1dcc00203b751191096bb0602e17a9a94dcee8b846329efa703cea9
+(7) 41be5971d71935bc88c3cf8aefd78ed3188c8721b7134cda3b25d353faf05d4f
+(8) bd4c9d512a4f2da2cdcd9e4f89c049e3e7ac81bf57a05369997c2f13e793bebb
+(9) 04196d803f743cc1fd021e7d02d5a552f14ab9826ccd4d4b265ff96c45169d2c
+
+HD Wallet
+==================
+Mnemonic:      confirm shift cable melody caught swing erode language spend victory conduct van
+Base HD Path:  m/44'/60'/0'/0/{account_index}
+
+Listening on localhost:8545			
+			]]>
+			</screen>
+		</section>
 	</section>
 	<section id="browser-solidity">
 		<title>browser-solidity</title>
@@ -403,6 +482,26 @@ contract Purchase {
 				]]>
 				</screen>
 			</section>
+			<section>
+				<title>address</title>
+				<screen>
+				<![CDATA[
+address public minter;
+				]]>
+				</screen>
+				<section>
+					<title>payable</title>
+					
+				</section>
+				<section>
+					<title>.value()</title>
+					
+				</section>
+				<section>
+					<title>.gas()</title>
+					
+				</section>
+			</section>
 		</section>
 		<section id="solidity.variable">
 			<title>变量</title>
@@ -515,8 +614,6 @@ contract C {
 			</section>
 			<section>
 				<title>函数的例子</title>
-
-
 				<para>完整的例子</para>
 				<programlisting>
 				<![CDATA[
@@ -546,6 +643,42 @@ contract MyContractByNetkiller {
 				]]>
 				</programlisting>
 			</section>
+			<section id="">
+				<title>Fallback function</title>
+				<programlisting>
+				<![CDATA[
+				
+				]]>
+				</programlisting>
+			</section>
+			<section id="solidity.modifier">
+				<title>modifier</title>
+				<para>modifier 可以理解为 function 的触发器，或者理解为 hook。执行 function的时候会首先运行 modifier</para>
+				<para>_; 表示执行 modifier 完成所有命令后，继续运行 function 内的逻辑。</para>
+				<screen>
+				<![CDATA[
+pragma solidity ^0.4.11;  
+  
+contract owned {  
+    function owned() { owner = msg.sender; }  
+    address owner;    
+    uint price;
+    mapping (address => bool) registeredAddresses;
+  
+    modifier onlyOwner {  
+        require(msg.sender == owner);  
+        _;  
+    } 
+    function changePrice(uint _price) onlyOwner {  
+        price = _price;  
+    } 
+    function close() onlyOwner {  
+        selfdestruct(owner);  
+    }  
+}
+				]]>
+				</screen>
+			</section>
 		</section>
 		<section id="solidity.event">
 			<title>事件</title>
@@ -556,6 +689,35 @@ contract MyContractByNetkiller {
 			]]>
 			</programlisting>
 
+		</section>
+		<section id="solidity.oop">
+			<title>面向兑奖编程</title>
+			<section id="solidity.is">
+				<title>继承</title>
+				<para>例子 mortal 继承 owned</para>
+				<programlisting>
+				<![CDATA[
+pragma solidity ^0.4.11;  
+  
+contract owned {  
+    function owned() { owner = msg.sender; }  
+    address owner;  
+  
+    modifier onlyOwner {  
+        require(msg.sender == owner);  
+        _;  
+    }  
+}  
+  
+  
+contract mortal is owned {  
+    function close() onlyOwner {  
+        selfdestruct(owner);  
+    }  
+}
+				]]>
+				</programlisting>
+			</section>
 		</section>
 	</section>
 
@@ -1149,6 +1311,13 @@ HelloWorld contract = HelloWorld.load(contractAddress,web3j,credentials, Managed
 			<ulink url="http://web3py.readthedocs.io/">http://web3py.readthedocs.io/</ulink>
 		</para>
 
+	</section>
+	<section id="testnet">
+		<title>测试网络</title>
+		<section id="rinkeby">
+			<title>rinkeby</title>
+			<ulink url="https://faucet.rinkeby.io">https://faucet.rinkeby.io</ulink>
+		</section>
 	</section>
 	<section id="summary">
 		<title>总结</title>
