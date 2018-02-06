@@ -64,14 +64,6 @@
 		<para>链（ Chain ）：一个链即是一个由若干区块通过特定指向链接、摘要算法或加密算法锚定组成的数据集合。</para>
 
 	</section>
-	<section id="why">
-		<title>why-为什么做</title>
-	</section>
-	<section id="when">
-		<title>when-何时做</title>
-	</section>
-
-
 	<section id="how">
 		<title>how-怎么做</title>
 		<screen>
@@ -101,23 +93,34 @@
 +-------------------+				
 		]]>
 		</screen>
-		<section>
+		<section id="dep.tools">
+			<title>依赖工具</title>
+			<screen>
+			<![CDATA[
+yum -y install epel-release
+yum install -y git
+yum install -y golang
+			]]>
+			</screen>
+		</section>
+		<section id="docker">
 			<title>安装Docker</title>
 			<screen>
 			<![CDATA[
 curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/docker.centos7.ce.sh	 | bash
 curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/registry-mirror.sh	 | bash
-curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/docker-compose.sh	 | bash
 or 
 curl -fsSL https://get.docker.com/ | sh	
 
 创建2个docker网络,如下：
 docker network create fabric_noops
-docker network create fabric_pbft					
-				
-yum -y install epel-release
-yum install -y git
-yum install -y golang
+docker network create fabric_pbft
+			]]>
+			</screen>
+			<para>安装 docker-compose</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/virtualization/docker/docker-compose.sh	 | bash			
 			]]>
 			</screen>
 		</section>
@@ -241,11 +244,7 @@ docker-compose -version
 			</section>
 			<section>
 				<title>启动 docker 虚拟机</title>
-				<screen>
-				<![CDATA[
-git clone https://github.com/yeasy/docker-compose-files
-				]]>
-				</screen>
+
 				<para>创建文件 docker-compose.yml</para>
 				<screen>
 				<![CDATA[
@@ -312,6 +311,12 @@ test_membersrvc_1   membersrvc                       Up      0.0.0.0:7054->7054/
 test_vp0_1          sh -c sleep 5; peer node s ...   Up      0.0.0.0:7050->7050/tcp, 0.0.0.0:7051->7051/tcp, 0.0.0.0:7053->7053/tcp				
 				]]>
 				</screen>
+
+				<screen>
+				<![CDATA[
+
+				]]>
+				</screen>
 			</section>
 		</section>
 		<section>
@@ -352,7 +357,7 @@ root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/ch
 				<title>测试</title>
 				<screen>
 				<![CDATA[
-peer chaincode deploy -n test_cc -p github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 -c '{"Args":["init","a","100","b","200"]}'				
+peer chaincode deploy -n test_cc -p /go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 -c '{"Args":["init","a","100","b","200"]}'				
 peer chaincode invoke -n test_cc -c '{"Args":["query","a"]}'
 peer chaincode invoke -n test_cc -c '{"Args":["query","b"]}'
 交易，a向b转账10元，如下：
@@ -371,15 +376,23 @@ peer chaincode invoke -n test_cc -c '{"Args":["invoke","a","b","10"]}'
 
 	<section id="fabric-samples">
 		<title>fabric-samples</title>
-		<para>安装</para>
+		<para>安装 fabric-samples</para>
 		<screen>
 		<![CDATA[
 git clone https://github.com/hyperledger/fabric-samples.git
-cd fabric-samples/fabcar		
+cd fabric-samples
 		]]>
 		</screen>
-		<para>启动</para>
-		<screen>
+		<para>fabric-samples 包含了很多例子，我们只运行几个常用的例子。</para>
+		<section id="fabcar">
+			<title>fabcar</title>
+			<screen>
+			<![CDATA[
+cd fabric-samples/fabcar				
+			]]>
+			</screen>
+			<para>启动</para>
+			<screen>
 		<![CDATA[
 [root@localhost fabcar]# ./startFabric.sh 
 
@@ -501,18 +514,18 @@ Then run 'node enrollAdmin.js', then 'node registerUser'
 The 'node invoke.js' will fail until it has been updated with valid arguments
 The 'node query.js' may be run at anytime once the user has been registered
 		]]>
-		</screen>
-		<para>至此 hyperledger 开发环境已经启动完毕</para>
-		<para></para>
-		<screen>
+			</screen>
+			<para>至此 hyperledger 开发环境已经启动完毕</para>
+			<para></para>
+			<screen>
 		<![CDATA[
 node enrollAdmin.js
 node registerUser.js 
 node invoke.js
 node query.js 		
 		]]>
-		</screen>
-		<screen>
+			</screen>
+			<screen>
 		<![CDATA[
 [root@localhost fabcar]# node enrollAdmin.js
  Store path:/root/fabric-samples/fabcar/hfc-key-store
@@ -544,7 +557,231 @@ Successfully loaded user1 from persistence
 Query has completed, checking results
 Response is  [{"Key":"CAR0", "Record":{"colour":"blue","make":"Toyota","model":"Prius","owner":"Tomoko"}},{"Key":"CAR1", "Record":{"colour":"red","make":"Ford","model":"Mustang","owner":"Brad"}},{"Key":"CAR2", "Record":{"colour":"green","make":"Hyundai","model":"Tucson","owner":"Jin Soo"}},{"Key":"CAR3", "Record":{"colour":"yellow","make":"Volkswagen","model":"Passat","owner":"Max"}},{"Key":"CAR4", "Record":{"colour":"black","make":"Tesla","model":"S","owner":"Adriana"}},{"Key":"CAR5", "Record":{"colour":"purple","make":"Peugeot","model":"205","owner":"Michel"}},{"Key":"CAR6", "Record":{"colour":"white","make":"Chery","model":"S22L","owner":"Aarav"}},{"Key":"CAR7", "Record":{"colour":"violet","make":"Fiat","model":"Punto","owner":"Pari"}},{"Key":"CAR8", "Record":{"colour":"indigo","make":"Tata","model":"Nano","owner":"Valeria"}},{"Key":"CAR9", "Record":{"colour":"brown","make":"Holden","model":"Barina","owner":"Shotaro"}}]		
 		]]>
-		</screen>
+			</screen>
+		</section>
+		<section id="balance-transfer">
+			<title>balance-transfer</title>
+			<screen>
+			<![CDATA[
+[root@localhost fabric-samples]# cd balance-transfer/
+[root@localhost balance-transfer]# ./runApp.sh 
+
+Stopping peer0.org1.example.com ... done
+Stopping peer0.org2.example.com ... done
+Stopping peer1.org2.example.com ... done
+Stopping peer1.org1.example.com ... done
+Stopping ca_peerOrg1 ... done
+Stopping orderer.example.com ... done
+Stopping ca_peerOrg2 ... done
+Removing peer0.org1.example.com ... done
+Removing peer0.org2.example.com ... done
+Removing peer1.org2.example.com ... done
+Removing peer1.org1.example.com ... done
+Removing ca_peerOrg1 ... done
+Removing orderer.example.com ... done
+Removing ca_peerOrg2 ... done
+Removing network artifacts_default
+
+========== No containers available for deletion ==========
+
+
+========== No images available for deletion ===========
+
+Creating network "artifacts_default" with the default driver
+Creating ca_peerOrg2
+Creating orderer.example.com
+Creating ca_peerOrg1
+Creating peer1.org2.example.com
+Creating peer0.org2.example.com
+Creating peer0.org1.example.com
+Creating peer1.org1.example.com
+/root/fabric-samples/balance-transfer
+
+
+============== node modules installed already =============
+
+[2018-02-06 09:14:54.916] [DEBUG] Helper - [crypto_ecdsa_aes]: constructor, keySize: 256
+[2018-02-06 09:14:54.921] [DEBUG] Helper - [crypto_ecdsa_aes]: Hash algorithm: SHA2, hash output size: 256
+[2018-02-06 09:14:55.046] [DEBUG] Helper - [utils.CryptoKeyStore]: CryptoKeyStore, constructor - start
+[2018-02-06 09:14:55.048] [DEBUG] Helper - [utils.CryptoKeyStore]: constructor, no super class specified, using config: fabric-client/lib/impl/FileKeyValueStore.js
+[2018-02-06 09:14:55.056] [DEBUG] Helper - [crypto_ecdsa_aes]: constructor, keySize: 256
+[2018-02-06 09:14:55.056] [DEBUG] Helper - [crypto_ecdsa_aes]: Hash algorithm: SHA2, hash output size: 256
+[2018-02-06 09:14:55.057] [DEBUG] Helper - [utils.CryptoKeyStore]: CryptoKeyStore, constructor - start
+[2018-02-06 09:14:55.057] [DEBUG] Helper - [utils.CryptoKeyStore]: constructor, no super class specified, using config: fabric-client/lib/impl/FileKeyValueStore.js
+[2018-02-06 09:14:55.082] [INFO] SampleWebApp - ****************** SERVER STARTED ************************
+[2018-02-06 09:14:55.082] [INFO] SampleWebApp - **************  http://localhost:4000  ******************
+
+			]]>
+			</screen>
+			<para>安装 jq 工具</para>
+			<screen>
+			<![CDATA[
+yum install -y jq			
+			]]>
+			</screen>
+			<para>API 测试结果</para>
+			<screen>
+			<![CDATA[
+[root@localhost balance-transfer]# ./testAPIs.sh 
+POST request Enroll on Org1  ...
+
+{"success":true,"secret":"uXlJIPvBgLbh","message":"Jim enrolled Successfully","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTc5NjMwMDUsInVzZXJuYW1lIjoiSmltIiwib3JnTmFtZSI6Im9yZzEiLCJpYXQiOjE1MTc5MjcwMDV9.pBqwAVac32NIA_x5S163h9_lRfIHMx4shX05D0geO5k"}
+
+ORG1 token is eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTc5NjMwMDUsInVzZXJuYW1lIjoiSmltIiwib3JnTmFtZSI6Im9yZzEiLCJpYXQiOjE1MTc5MjcwMDV9.pBqwAVac32NIA_x5S163h9_lRfIHMx4shX05D0geO5k
+
+POST request Enroll on Org2 ...
+
+{"success":true,"secret":"kXcltqsAoiDf","message":"Barry enrolled Successfully","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTc5NjMwMDcsInVzZXJuYW1lIjoiQmFycnkiLCJvcmdOYW1lIjoib3JnMiIsImlhdCI6MTUxNzkyNzAwN30.ePexFJ2r9WoYNma5iKomJu3anEvg3PTgBEqI6K-s6F0"}
+
+ORG2 token is eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MTc5NjMwMDcsInVzZXJuYW1lIjoiQmFycnkiLCJvcmdOYW1lIjoib3JnMiIsImlhdCI6MTUxNzkyNzAwN30.ePexFJ2r9WoYNma5iKomJu3anEvg3PTgBEqI6K-s6F0
+
+
+POST request Create channel  ...
+
+{"success":true,"message":"Channel 'mychannel' created Successfully"}
+
+POST request Join channel on Org1
+
+{"success":true,"message":"Successfully joined peers in organization org1 to the channel 'mychannel'"}
+
+POST request Join channel on Org2
+
+{"success":true,"message":"Successfully joined peers in organization org2 to the channel 'mychannel'"}
+
+POST Install chaincode on Org1
+
+Successfully Installed chaincode on organization org1
+
+POST Install chaincode on Org2
+
+Successfully Installed chaincode on organization org2
+
+POST instantiate chaincode on peer1 of Org1
+
+Failed to order the transaction. Error code: undefined
+
+POST invoke chaincode on peers of Org1 and Org2
+
+Transacton ID is Failed to order the transaction. Error code: undefined
+
+
+GET query chaincode on peer1 of Org1
+
+a now has Error: 2 UNKNOWN: could not find chaincode with name 'mycc' - make sure the chaincode mycc has been successfully instantiated and try again after the move
+
+GET query Block by blockNumber
+
+Error: 2 UNKNOWN: chaincode error (status: 500, message: Failed to get block number 1, error Entry not found in index)
+    at new createStatusError (/root/fabric-samples/balance-transfer/node_modules/grpc/src/client.js:65:15)
+    at /root/fabric-samples/balance-transfer/node_modules/grpc/src/client.js:568:15
+
+GET query Transaction by TransactionID
+
+Error: 2 UNKNOWN: chaincode error (status: 500, message: Failed to get transaction with id Failed, error Entry not found in index)
+    at new createStatusError (/root/fabric-samples/balance-transfer/node_modules/grpc/src/client.js:65:15)
+    at /root/fabric-samples/balance-transfer/node_modules/grpc/src/client.js:568:15
+
+
+GET query ChainInfo
+
+{"height":{"low":1,"high":0,"unsigned":true},"currentBlockHash":{"buffer":{"type":"Buffer","data":[8,1,18,32,180,19,234,224,76,239,188,107,147,219,120,185,108,73,201,120,81,0,242,221,32,3,94,175,16,200,181,113,100,97,129,57]},"offset":4,"markedOffset":-1,"limit":36,"littleEndian":true,"noAssert":false},"previousBlockHash":{"buffer":{"type":"Buffer","data":[]},"offset":0,"markedOffset":-1,"limit":0,"littleEndian":false,"noAssert":false}}
+
+GET query Installed chaincodes
+
+["name: mycc, version: v0, path: github.com/example_cc"]
+
+GET query Instantiated chaincodes
+
+[]
+
+GET query Channels
+
+{"channels":[{"channel_id":"mychannel"}]}
+
+Total execution time : 364 secs ...			
+			]]>
+			</screen>
+			<para>上面 ERROR 可能是因为 hyperledger v1.0.5 版本的缘故。此时的 fabric-samples 仅仅支持 v1.0.0。</para>
+		</section>
+
+	</section>
+	<section id="">
+		<title></title>
+		<section id="">
+			<title></title>
+			<screen>
+			<![CDATA[
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '
+{
+
+    "enrollId": "jim",
+    "enrollSecret": "6avZQLwcUe9b"
+
+}' http://localhost:7050/registrar			
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section id="fabric-sdk-node">
+		<title>Hyperledger Fabric Client SDK for Node.js</title>
+		<section id="">
+			<title>package.json</title>
+			<screen>
+			<![CDATA[
+[root@localhost fabcar]# cat package.json 
+{
+    "name": "fabcar",
+    "version": "1.0.0",
+    "description": "Hyperledger Fabric Car Sample Application",
+    "main": "fabcar.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "fabric-ca-client": "^1.0.2",
+        "fabric-client": "^1.0.2",
+        "grpc": "^1.6.0"
+    },
+    "author": "Anthony O'Dowd",
+    "license": "Apache-2.0",
+    "keywords": [
+        "Hyperledger",
+        "Fabric",
+        "Car",
+        "Sample",
+        "Application"
+    ]
+}
+			]]>
+			</screen>
+		</section>
+
+	</section>
+	<section id="fabric-sdk-java">
+		<title>fabric-sdk-java</title>
+		<section id="java.sdk.maven">
+			<title>Maven</title>
+			<screen>
+			<![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>cn.netkiller</groupId>
+	<artifactId>fabric-sdk-java</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<dependencies>
+		<!-- https://mvnrepository.com/artifact/org.hyperledger.fabric-sdk-java/fabric-sdk-java -->
+		<dependency>
+			<groupId>org.hyperledger.fabric-sdk-java</groupId>
+			<artifactId>fabric-sdk-java</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+
+	</dependencies>
+</project>			
+			]]>
+			</screen>
+		</section>
 	</section>
 
 	<section id="FAQ">
@@ -574,6 +811,14 @@ docker tag hyperledger/fabric-peer:x86_64-1.0.5 hyperledger/fabric-peer \
 && docker tag hyperledger/fabric-couchdb:x86_64-1.0.5 hyperledger/fabric-couchdb \
 && docker tag hyperledger/fabric-ca:x86_64-1.0.5 hyperledger/fabric-ca \
 && docker tag hyperledger/fabric-tools:x86_64-1.0.5 hyperledger/fabric-tools
+			]]>
+			</screen>
+		</section>
+		<section id="hyperledger.uninstall">
+			<title>卸载 hyperledger 环境</title>
+			<screen>
+			<![CDATA[
+docker rmi -f $(docker images -q)			
 			]]>
 			</screen>
 		</section>
