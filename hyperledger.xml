@@ -7,7 +7,7 @@
 <article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
 	xml:lang="zh-cn">
 	<articleinfo>
-		<title>hyperledger v1.0.5 区块链入门</title>
+		<title>Hyperledger Fabric v1.0.5 区块链入门</title>
 		<subtitle>本文作者最近在找工作，有意向致电 13113668890</subtitle>
 		&article.author.xml;
 
@@ -71,29 +71,7 @@
 		<title>安装 Hyperledger Fabric</title>
 		<screen>
 		<![CDATA[
-+---------------------------------+		
-|        	     SDK              |
-+---------------------------------+	
-| golang | nodejs | python | java |
-+---------------------------------+			
-	|
-	V
-+---------------------------------+				
-| fabric-ca :                     |
-+---------------------------------+
-     |                       |
-+-------------------+     +-------------------+
-|	Peer            |     |  Peer             |	        
-+-------------------+     +-------------------+		
-     |                       |
-     V                       V
-+-------------------+     +-------------------+
-| Orderer           |     | Orderer           |
-+-------------------+     +-------------------+
-                 |           |
-             +-------------------+
-             | Couchdb           |
-             +-------------------+				
+			
 		]]>
 		</screen>
 		<section id="dep.tools">

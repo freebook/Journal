@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V5.0//EN"
+	"/usr/share/xml/docbook/schema/dtd/5.0/docbook.dtd" [
+	<!ENTITY article.author.xml 		SYSTEM "../common/article.author.xml">
+	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
+	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
+]>
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook"
+	xml:lang="zh-cn">
+	<articleinfo>
+		<title>hyperledger v1.0.5 区块链运维入门</title>
+		<subtitle></subtitle>
+		&article.author.xml;
+		&book.info.legalnotice.xml;
+		<abstract>
+			<para>网上搜索hyperledger大部分文章是讲解开发环境配置的，安装哪些文章配置好开发环境，写好合约，怎样落地呢？却很少文章提及。</para>
+			<para>要将区块链落地，我们必须依赖运维技术，这是IT基础设施，区块链应用将建立在这个基础设施之上，否则区块链就是浮云。</para>
+		</abstract>
+		&book.info.abstract.xml;
+		<keywordset>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+			<keyword></keyword>
+		</keywordset>
+		<pubdate>$Date$</pubdate>
+		<release>$Id$</release>
+	</articleinfo>
+	<section id="background">
+		<title>背景</title>
+		<para>由于区块链是区中心化，与传统运维不同，所以之前你积累的经验，不一定适用于区块链。要想运维好区块链项目，就必须理解去中心化这个概念。</para>
+		<para>首先谈谈传统运维，总结为三个字“中心化”，当然有人反对并抛出“分布式”感念，传统运维的分布式仍然建立在中心化的基础之上。</para>
+		<para>我们来看看传统应用模式，决多数应用都可以概括为：</para>
+		<literallayout>
+		<![CDATA[
+用户 -> WEB -> Application -> Cache -> Database 
+		]]>
+		</literallayout>
+		<para>可以在这个体系下面做灵活变化，例如加入所有引擎、分布式文件系统，大数据等等应用，但都离不开这个模式。</para>
+		<para>区块链完全不同，如果举一个最接近的例子，我想可能与多数据中心远程异地灾备比较接近。</para>
+
+	</section>
+	<section id="overview">
+		<title>部署拓扑</title>
+		<para>什么是区块链呢？
+			区块链实际上就是数据库，一个只能插入和查询的数据库，数据不能被修改和删除，并且这个数据库没有DBA管理员角色。这么一说你应该明白了把，实际上运维区块链就是在维护一个分布式数据库。</para>
+		<para>网上的绝大多数安装例子中，均采用 docker
+			部署方案，但无一例外的是，全部安装在一个物理机上。如果是生产环境，我们必须分开不是，首先要做的工作是化整为零，拆解应用，搞明白每个容器的功能和作用。然后我们将应用拆分，独立部署到物理节点上去。</para>
+		<literallayout>
+		<![CDATA[
+       +---------------------------------+		
+       |        	       SDK               |
+       +---------------------------------+	
+       | golang | nodejs | python | java |
+       +---------------------------------+			
+	                  |
+	                  V
+       +---------------------------------+				
+       |           fabric-ca             |
+       +---------------------------------+
+           |                       |
++-------------------+     +-------------------+
+|	Peer            |     |  Peer             |	        
++-------------------+     +-------------------+		
+     |                       |
+     V                       V
++-------------------+     +-------------------+
+| Orderer           |     | Orderer           |
++-------------------+     +-------------------+
+                 |           |
+             +-------------------+
+             | Couchdb           |
+             +-------------------+	
+		]]>
+		</literallayout>
+		<para>接下来我们要做的工作是将上面拓扑图种的技术点分分击破。</para>
+
+		<para>由于 Hyperledger Fabric 是建立在 Docker 基础之上的。所以不建议你去除 Docker
+			转而使用传统的本地编译安装方式。我们仍然保持使用 Docker 在每个物理节点上，这回省去软件的编译和安装环节。</para>
+
+	</section>
+	<section id="couchdb">
+		<title>CouchDB 节点安装</title>
+		<para>整个 Hyperledger Fabric 技术栈中只有这个 CouchDB 是个外来户，看到 CouchDB
+			我就非常兴奋，这是一个NoSQL数据库(它与MongoDB十分类似)，所以CouchDB 100%可以独立运行，且最容易分离。</para>
+		<para>CouchDB 在这里有两个方案可以选择。</para>
+		<itemizedlist>
+			<title></title>
+			<listitem>
+				<para>采用 Docker 运行 CouchDB的方案。</para>
+			</listitem>
+			<listitem>
+				<para>采用传统方式物理机上本地安装 CouchDB</para>
+			</listitem>
+		</itemizedlist>
+		<para>理论两种方案对实际结果没有什么区别，只需提供IP地址，用户名与密码供其他节点访问即可。但实际我们看到 Hyperledger Fabric 使用的镜像是 hyperledger/fabric-couchdb 不清楚是否有修改过 CouchDB 数据库。</para>
+		<para>如果你对 Docker 比较熟悉就采用 Docker 方案。如果不熟悉就采用本地安装方式。总之选择一种你能Hold住（掌控）的方案，一旦出现故障，你能第一时间排查并处理。</para>
+		<para>下面是 Docker 方案</para>
+		<screen>
+		<![CDATA[
+  couchdb:
+    container_name: couchdb
+    image: hyperledger/fabric-couchdb
+    # Populate the COUCHDB_USER and COUCHDB_PASSWORD to set an admin user and password
+    # for CouchDB.  This will prevent CouchDB from operating in an "Admin Party" mode.
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 5984:5984
+    networks:
+      - basic		
+		]]>
+		</screen>
+		
+	</section>
+
+	<section id="orderer">
+		<title>Orderer 节点安装</title>
+		<para>我们</para>
+	</section>
+
+	<section id="peer">
+		<title>Peer 节点安装</title>
+		<para></para>
+	</section>
+	<section id="ca">
+		<title>CA 节点安装</title>
+		<para></para>
+	</section>
+	<section id="tools">
+		<title>Tools 节点安装</title>
+		<para></para>
+	</section>
+	<section id="test">
+		<title>验收与测试</title>
+	</section>
+	<section id="summary">
+		<title>总结</title>
+	</section>
+	<!-- Conclusion -->
+</article>
