@@ -8,7 +8,7 @@
 	xml:lang="zh-cn">
 	<articleinfo>
 		<title>hyperledger v1.0.5 区块链入门</title>
-		<subtitle></subtitle>
+		<subtitle>本文作者最近在找工作，有意向致电 13113668890</subtitle>
 		&article.author.xml;
 
 		<copyright>
@@ -76,7 +76,7 @@
 	|
 	V
 +---------------------------------+				
-| fabric-membersrvc :             |
+| fabric-ca :                     |
 +---------------------------------+
      |                       |
 +-------------------+     +-------------------+
@@ -85,12 +85,12 @@
      |                       |
      V                       V
 +-------------------+     +-------------------+
-| Orderer           |     |                   |
+| Orderer           |     | Orderer           |
 +-------------------+     +-------------------+
-     |
-+-------------------+
-| Couchdb           |
-+-------------------+				
+                 |           |
+             +-------------------+
+             | Couchdb           |
+             +-------------------+				
 		]]>
 		</screen>
 		<section id="dep.tools">
@@ -136,7 +136,7 @@ npm install
 			</screen>
 		</section>
 
-		<section>
+		<section id="bootstrap">
 			<title>安装 hyperledger 1.0.4</title>
 			<para>运行后 hyperledger 相关镜像被安装到 Docker 中</para>
 			<screen>
@@ -145,11 +145,18 @@ cd /usr/local/src
 curl -s https://raw.githubusercontent.com/hyperledger/fabric/release/scripts/bootstrap-1.0.4.sh | bash			
 			]]>
 			</screen>
+			<para>由于上面脚本会安装所有节点，速度较慢，作者建议你参考下一章节，手工安装所需最低配置节点。</para>
 		</section>
-		<section>
-			<title>手工安装 hyperledger 开发环境</title>
+		<section id="hyperledger">
+			<title>手工安装 hyperledger v 1.0.5 开发环境</title>
 			<para>对于开发环境，最小化的环境，包括 1 个 peer 节点、1 个 Orderer 节点、1 个 CA 节点。</para>
 			<para>准备一个服务器或者虚拟机，安装 CentOS 操作系统。</para>
+			<para>如果你是在已有的Docker上安装，建议你删除所有容器后在安装。以免出现冲突等情况。</para>
+			<screen>
+			<![CDATA[
+docker stop $(docker ps -q) && docker rm $(docker ps -aq)			
+			]]>
+			</screen>
 			<section id="">
 				<title>登录 docker</title>
 				<screen>
@@ -242,114 +249,259 @@ docker-compose -version
 				]]>
 				</screen>
 			</section>
-			<section>
-				<title>启动 docker 虚拟机</title>
+			
+		</section>
 
-				<para>创建文件 docker-compose.yml</para>
-				<screen>
+		<section id="docker-compose.yml">
+			<title>启动 docker 虚拟机</title>
+			<para>这里我们最小化启动，需要四个节点，分别是 ca, peer, order, couchdb。</para>
+			<para>创建文件 docker-compose.yml</para>
+			<screen>
 				<![CDATA[
 [root@localhost ~]# mkdir -p docker
 [root@localhost ~]# cd docker
 [root@localhost docker]# vim docker-compose.yml
+#
+# Copyright IBM Corp All Rights Reserved
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+version: '2'
 
-membersrvc:
-  image: hyperledger/fabric-membersrvc
-  ports:
-    - "7054:7054"
-  command: membersrvc
-vp0:
-  image: hyperledger/fabric-peer
-  ports:
-    - "7050:7050"
-    - "7051:7051"
-    - "7053:7053"
-  environment:
-    - CORE_PEER_ADDRESSAUTODETECT=true
-    - CORE_VM_ENDPOINT=unix:///var/run/docker.sock
-    - CORE_LOGGING_LEVEL=DEBUG
-    - CORE_PEER_ID=vp0
-    - CORE_PEER_PKI_ECA_PADDR=membersrvc:7054
-    - CORE_PEER_PKI_TCA_PADDR=membersrvc:7054
-    - CORE_PEER_PKI_TLSCA_PADDR=membersrvc:7054
-    - CORE_SECURITY_ENABLED=true
-    - CORE_SECURITY_ENROLLID=test_vp0
-    - CORE_SECURITY_ENROLLSECRET=MwYpmSRjupbT
-  volumes:
-      - /var/run/:/var/run/
-  links:
-    - membersrvc
-  command: sh -c "sleep 5; peer node start --peer-chaincodedev"				
+networks:
+  basic:
+
+services:
+  ca.example.com:
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.example.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/4239aa0dcd76daeeb8ba0cda701851d14504d31aad1b2ddddbac6a57365e497c_sk
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.example.com
+    networks:
+      - basic
+
+  orderer.example.com:
+    container_name: orderer.example.com
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - 7050:7050
+    volumes:
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/:/etc/hyperledger/msp/orderer
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/:/etc/hyperledger/msp/peerOrg1
+    networks:
+      - basic
+
+  peer0.org1.example.com:
+    container_name: peer0.org1.example.com
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      # # the following setting starts chaincode containers on the same
+      # # bridge network as the peers
+      # # https://docs.docker.com/compose/networking/
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      # The CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME and CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD
+      # provide the credentials for ledger to connect to CouchDB.  The username and password must
+      # match the username and password set for the associated CouchDB.
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 7051:7051
+      - 7053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.example.com/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    depends_on:
+      - orderer.example.com
+      - couchdb
+    networks:
+      - basic
+
+  couchdb:
+    container_name: couchdb
+    image: hyperledger/fabric-couchdb
+    # Populate the COUCHDB_USER and COUCHDB_PASSWORD to set an admin user and password
+    # for CouchDB.  This will prevent CouchDB from operating in an "Admin Party" mode.
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 5984:5984
+    networks:
+      - basic
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./../chaincode/:/opt/gopath/src/github.com/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    networks:
+        - basic
+    #depends_on:
+    #  - orderer.example.com
+    #  - peer0.org1.example.com
+    #  - couchdb
+			
 				]]>
-				</screen>
-				<para>启动 Docker</para>
-				<screen>
+			</screen>
+			<para>启动 Docker</para>
+			<screen>
 				<![CDATA[
-[root@localhost docker]# docker-compose up
-Creating test_membersrvc_1
-Creating test_vp0_1
-Attaching to test_membersrvc_1, test_vp0_1
-vp0_1         | 2018-01-19 10:07:27.345 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
-vp0_1         | 2018-01-19 10:07:27.345 UTC [nodeCmd] serve -> INFO 002 Starting peer:
-vp0_1         |  Version: 1.1.0
-vp0_1         |  Go version: go1.9.2
-vp0_1         |  OS/Arch: linux/amd64
-vp0_1         |  Experimental features: false
-vp0_1         |  Chaincode:
-vp0_1         |   Base Image Version: 0.4.2
-vp0_1         |   Base Docker Namespace: hyperledger
-vp0_1         |   Base Docker Label: org.hyperledger.fabric
-vp0_1         |   Docker Namespace: hyperledger				
+[root@localhost docker]# docker-compose -f docker-compose.yml up -d ca.example.com orderer.example.com peer0.org1.example.com couchdb			
 				]]>
-				</screen>
-				<para>查看进程</para>
-				<screen>
+			</screen>
+			<para>查看进程</para>
+			<screen>
 				<![CDATA[
 [root@localhost docker]# docker-compose ps 
-      Name                     Command               State                                   Ports                                  
------------------------------------------------------------------------------------------------------------------------------------
-test_membersrvc_1   membersrvc                       Up      0.0.0.0:7054->7054/tcp                                                 
-test_vp0_1          sh -c sleep 5; peer node s ...   Up      0.0.0.0:7050->7050/tcp, 0.0.0.0:7051->7051/tcp, 0.0.0.0:7053->7053/tcp				
+         Name                       Command               State                       Ports                      
+----------------------------------------------------------------------------------------------------------------
+ca.example.com           sh -c fabric-ca-server sta ...   Up      0.0.0.0:7054->7054/tcp                         
+cli                      /bin/bash                        Up                                                     
+couchdb                  tini -- /docker-entrypoint ...   Up      4369/tcp, 0.0.0.0:5984->5984/tcp, 9100/tcp     
+orderer.example.com      orderer                          Up      0.0.0.0:7050->7050/tcp                         
+peer0.org1.example.com   peer node start                  Up      0.0.0.0:7051->7051/tcp, 0.0.0.0:7053->7053/tcp
+				
 				]]>
-				</screen>
+			</screen>
 
+			<screen>
+			<![CDATA[
+
+			]]>
+			</screen>
+		</section>
+		<section id="resource">
+			<title>管理 hyperledger</title>
+			<section id="">
+				<title>CouchDB 管理界面</title>
 				<screen>
-				<![CDATA[
-
-				]]>
+					<![CDATA[
+[root@localhost fabcar]# curl http://localhost:5984
+{"couchdb":"Welcome","version":"2.0.0","vendor":{"name":"The Apache Software Foundation"}}					
+					]]>
 				</screen>
+				<ulink url="http://localhost:5984/_utils/">http://localhost:5984/_utils/</ulink>
 			</section>
 		</section>
-		<section>
-			<title>部署 chaincode_example</title>
+
+		<section id="chaincode">
+			<title>部署 chaincode</title>
+			<section id="channel">
+				<title>channel 管理</title>
+				<para>Hyperledger Fabric Channel 可以理解为 vlan （交换机术语） 用来实现区块隔离。</para>
+				<section id="peer.channel.list">
+					<title>列出 channel</title>
+					<screen>
+					<![CDATA[
+root@595ec455c0ff:/opt/gopath/src/github.com/hyperledger/fabric# peer channel list 
+2018-02-07 03:24:41.151 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-07 03:24:41.152 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-07 03:24:41.154 UTC [channelCmd] InitCmdFactory -> INFO 003 Endorser and orderer connections initialized
+2018-02-07 03:24:41.155 UTC [msp/identity] Sign -> DEBU 004 Sign: plaintext: 0A85070A5B08031A0B08F9E2E9D30510...631A0D0A0B4765744368616E6E656C73 
+2018-02-07 03:24:41.156 UTC [msp/identity] Sign -> DEBU 005 Sign: digest: 238CBAB61A0524954DC3C511588EB8FC1F886E636A8800131EBE16FB95FB0C9A 
+2018-02-07 03:24:41.167 UTC [channelCmd] list -> INFO 006 Channels peers has joined to: 
+2018-02-07 03:24:41.167 UTC [channelCmd] list -> INFO 007 mychannel 
+2018-02-07 03:24:41.167 UTC [main] main -> INFO 008 Exiting.....					
+					]]>
+					</screen>
+				</section>
+				<section id="peer.channel.create">
+					<title>创建 Channel</title>
+					<screen>
+					<![CDATA[
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx					
+					]]>
+					</screen>
+				</section>
+				<section id="">
+					<title>加入 Channel</title>
+					<screen>
+					<![CDATA[
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+peer0.org1.example.com peer channel join -b mychannel.block
+					]]>
+					</screen>
+				</section>
+			</section>
 			<section id="">
 				<title>部署连</title>
 				<screen>
 				<![CDATA[
-[root@localhost docker]# docker-compose exec vp0 bash
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric#				
+[root@localhost docker]# docker-compose exec peer0.org1.example.com bash
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric#
 				]]>
 				</screen>
-				<para>编译 chaincode_example02</para>
+				<para>安装合约</para>
 				<screen>
 				<![CDATA[
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric# cd examples/chaincode/go/chaincode_example02/
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# go build ./chaincode_example02.go
-
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# ls -l
-total 22304
--rwxr-xr-x 1 root root 22826520 Jan 19 11:49 chaincode_example02
--rw-r--r-- 1 root root     5078 Jan 17 12:27 chaincode_example02.go
--rw-r--r-- 1 root root     3165 Jan 17 12:27 chaincode_example02_test.go				
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+peer chaincode install -n fabcar -v 1.0 -p github.com/fabcar			
 				]]>
 				</screen>
-				<para>启动 chaincode_example02</para>
-				<!-- <para>命令如下： CORE_CHAINCODE_ID_NAME=mycc CORE_PEER_ADDRESS=0.0.0.0:7051 
-					./chaincode_example02 </para> -->
+				<para>实例化合约</para>
 				<screen>
 				<![CDATA[
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02# ./chaincode_example02 
-2018-01-19 11:56:52.103 UTC [shim] SetupChaincodeLogging -> INFO 001 Chaincode log level not provided; defaulting to: INFO
-2018-01-19 11:56:52.104 UTC [shim] SetupChaincodeLogging -> INFO 002 Chaincode (build level: ) starting up ...
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+peer chaincode instantiate -o orderer.example.com:7050 -C mychannel -n fabcar -v 1.0 -c '{"Args":[""]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
+				]]>
+				</screen>
+				<para>初始化合约</para>
+				<screen>
+				<![CDATA[
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"initLedger","Args":[""]}'				
 				]]>
 				</screen>
 			</section>
@@ -357,21 +509,22 @@ root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric/examples/chaincode/go/ch
 				<title>测试</title>
 				<screen>
 				<![CDATA[
-peer chaincode deploy -n test_cc -p /go/src/github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 -c '{"Args":["init","a","100","b","200"]}'				
-peer chaincode invoke -n test_cc -c '{"Args":["query","a"]}'
-peer chaincode invoke -n test_cc -c '{"Args":["query","b"]}'
-交易，a向b转账10元，如下：
-peer chaincode invoke -n test_cc -c '{"Args":["invoke","a","b","10"]}'			
+root@595ec455c0ff:/opt/gopath/src/github.com/hyperledger/fabric# peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryCar","Args":["CAR9"]}'
+2018-02-07 04:44:03.451 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-07 04:44:03.451 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-07 04:44:03.454 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 003 Using default escc
+2018-02-07 04:44:03.455 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 004 Using default vscc
+2018-02-07 04:44:03.456 UTC [msp/identity] Sign -> DEBU 005 Sign: plaintext: 0A97070A6908031A0C089388EAD30510...0A0871756572794361720A0443415239 
+2018-02-07 04:44:03.456 UTC [msp/identity] Sign -> DEBU 006 Sign: digest: 28C28E7387383CC89E298B29932853964A5D26E4AA358C1242D62ACCAF121BFB 
+2018-02-07 04:44:03.495 UTC [msp/identity] Sign -> DEBU 007 Sign: plaintext: 0A97070A6908031A0C089388EAD30510...F7BBABB41F274432D5C6985A78D8E949 
+2018-02-07 04:44:03.495 UTC [msp/identity] Sign -> DEBU 008 Sign: digest: BC6559CACFFC49B5B053B050B7634D1D4D920CAC3F228ED6F38EBFF6A760D7C1 
+2018-02-07 04:44:03.504 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> DEBU 009 ESCC invoke result: version:1 response:<status:200 message:"OK" payload:"{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}" > payload:"\n \245\036\265\326\362rL\341\234\326\267\3452\360\277]\220\017C\212\206\311\034\344P\022\034(\364\026-_\022\215\001\n0\022\026\n\006fabcar\022\014\n\n\n\004CAR9\022\002\010\005\022\026\n\004lscc\022\016\n\014\n\006fabcar\022\002\010\001\032J\010\310\001\032E{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}\"\r\022\006fabcar\032\0031.0" endorsement:<endorser:"\n\007Org1MSP\022\200\006-----BEGIN -----\nMIICGjCCAcCgAwIBAgIRAPlwF/rUZUP9mqN4wSml4iswCgYIKoZIzj0EAwIwczEL\nMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNhbiBG\ncmFuY2lzY28xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMTcwODMxMDkxNDMyWhcNMjcwODI5MDkxNDMy\nWjBbMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMN\nU2FuIEZyYW5jaXNjbzEfMB0GA1UEAxMWcGVlcjAub3JnMS5leGFtcGxlLmNvbTBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABHihxW6ks3B2+5XdbAVq3CBgxRRRZ22x\nzzpqnD86nKkz7fBElBuhlXl2K6rTxyY2OBOB0ts8keqZ93xueRGymrajTTBLMA4G\nA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMCsGA1UdIwQkMCKAIEI5qg3Ndtru\nuLoM2nAYUdFFBNMarRst3dusalc2Xkl8MAoGCCqGSM49BAMCA0gAMEUCIQD4j0Rn\ne1rrd0FSCzsR6u+IuuPK5dI/kR/bh7+VLf0TNgIgCfUtkJvfvzVEwZLFoFyjoHtr\ntvwzNUS1U0hEqIaDeo4=\n-----END -----\n" signature:"0E\002!\000\2657\267\025<v\010\014sC\261U\207H\251\021KJw#\2322C\031<\346=\207\222\343\263\025\002 So\272|v\027xM\026\225\003bx\312\277n\367\273\253\264\037'D2\325\306\230Zx\330\351I" > 
+2018-02-07 04:44:03.509 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> INFO 00a Chaincode invoke successful. result: status:200 payload:"{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}" 
+2018-02-07 04:44:03.510 UTC [main] main -> INFO 00b Exiting.....
 				]]>
 				</screen>
 			</section>
 		</section>
-	</section>
-
-	<section id="hyperledger.composer">
-		<title>Hyperledger Composer</title>
-		<subtitle>Build Blockchain applications and business networks your way</subtitle>
-		<ulink url="https://hyperledger.github.io/composer/" />
 	</section>
 
 	<section id="fabric-samples">
@@ -393,7 +546,7 @@ cd fabric-samples/fabcar
 			</screen>
 			<para>启动</para>
 			<screen>
-		<![CDATA[
+			<![CDATA[
 [root@localhost fabcar]# ./startFabric.sh 
 
 # don't rewrite paths for Windows Git Bash users
@@ -518,15 +671,15 @@ The 'node query.js' may be run at anytime once the user has been registered
 			<para>至此 hyperledger 开发环境已经启动完毕</para>
 			<para></para>
 			<screen>
-		<![CDATA[
+			<![CDATA[
 node enrollAdmin.js
 node registerUser.js 
 node invoke.js
 node query.js 		
-		]]>
+			]]>
 			</screen>
 			<screen>
-		<![CDATA[
+			<![CDATA[
 [root@localhost fabcar]# node enrollAdmin.js
  Store path:/root/fabric-samples/fabcar/hfc-key-store
 Successfully loaded admin from persistence
@@ -539,6 +692,16 @@ Successfully registered user1 - secret:ZjzLwIaVjEAV
 Successfully enrolled member user "user1" 
 User1 was successfully registered and enrolled and is ready to intreact with the fabric network
 
+[root@localhost fabcar]# node query.js 
+Store path:/root/fabric-samples/fabcar/hfc-key-store
+Successfully loaded user1 from persistence
+Query has completed, checking results
+Response is  [{"Key":"CAR0", "Record":{"colour":"blue","make":"Toyota","model":"Prius","owner":"Tomoko"}},{"Key":"CAR1", "Record":{"colour":"red","make":"Ford","model":"Mustang","owner":"Brad"}},{"Key":"CAR2", "Record":{"colour":"green","make":"Hyundai","model":"Tucson","owner":"Jin Soo"}},{"Key":"CAR3", "Record":{"colour":"yellow","make":"Volkswagen","model":"Passat","owner":"Max"}},{"Key":"CAR4", "Record":{"colour":"black","make":"Tesla","model":"S","owner":"Adriana"}},{"Key":"CAR5", "Record":{"colour":"purple","make":"Peugeot","model":"205","owner":"Michel"}},{"Key":"CAR6", "Record":{"colour":"white","make":"Chery","model":"S22L","owner":"Aarav"}},{"Key":"CAR7", "Record":{"colour":"violet","make":"Fiat","model":"Punto","owner":"Pari"}},{"Key":"CAR8", "Record":{"colour":"indigo","make":"Tata","model":"Nano","owner":"Valeria"}},{"Key":"CAR9", "Record":{"colour":"brown","make":"Holden","model":"Barina","owner":"Shotaro"}}]		
+			]]>
+			</screen>
+			<para>invoke.js 脚本会出现下面错误</para>
+			<screen>
+			<![CDATA[
 [root@localhost fabcar]# node invoke.js
 Store path:/root/fabric-samples/fabcar/hfc-key-store
 Successfully loaded user1 from persistence
@@ -548,17 +711,222 @@ error: [client-utils.js]: sendPeersProposal - Promise is rejected: Error: 2 UNKN
     at /root/fabric-samples/fabcar/node_modules/grpc/src/client.js:568:15
 Transaction proposal was bad
 Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...
-Failed to invoke successfully :: Error: Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...
-# 这里会出错，暂时不去纠结，继续做实验。
-
-[root@localhost fabcar]# node query.js 
-Store path:/root/fabric-samples/fabcar/hfc-key-store
-Successfully loaded user1 from persistence
-Query has completed, checking results
-Response is  [{"Key":"CAR0", "Record":{"colour":"blue","make":"Toyota","model":"Prius","owner":"Tomoko"}},{"Key":"CAR1", "Record":{"colour":"red","make":"Ford","model":"Mustang","owner":"Brad"}},{"Key":"CAR2", "Record":{"colour":"green","make":"Hyundai","model":"Tucson","owner":"Jin Soo"}},{"Key":"CAR3", "Record":{"colour":"yellow","make":"Volkswagen","model":"Passat","owner":"Max"}},{"Key":"CAR4", "Record":{"colour":"black","make":"Tesla","model":"S","owner":"Adriana"}},{"Key":"CAR5", "Record":{"colour":"purple","make":"Peugeot","model":"205","owner":"Michel"}},{"Key":"CAR6", "Record":{"colour":"white","make":"Chery","model":"S22L","owner":"Aarav"}},{"Key":"CAR7", "Record":{"colour":"violet","make":"Fiat","model":"Punto","owner":"Pari"}},{"Key":"CAR8", "Record":{"colour":"indigo","make":"Tata","model":"Nano","owner":"Valeria"}},{"Key":"CAR9", "Record":{"colour":"brown","make":"Holden","model":"Barina","owner":"Shotaro"}}]		
-		]]>
+Failed to invoke successfully :: Error: Failed to send Proposal or receive valid response. Response null or status is not 200. exiting...			
+			]]>
 			</screen>
-			
+			<para>这里出错，是因为没有提供相关的调用方法和参数，暂时不去纠结，继续做实验。</para>
+			<section id="">
+				<title>智能合约</title>
+				<programlisting>
+				<![CDATA[
+[root@localhost fabric-samples]# cat chaincode/fabcar/fabcar.go 
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/*
+ * The sample smart contract for documentation topic:
+ * Writing Your First Blockchain Application
+ */
+
+package main
+
+/* Imports
+ * 4 utility libraries for formatting, handling bytes, reading and writing JSON, and string manipulation
+ * 2 specific Hyperledger Fabric specific libraries for Smart Contracts
+ */
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	sc "github.com/hyperledger/fabric/protos/peer"
+)
+
+// Define the Smart Contract structure
+type SmartContract struct {
+}
+
+// Define the car structure, with 4 properties.  Structure tags are used by encoding/json library
+type Car struct {
+	Make   string `json:"make"`
+	Model  string `json:"model"`
+	Colour string `json:"colour"`
+	Owner  string `json:"owner"`
+}
+
+/*
+ * The Init method is called when the Smart Contract "fabcar" is instantiated by the blockchain network
+ * Best practice is to have any Ledger initialization in separate function -- see initLedger()
+ */
+func (s *SmartContract) Init(APIstub shim.ChaincodeStubInterface) sc.Response {
+	return shim.Success(nil)
+}
+
+/*
+ * The Invoke method is called as a result of an application request to run the Smart Contract "fabcar"
+ * The calling application program has also specified the particular smart contract function to be called, with arguments
+ */
+func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) sc.Response {
+
+	// Retrieve the requested Smart Contract function and arguments
+	function, args := APIstub.GetFunctionAndParameters()
+	// Route to the appropriate handler function to interact with the ledger appropriately
+	if function == "queryCar" {
+		return s.queryCar(APIstub, args)
+	} else if function == "initLedger" {
+		return s.initLedger(APIstub)
+	} else if function == "createCar" {
+		return s.createCar(APIstub, args)
+	} else if function == "queryAllCars" {
+		return s.queryAllCars(APIstub)
+	} else if function == "changeCarOwner" {
+		return s.changeCarOwner(APIstub, args)
+	}
+
+	return shim.Error("Invalid Smart Contract function name.")
+}
+
+func (s *SmartContract) queryCar(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect number of arguments. Expecting 1")
+	}
+
+	carAsBytes, _ := APIstub.GetState(args[0])
+	return shim.Success(carAsBytes)
+}
+
+func (s *SmartContract) initLedger(APIstub shim.ChaincodeStubInterface) sc.Response {
+	cars := []Car{
+		Car{Make: "Toyota", Model: "Prius", Colour: "blue", Owner: "Tomoko"},
+		Car{Make: "Ford", Model: "Mustang", Colour: "red", Owner: "Brad"},
+		Car{Make: "Hyundai", Model: "Tucson", Colour: "green", Owner: "Jin Soo"},
+		Car{Make: "Volkswagen", Model: "Passat", Colour: "yellow", Owner: "Max"},
+		Car{Make: "Tesla", Model: "S", Colour: "black", Owner: "Adriana"},
+		Car{Make: "Peugeot", Model: "205", Colour: "purple", Owner: "Michel"},
+		Car{Make: "Chery", Model: "S22L", Colour: "white", Owner: "Aarav"},
+		Car{Make: "Fiat", Model: "Punto", Colour: "violet", Owner: "Pari"},
+		Car{Make: "Tata", Model: "Nano", Colour: "indigo", Owner: "Valeria"},
+		Car{Make: "Holden", Model: "Barina", Colour: "brown", Owner: "Shotaro"},
+	}
+
+	i := 0
+	for i < len(cars) {
+		fmt.Println("i is ", i)
+		carAsBytes, _ := json.Marshal(cars[i])
+		APIstub.PutState("CAR"+strconv.Itoa(i), carAsBytes)
+		fmt.Println("Added", cars[i])
+		i = i + 1
+	}
+
+	return shim.Success(nil)
+}
+
+func (s *SmartContract) createCar(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+
+	if len(args) != 5 {
+		return shim.Error("Incorrect number of arguments. Expecting 5")
+	}
+
+	var car = Car{Make: args[1], Model: args[2], Colour: args[3], Owner: args[4]}
+
+	carAsBytes, _ := json.Marshal(car)
+	APIstub.PutState(args[0], carAsBytes)
+
+	return shim.Success(nil)
+}
+
+func (s *SmartContract) queryAllCars(APIstub shim.ChaincodeStubInterface) sc.Response {
+
+	startKey := "CAR0"
+	endKey := "CAR999"
+
+	resultsIterator, err := APIstub.GetStateByRange(startKey, endKey)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	defer resultsIterator.Close()
+
+	// buffer is a JSON array containing QueryResults
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+
+	bArrayMemberAlreadyWritten := false
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		// Add a comma before array members, suppress it for the first array member
+		if bArrayMemberAlreadyWritten == true {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString("{\"Key\":")
+		buffer.WriteString("\"")
+		buffer.WriteString(queryResponse.Key)
+		buffer.WriteString("\"")
+
+		buffer.WriteString(", \"Record\":")
+		// Record is a JSON object, so we write as-is
+		buffer.WriteString(string(queryResponse.Value))
+		buffer.WriteString("}")
+		bArrayMemberAlreadyWritten = true
+	}
+	buffer.WriteString("]")
+
+	fmt.Printf("- queryAllCars:\n%s\n", buffer.String())
+
+	return shim.Success(buffer.Bytes())
+}
+
+func (s *SmartContract) changeCarOwner(APIstub shim.ChaincodeStubInterface, args []string) sc.Response {
+
+	if len(args) != 2 {
+		return shim.Error("Incorrect number of arguments. Expecting 2")
+	}
+
+	carAsBytes, _ := APIstub.GetState(args[0])
+	car := Car{}
+
+	json.Unmarshal(carAsBytes, &car)
+	car.Owner = args[1]
+
+	carAsBytes, _ = json.Marshal(car)
+	APIstub.PutState(args[0], carAsBytes)
+
+	return shim.Success(nil)
+}
+
+// The main function is only relevant in unit test mode. Only included here for completeness.
+func main() {
+
+	// Create a new Smart Contract
+	err := shim.Start(new(SmartContract))
+	if err != nil {
+		fmt.Printf("Error creating new Smart Contract: %s", err)
+	}
+}				
+				]]>
+				</programlisting>
+			</section>
 			<section id="fabcar.createCar">
 				<title>创建记录</title>
 				<screen>
@@ -592,7 +960,7 @@ var request = {
 	};				
 				]]>
 				</programlisting>
-				<para></para>
+				<para>运行结果</para>
 				<screen>
 				<![CDATA[
 [root@localhost fabcar]# node createCar.js 
@@ -609,9 +977,9 @@ Successfully committed the change to the ledger by the peer
 				]]>
 				</screen>
 			</section>
-			
+
 			<section id="">
-				<title>实验一，查询单条记录</title>
+				<title>查询单条记录</title>
 				<para>查找 CAR5 这条记录的数据。</para>
 				<programlisting>
 				<![CDATA[
@@ -913,9 +1281,15 @@ GET query Channels
 Total execution time : 364 secs ...			
 			]]>
 			</screen>
-			<para>上面 ERROR 可能是因为 hyperledger v1.0.5 版本的缘故。此时的 fabric-samples 仅仅支持 v1.0.0。</para>
+			<para>上面 ERROR 可能是因为 hyperledger v1.0.5 版本的缘故。此时的 fabric-samples 仅仅支持
+				v1.0.0。</para>
 		</section>
 
+	</section>
+	<section id="hyperledger.composer">
+		<title>Hyperledger Composer</title>
+		<subtitle>Build Blockchain applications and business networks your way</subtitle>
+		<ulink url="https://hyperledger.github.io/composer/" />
 	</section>
 	<section id="restful">
 		<title>Restful 接口</title>
@@ -932,6 +1306,34 @@ curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POS
 }' http://localhost:7050/registrar			
 			]]>
 			</screen>
+		</section>
+		<section id="">
+			<title></title>
+			<screen>
+			<![CDATA[
+curl -i -H "Accept: application/json" -H "Content-Type: application/json" -X POST -d '
+{
+
+   "jsonrpc": "2.0",
+   "method": "deploy",
+   "params": {
+    "type": 1,
+    "chaincodeID":{
+        "name": "mycc"
+    },
+    "ctorMsg": {
+         "function":"init",
+         "args":[]
+     },
+    "secureContext": "jim"
+  },
+   "id": 1
+
+}' http://localhost:7050/chaincode	
+		
+			]]>
+			</screen>
+
 		</section>
 	</section>
 	<section id="fabric-sdk-node">
