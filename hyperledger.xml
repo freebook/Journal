@@ -34,7 +34,7 @@
 		<release>$Id$</release>
 	</articleinfo>
 	<section id="what">
-		<title>what-做什么</title>
+		<title>Hyperledger Fabric</title>
 		<para>区块链技术发展至今，形成了公有链、联盟链和邦链三种种主流技术平台。</para>
 		<para>公有链：
 			面向大众，用户可以匿名参与，非常方便，账本数据也公开，加上强大的智能合约，因此公有链极大地促进了区块链概念和技术的普及，比如比特币、Ethereum平台等。</para>
@@ -68,7 +68,7 @@
 
 	</section>
 	<section id="how">
-		<title>how-怎么做</title>
+		<title>安装 Hyperledger Fabric</title>
 		<screen>
 		<![CDATA[
 +---------------------------------+		
@@ -257,6 +257,7 @@ docker-compose -version
 
 		<section id="docker-compose.yml">
 			<title>启动 docker 虚拟机</title>
+			<para>体验 Hyperledger Fabric 在 https://github.com/hyperledger/fabric/tree/release/examples 下面有一些例子供用户学习。这里我选择的是 fabric-samples</para>
 			<para>这里我们最小化启动，需要四个节点，分别是 ca, peer, order, couchdb。</para>
 			<para>创建文件 docker-compose.yml</para>
 			<screen>
@@ -438,6 +439,12 @@ peer0.org1.example.com   peer node start                  Up      0.0.0.0:7051->
 			<section id="channel">
 				<title>channel 管理</title>
 				<para>Hyperledger Fabric Channel 可以理解为 vlan （交换机术语） 用来实现区块隔离。</para>
+				<screen>
+				<![CDATA[
+[root@localhost docker]# docker-compose exec peer0.org1.example.com bash
+root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric#				
+				]]>
+				</screen>
 				<section id="peer.channel.list">
 					<title>列出 channel</title>
 					<screen>
@@ -475,12 +482,13 @@ peer0.org1.example.com peer channel join -b mychannel.block
 					</screen>
 				</section>
 			</section>
-			<section id="">
+			<section id="peer.chaincode">
 				<title>部署连</title>
 				<screen>
 				<![CDATA[
-[root@localhost docker]# docker-compose exec peer0.org1.example.com bash
-root@dcb09db1cbc8:/go/src/github.com/hyperledger/fabric#
+[root@localhost basic-network]# docker-compose exec cli bash
+root@b1ded848f967:/opt/gopath/src/github.com/hyperledger/fabric/peer#
+
 				]]>
 				</screen>
 				<para>安装合约</para>
@@ -508,24 +516,62 @@ peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"f
 				]]>
 				</screen>
 			</section>
-			<section id="">
-				<title>测试</title>
+			<section id="peer.chaincode.query">
+				<title>查询合约</title>
 				<screen>
 				<![CDATA[
-root@595ec455c0ff:/opt/gopath/src/github.com/hyperledger/fabric# peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryCar","Args":["CAR9"]}'
-2018-02-07 04:44:03.451 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
-2018-02-07 04:44:03.451 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
-2018-02-07 04:44:03.454 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 003 Using default escc
-2018-02-07 04:44:03.455 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 004 Using default vscc
-2018-02-07 04:44:03.456 UTC [msp/identity] Sign -> DEBU 005 Sign: plaintext: 0A97070A6908031A0C089388EAD30510...0A0871756572794361720A0443415239 
-2018-02-07 04:44:03.456 UTC [msp/identity] Sign -> DEBU 006 Sign: digest: 28C28E7387383CC89E298B29932853964A5D26E4AA358C1242D62ACCAF121BFB 
-2018-02-07 04:44:03.495 UTC [msp/identity] Sign -> DEBU 007 Sign: plaintext: 0A97070A6908031A0C089388EAD30510...F7BBABB41F274432D5C6985A78D8E949 
-2018-02-07 04:44:03.495 UTC [msp/identity] Sign -> DEBU 008 Sign: digest: BC6559CACFFC49B5B053B050B7634D1D4D920CAC3F228ED6F38EBFF6A760D7C1 
-2018-02-07 04:44:03.504 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> DEBU 009 ESCC invoke result: version:1 response:<status:200 message:"OK" payload:"{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}" > payload:"\n \245\036\265\326\362rL\341\234\326\267\3452\360\277]\220\017C\212\206\311\034\344P\022\034(\364\026-_\022\215\001\n0\022\026\n\006fabcar\022\014\n\n\n\004CAR9\022\002\010\005\022\026\n\004lscc\022\016\n\014\n\006fabcar\022\002\010\001\032J\010\310\001\032E{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}\"\r\022\006fabcar\032\0031.0" endorsement:<endorser:"\n\007Org1MSP\022\200\006-----BEGIN -----\nMIICGjCCAcCgAwIBAgIRAPlwF/rUZUP9mqN4wSml4iswCgYIKoZIzj0EAwIwczEL\nMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNhbiBG\ncmFuY2lzY28xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMTcwODMxMDkxNDMyWhcNMjcwODI5MDkxNDMy\nWjBbMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMN\nU2FuIEZyYW5jaXNjbzEfMB0GA1UEAxMWcGVlcjAub3JnMS5leGFtcGxlLmNvbTBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABHihxW6ks3B2+5XdbAVq3CBgxRRRZ22x\nzzpqnD86nKkz7fBElBuhlXl2K6rTxyY2OBOB0ts8keqZ93xueRGymrajTTBLMA4G\nA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMCsGA1UdIwQkMCKAIEI5qg3Ndtru\nuLoM2nAYUdFFBNMarRst3dusalc2Xkl8MAoGCCqGSM49BAMCA0gAMEUCIQD4j0Rn\ne1rrd0FSCzsR6u+IuuPK5dI/kR/bh7+VLf0TNgIgCfUtkJvfvzVEwZLFoFyjoHtr\ntvwzNUS1U0hEqIaDeo4=\n-----END -----\n" signature:"0E\002!\000\2657\267\025<v\010\014sC\261U\207H\251\021KJw#\2322C\031<\346=\207\222\343\263\025\002 So\272|v\027xM\026\225\003bx\312\277n\367\273\253\264\037'D2\325\306\230Zx\330\351I" > 
-2018-02-07 04:44:03.509 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> INFO 00a Chaincode invoke successful. result: status:200 payload:"{\"colour\":\"brown\",\"make\":\"Holden\",\"model\":\"Barina\",\"owner\":\"Shotaro\"}" 
-2018-02-07 04:44:03.510 UTC [main] main -> INFO 00b Exiting.....
+root@b1ded848f967:/opt/gopath/src/github.com/hyperledger/fabric/peer# peer chaincode query -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryCar","Args":["CAR9"]}'
+2018-02-07 05:11:59.737 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-07 05:11:59.737 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-07 05:11:59.738 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 003 Using default escc
+2018-02-07 05:11:59.738 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 004 Using default vscc
+2018-02-07 05:11:59.738 UTC [msp/identity] Sign -> DEBU 005 Sign: plaintext: 0A93070A6908031A0C089F95EAD30510...0A0871756572794361720A0443415239 
+2018-02-07 05:11:59.739 UTC [msp/identity] Sign -> DEBU 006 Sign: digest: 84E6F021BEA8C5F2D97B1C8BFEA4BB07B91DBC167E0BBD188260B234DC4620E8 
+Query Result: {"colour":"brown","make":"Holden","model":"Barina","owner":"Shotaro"}
+2018-02-07 05:11:59.771 UTC [main] main -> INFO 007 Exiting.....
+
 				]]>
 				</screen>
+			</section>
+			<section id="peer.chaincode.invoke">
+				<title>调用合约</title>
+				<para>调用合约，新增一条记录，然后做查询操作。</para>
+				<screen>
+				<![CDATA[
+peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"createCar","Args":["CAR15", "Toyota", "Rezi", "White", "Neo"]}'				
+peer chaincode query -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryCar","Args":["CAR15"]}'
+				]]>
+				</screen>
+				<para>演示结果</para>
+				<screen>
+				<![CDATA[
+root@b1ded848f967:/opt/gopath/src/github.com/hyperledger/fabric/peer# peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"createCar","Args":["CAR15", "Toyota", "Rezi", "White", "Neo"]}'
+2018-02-07 05:16:57.415 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-07 05:16:57.415 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-07 05:16:57.417 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 003 Using default escc
+2018-02-07 05:16:57.417 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 004 Using default vscc
+2018-02-07 05:16:57.418 UTC [msp/identity] Sign -> DEBU 005 Sign: plaintext: 0A93070A6908031A0C08C997EAD30510...52657A690A0557686974650A034E656F 
+2018-02-07 05:16:57.418 UTC [msp/identity] Sign -> DEBU 006 Sign: digest: D9BDF565353FFAD37CDC64DBFBD06DA8B5A049AA32305E1668A695E6522C3043 
+2018-02-07 05:16:57.443 UTC [msp/identity] Sign -> DEBU 007 Sign: plaintext: 0A93070A6908031A0C08C997EAD30510...4B5F674D96D8DE9BE699613B72ED46B1 
+2018-02-07 05:16:57.443 UTC [msp/identity] Sign -> DEBU 008 Sign: digest: 2951E3522A902D2644E08508E52A1D833AF9E11A420EE933851CC5673B005375 
+2018-02-07 05:16:57.451 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> DEBU 009 ESCC invoke result: version:1 response:<status:200 message:"OK" > payload:"\n \327\324\006\316\004\230\3262{\300\\|\275\035\336\243\316L\232\247x\020n`2\346\334\031\n(<\262\022\204\001\nn\022T\n\006fabcar\022J\032H\n\005CAR15\032?{\"make\":\"Toyota\",\"model\":\"Rezi\",\"colour\":\"White\",\"owner\":\"Neo\"}\022\026\n\004lscc\022\016\n\014\n\006fabcar\022\002\010\001\032\003\010\310\001\"\r\022\006fabcar\032\0031.0" endorsement:<endorser:"\n\007Org1MSP\022\200\006-----BEGIN -----\nMIICGjCCAcCgAwIBAgIRAPlwF/rUZUP9mqN4wSml4iswCgYIKoZIzj0EAwIwczEL\nMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExFjAUBgNVBAcTDVNhbiBG\ncmFuY2lzY28xGTAXBgNVBAoTEG9yZzEuZXhhbXBsZS5jb20xHDAaBgNVBAMTE2Nh\nLm9yZzEuZXhhbXBsZS5jb20wHhcNMTcwODMxMDkxNDMyWhcNMjcwODI5MDkxNDMy\nWjBbMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMN\nU2FuIEZyYW5jaXNjbzEfMB0GA1UEAxMWcGVlcjAub3JnMS5leGFtcGxlLmNvbTBZ\nMBMGByqGSM49AgEGCCqGSM49AwEHA0IABHihxW6ks3B2+5XdbAVq3CBgxRRRZ22x\nzzpqnD86nKkz7fBElBuhlXl2K6rTxyY2OBOB0ts8keqZ93xueRGymrajTTBLMA4G\nA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMCsGA1UdIwQkMCKAIEI5qg3Ndtru\nuLoM2nAYUdFFBNMarRst3dusalc2Xkl8MAoGCCqGSM49BAMCA0gAMEUCIQD4j0Rn\ne1rrd0FSCzsR6u+IuuPK5dI/kR/bh7+VLf0TNgIgCfUtkJvfvzVEwZLFoFyjoHtr\ntvwzNUS1U0hEqIaDeo4=\n-----END -----\n" signature:"0E\002!\000\364q\r\026\267\205\357\245\006\364\354v\333r92\022l\2267[Yb@F\263N\230\324\351.\025\002 \022K\275P\234\262A\3338\244\337\216\340q%-K_gM\226\330\336\233\346\231a;r\355F\261" > 
+2018-02-07 05:16:57.451 UTC [chaincodeCmd] chaincodeInvokeOrQuery -> INFO 00a Chaincode invoke successful. result: status:200 
+2018-02-07 05:16:57.451 UTC [main] main -> INFO 00b Exiting.....
+
+
+root@b1ded848f967:/opt/gopath/src/github.com/hyperledger/fabric/peer# peer chaincode query -o orderer.example.com:7050 -C mychannel -n fabcar -c '{"function":"queryCar","Args":["CAR15"]}'
+2018-02-07 05:17:07.383 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-07 05:17:07.383 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-07 05:17:07.383 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 003 Using default escc
+2018-02-07 05:17:07.383 UTC [chaincodeCmd] checkChaincodeCmdParams -> INFO 004 Using default vscc
+2018-02-07 05:17:07.384 UTC [msp/identity] Sign -> DEBU 005 Sign: plaintext: 0A93070A6908031A0C08D397EAD30510...0871756572794361720A054341523135 
+2018-02-07 05:17:07.384 UTC [msp/identity] Sign -> DEBU 006 Sign: digest: FBFD595C716FB185BABBBD3709040F6D1538964931BA47A8B653E878C2084C4B 
+Query Result: {"colour":"White","make":"Toyota","model":"Rezi","owner":"Neo"}
+2018-02-07 05:17:07.411 UTC [main] main -> INFO 007 Exiting.....
+
+				]]>
+				</screen>
+
 			</section>
 		</section>
 	</section>
