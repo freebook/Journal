@@ -77,6 +77,297 @@
 
 		<para>由于 Hyperledger Fabric 是建立在 Docker 基础之上的。所以不建议你去除 Docker
 			转而使用传统的本地编译安装方式。我们仍然保持使用 Docker 在每个物理节点上，这回省去软件的编译和安装环节。</para>
+		<section id="depends">
+			<title>依赖关系</title>
+			<para>需要注意的是于其他传统系统一样，Hyperledger Fabric 的启动也是有顺序的，这是因为他们之间存在着依赖关系。</para>
+		</section>
+	</section>
+	<section id="">
+		<title>生成证书和创世区块</title>
+		<para>这里我们需要几个命令（configtxgen configtxlator cryptogen），官方的安装方式：</para>
+		<screen>
+		<![CDATA[
+curl -sSL https://goo.gl/byy2Qj | bash -s 1.0.5
+		]]>
+		</screen>
+		<para>无论如何我都安装不成功，可能是（https://goo.gl/byy2Qj）被天朝给墙了。不过我发现 fabric-tools
+			里面有这个工具。</para>
+		<screen>
+		<![CDATA[
+[root@localhost ~]# mkdir netkiller
+[root@localhost ~]# cd netkiller/
+[root@localhost netkiller]# mkdir -p {chaincode,crypto-config,config,artifacts}	
+		]]>
+		</screen>
+
+		<section id="">
+			<title>创建配置文件</title>
+
+			<section id="">
+				<title>crypto-config.yaml</title>
+
+				<para>创建证书</para>
+				<screen>
+				<![CDATA[
+OrdererOrgs:
+  - Name: Orderer
+    Domain: example.com
+    Specs:
+      - Hostname: orderer
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1			
+				]]>
+				</screen>
+				<para>如果有多个Peer节点参考下面配置。</para>
+				<screen>
+				<![CDATA[
+[root@localhost netkiller]# vim crypto-config.yaml
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: example.com
+    Specs:
+      - Hostname: orderer
+PeerOrgs:
+  - Name: Org1
+    Domain: org1.example.com
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+  - Name: Org2
+    Domain: org2.example.com
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title>configtx.yaml</title>
+				<screen>
+				<![CDATA[
+---
+Profiles:
+
+    OneOrgOrdererGenesis:
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *OrdererOrg
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *Org1
+    OneOrgChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org1
+
+Organizations:
+
+    - &OrdererOrg
+        Name: OrdererOrg
+
+        ID: OrdererMSP
+
+        MSPDir: crypto-config/ordererOrganizations/example.com/msp
+
+    - &Org1
+        Name: Org1MSP
+
+        ID: Org1MSP
+
+        MSPDir: crypto-config/peerOrganizations/org1.example.com/msp
+
+        AnchorPeers:
+            - Host: peer0.org1.example.com
+              Port: 7051
+
+Orderer: &OrdererDefaults
+
+    OrdererType: solo
+
+    Addresses:
+        - orderer.example.com:7050
+
+    BatchTimeout: 2s
+
+    BatchSize:
+
+        MaxMessageCount: 10
+
+        AbsoluteMaxBytes: 99 MB
+
+        PreferredMaxBytes: 512 KB
+
+    Kafka:
+        Brokers:
+            - 127.0.0.1:9092
+
+    Organizations:
+
+Application: &ApplicationDefaults
+
+    Organizations:
+				]]>
+				</screen>
+			</section>
+		</section>
+
+		<section id="">
+			<title>启动 fabric-tools 容器</title>
+			<para>创建文件 docker-compose-fabric-tools.yml</para>
+			<screen>
+			<![CDATA[
+version: '2'
+
+networks:
+  basic:
+
+services:
+  tools:
+    container_name: tools 
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+    # working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    working_dir: /root/netkiller
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ~/netkiller:/root/netkiller
+        - ./chaincode/:/opt/gopath/src/github.com/
+        - ./crypto:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    networks:
+        - basic
+			]]>
+			</screen>
+			<section id="">
+				<title>启动 Docker 容器</title>
+				<para>启动 Docker 容器</para>
+				<screen>
+				<![CDATA[
+[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml up -d
+Creating tools
+				]]>
+				</screen>
+				<para>进入容器</para>
+				<screen>
+				<![CDATA[
+[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml exec tools bash
+root@88e9040d2d2a:/opt/gopath/src/github.com/hyperledger/fabric/peer#				
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title>生成证书</title>
+				<para>命令</para>
+				<screen>
+				<![CDATA[
+cryptogen generate --config=./crypto-config.yaml
+				]]>
+				</screen>
+				<para>演示</para>
+				<screen>
+				<![CDATA[
+root@8f467a88de99:~/netkiller# cryptogen generate --config=./crypto-config.yaml
+org1.example.com
+org2.example.com				
+
+root@8f467a88de99:~/netkiller# ls -1 crypto-config
+ordererOrganizations
+peerOrganizations
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title>生成创世区块</title>
+				<screen>
+				<![CDATA[
+root@8f467a88de99:~/netkiller# configtxgen -profile OneOrgOrdererGenesis -outputBlock ./config/genesis.block
+2018-02-08 08:35:30.121 UTC [common/configtx/tool] main -> INFO 001 Loading configuration
+2018-02-08 08:35:30.236 UTC [common/configtx/tool] doOutputBlock -> INFO 002 Generating genesis block
+2018-02-08 08:35:30.238 UTC [common/configtx/tool] doOutputBlock -> INFO 003 Writing genesis block			
+				]]>
+				</screen>
+
+			</section>
+			<section id="">
+				<title>生成通道配置文件</title>
+				<para>命令</para>
+				<screen>
+				<![CDATA[
+CHANNEL_NAME=mychannel
+configtxgen -profile OneOrgChannel -outputCreateChannelTx ./config/channel.tx -channelID $CHANNEL_NAME				
+				]]>
+				</screen>
+				<para>操作演示</para>
+				<screen>
+				<![CDATA[
+root@8f467a88de99:~/netkiller# CHANNEL_NAME=mychannel
+root@8f467a88de99:~/netkiller# configtxgen -profile OneOrgChannel -outputCreateChannelTx ./config/channel.tx -channelID $CHANNEL_NAME 
+2018-02-08 08:41:08.010 UTC [common/configtx/tool] main -> INFO 001 Loading configuration
+2018-02-08 08:41:08.020 UTC [common/configtx/tool] doOutputChannelCreateTx -> INFO 002 Generating new channel configtx
+2018-02-08 08:41:08.020 UTC [common/configtx/tool] doOutputChannelCreateTx -> INFO 003 Writing new channel tx				
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title> generate anchor peer transaction</title>
+				<para>命令</para>
+				<screen>
+				<![CDATA[
+CHANNEL_NAME=mychannel
+configtxgen -profile OneOrgChannel -outputAnchorPeersUpdate ./config/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP				
+				]]>
+				</screen>
+				<para>操作演示</para>
+				<screen>
+				<![CDATA[
+root@8f467a88de99:~/netkiller# CHANNEL_NAME=mychannel
+root@8f467a88de99:~/netkiller# configtxgen -profile OneOrgChannel -outputAnchorPeersUpdate ./config/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
+2018-02-08 08:46:19.162 UTC [common/configtx/tool] main -> INFO 001 Loading configuration
+2018-02-08 08:46:19.176 UTC [common/configtx/tool] doOutputAnchorPeersUpdate -> INFO 002 Generating anchor peer update
+2018-02-08 08:46:19.177 UTC [common/configtx/tool] doOutputAnchorPeersUpdate -> INFO 003 Writing anchor peer update
+				]]>
+				</screen>
+			</section>
+			<section id="">
+				<title>清理 Docker 容器</title>
+				<para>至此所需的证书与创世区块都已生产完毕，fabric-tools 容易完成了它的使命，你可以继续保留或者清理干净。</para>
+				<screen>
+				<![CDATA[
+[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml down
+Stopping tools ... done
+Removing tools ... done
+Removing network netkiller_basic
+				]]>
+				</screen>
+				<para>清理 fabric-tools 容器</para>
+				<screen>
+				<![CDATA[
+docker rm -f $(docker ps -qa)
+				]]>
+				</screen>
+			</section>
+		</section>
 
 	</section>
 	<section id="couchdb">
@@ -93,8 +384,10 @@
 				<para>采用传统方式物理机上本地安装 CouchDB</para>
 			</listitem>
 		</itemizedlist>
-		<para>理论两种方案对实际结果没有什么区别，只需提供IP地址，用户名与密码供其他节点访问即可。但实际我们看到 Hyperledger Fabric 使用的镜像是 hyperledger/fabric-couchdb 不清楚是否有修改过 CouchDB 数据库。</para>
-		<para>如果你对 Docker 比较熟悉就采用 Docker 方案。如果不熟悉就采用本地安装方式。总之选择一种你能Hold住（掌控）的方案，一旦出现故障，你能第一时间排查并处理。</para>
+		<para>理论两种方案对实际结果没有什么区别，只需提供IP地址，用户名与密码供其他节点访问即可。但实际我们看到 Hyperledger
+			Fabric 使用的镜像是 hyperledger/fabric-couchdb 不清楚是否有修改过 CouchDB 数据库。</para>
+		<para>如果你对 Docker 比较熟悉就采用 Docker
+			方案。如果不熟悉就采用本地安装方式。总之选择一种你能Hold住（掌控）的方案，一旦出现故障，你能第一时间排查并处理。</para>
 		<para>下面是 Docker 方案</para>
 		<screen>
 		<![CDATA[
@@ -112,12 +405,12 @@
       - basic		
 		]]>
 		</screen>
-		
+
 	</section>
 
 	<section id="orderer">
 		<title>Orderer 节点安装</title>
-		<para>我们</para>
+		<para></para>
 	</section>
 
 	<section id="peer">
