@@ -92,6 +92,13 @@ curl -sSL https://goo.gl/byy2Qj | bash -s 1.0.5
 		</screen>
 		<para>无论如何我都安装不成功，可能是（https://goo.gl/byy2Qj）被天朝给墙了。不过我发现 fabric-tools
 			里面有这个工具。</para>
+		<tip>
+			<para>经过翻墙发现 https://goo.gl/byy2Qj 地址是 301 到下面地址：</para>
+			<para>
+				<ulink
+					url="https://raw.githubusercontent.com/hyperledger/fabric/v1.0.5/scripts/bootstrap.sh" />
+			</para>
+		</tip>
 		<screen>
 		<![CDATA[
 [root@localhost ~]# mkdir netkiller
@@ -371,7 +378,7 @@ docker rm -f $(docker ps -qa)
 
 	</section>
 	<section id="couchdb">
-		<title>CouchDB 节点安装</title>
+		<title>CouchDB 节点</title>
 		<para>整个 Hyperledger Fabric 技术栈中只有这个 CouchDB 是个外来户，看到 CouchDB
 			我就非常兴奋，这是一个NoSQL数据库(它与MongoDB十分类似)，所以CouchDB 100%可以独立运行，且最容易分离。</para>
 		<para>CouchDB 在这里有两个方案可以选择。</para>
@@ -388,23 +395,82 @@ docker rm -f $(docker ps -qa)
 			Fabric 使用的镜像是 hyperledger/fabric-couchdb 不清楚是否有修改过 CouchDB 数据库。</para>
 		<para>如果你对 Docker 比较熟悉就采用 Docker
 			方案。如果不熟悉就采用本地安装方式。总之选择一种你能Hold住（掌控）的方案，一旦出现故障，你能第一时间排查并处理。</para>
-		<para>下面是 Docker 方案</para>
-		<screen>
-		<![CDATA[
+
+		<section id="">
+			<title>安装 CouchDB</title>
+			<para>下面是 Docker 方案</para>
+			<screen>
+			<![CDATA[
+[root@localhost netkiller]# vim docker-compose-couchdb.yml
+		
+version: '2'
+
+networks:
+  basic:
+
+services:
   couchdb:
     container_name: couchdb
     image: hyperledger/fabric-couchdb
     # Populate the COUCHDB_USER and COUCHDB_PASSWORD to set an admin user and password
     # for CouchDB.  This will prevent CouchDB from operating in an "Admin Party" mode.
     environment:
-      - COUCHDB_USER=
-      - COUCHDB_PASSWORD=
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=passw0rd
     ports:
-      - 5984:5984
+      - 172.16.0.17:5984:5984
     networks:
-      - basic		
-		]]>
-		</screen>
+      - basic
+			]]>
+			</screen>
+		</section>
+		<section id="">
+			<title>启动 CouchDB</title>
+			<para>启动 Docker 容器</para>
+			<screen>
+			<![CDATA[
+docker-compose -f docker-compose-couchdb.yml up -d		
+			]]>
+			</screen>
+			<para>访问CouchDB管理界面，http://172.16.0.17:5984/_utils/
+				请使用上面设置的密码进入。若想进入到容器内部可以使用下面命令：</para>
+			<screen>
+			<![CDATA[
+docker-compose -f docker-compose-couchdb.yml exec couchdb bash	
+			]]>
+			</screen>
+			<para>至此 CouchDB 节点部署完毕。</para>
+		</section>
+		<section id="">
+			<title>备份与恢复 CouchDB </title>
+			<para>既然是运维区块链，对于运维工作我们最关心的就是如何备份数据，在出现故障的时候恢复数据。</para>
+			<screen>
+			<![CDATA[
+npm install --save couchdb-backup-restore			
+			]]>
+			</screen>
+			<screen>
+			<![CDATA[
+var cbr = require('couchdb-backup-restore');
+ 
+var config = {credentials: 'http://localhost:5984'};
+ 
+function done(err) {
+  if (err) {
+    return console.error(err);
+  }
+  console.log('all done!');
+}
+ 
+// backup 
+cbr.backup(config, done).pipe(fs.createWriteStream('./db-backup.tar.gz'))
+
+// restore 
+fs.createReadStream('./db-backup.tar.gz').pipe(cbr.restore(config, done));
+			]]>
+			</screen>
+			
+		</section>
 
 	</section>
 
