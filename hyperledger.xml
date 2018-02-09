@@ -1391,6 +1391,13 @@ PeerOrgs:
       Count: 1			
 			]]>
 			</screen>
+
+			<para>Name：定义名称</para>
+			<para>Domain与Hostname：组合成为节点的名称，也是生成后的文件夹的名称。</para>
+			<para>Template: 模板数量</para>
+			<para>Users：用来指定添加进节点的默认用户数</para>
+			<para>Count：用来指定每个org下边所拥有的节点数。</para>
+
 			<para>如果有多个Peer节点参考下面配置。</para>
 			<screen>
 			<![CDATA[
@@ -1419,6 +1426,31 @@ PeerOrgs:
 		</section>
 		<section id="configtx.yaml">
 			<title>configtx.yaml</title>
+		</section>
+	</section>
+	<section id="">
+		<title>Chaincode</title>
+		<section id="">
+			<title>在宿主主机上编译合约</title>
+			<para>编译所以来的库文件</para>
+			<screen>
+			<![CDATA[
+yum install libtool-ltdl-devel
+go get github.com/hyperledger/fabric		
+			]]>
+			</screen>
+			<para>编译合约文件</para>
+			<screen>
+			<![CDATA[
+[root@localhost ~]# cd ~/netkiller/chaincode/chaincode_example02/
+[root@localhost chaincode_example02]#
+
+[root@localhost chaincode_example02]# go build chaincode_example02.go 
+
+[root@localhost chaincode_example02]# ls
+chaincode_example02  chaincode_example02.go  chaincode_example02_test.go 
+			]]>
+			</screen>
 		</section>
 	</section>
 	<section id="restful">
