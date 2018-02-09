@@ -9,12 +9,12 @@
 	xml:lang="zh-cn">
 	<articleinfo>
 		<title>hyperledger v1.0.5 区块链运维入门</title>
-		<subtitle></subtitle>
+		<subtitle>本文作者最近在找工作，有意向致电 13113668890</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
-			<para>网上搜索hyperledger大部分文章是讲解开发环境配置的，安装哪些文章配置好开发环境，写好合约，怎样落地呢？却很少文章提及。</para>
-			<para>要将区块链落地，我们必须依赖运维技术，这是IT基础设施，区块链应用将建立在这个基础设施之上，否则区块链就是浮云。</para>
+			<para>你网上搜索hyperledger大部分文章是讲解开发环境的安装与配置，没有一篇关于怎样运维区块链的文章。当你配置好开发环境，写好合约，怎样落地呢？却很少文章提及。</para>
+			<para>要将区块链落地，我们必须依赖运维技术，这是IT基础设施，区块链应用将建立在这个基础设施之上，否则区块链就是浮云，悬在空中无法落地。</para>
 		</abstract>
 		&book.info.abstract.xml;
 		<keywordset>
@@ -48,41 +48,63 @@
 			部署方案，但无一例外的是，全部安装在一个物理机上。如果是生产环境，我们必须分开不是，首先要做的工作是化整为零，拆解应用，搞明白每个容器的功能和作用。然后我们将应用拆分，独立部署到物理节点上去。</para>
 		<literallayout>
 		<![CDATA[
-       +---------------------------------+		
-       |        	       SDK               |
-       +---------------------------------+	
-       | golang | nodejs | python | java |
-       +---------------------------------+			
+     +---------------------------------+		
+     |      	         SDK               |
+     +---------------------------------+	
+     | golang | nodejs | python | java |
+     +---------------------------------+			
 	                  |
 	                  V
-       +---------------------------------+				
-       |           fabric-ca             |
-       +---------------------------------+
-           |                       |
-+-------------------+     +-------------------+
-|	Peer            |     |  Peer             |	        
-+-------------------+     +-------------------+		
-     |                       |
-     V                       V
-+-------------------+     +-------------------+
-| Orderer           |     | Orderer           |
-+-------------------+     +-------------------+
-                 |           |
+       +------------------------------+				
+       |           fabric-ca          |
+       +------------------------------+
+           |                     |
+           V                     V
++-------------------+   +-------------------+
+|	Peer            |   |  Peer             |	        
++-------------------+   +-------------------+		
+     |          |           |        |
+     V          |           |        V
++-----------+   |           |   +------------+
+| Orderer   |   |           |   | Orderer    |
++-----------+   |           |   +------------+
+                V           V
              +-------------------+
-             | Couchdb           |
+             |     Couchdb       |
              +-------------------+	
 		]]>
 		</literallayout>
 		<para>接下来我们要做的工作是将上面拓扑图种的技术点分分击破。</para>
 
 		<para>由于 Hyperledger Fabric 是建立在 Docker 基础之上的。所以不建议你去除 Docker
-			转而使用传统的本地编译安装方式。我们仍然保持使用 Docker 在每个物理节点上，这回省去软件的编译和安装环节。</para>
+			转而使用传统的本地编译安装方式。我们仍然保持使用 Docker 在每个物理节点上，省去软件的编译和安装环节。</para>
 		<section id="depends">
 			<title>依赖关系</title>
 			<para>需要注意的是于其他传统系统一样，Hyperledger Fabric 的启动也是有顺序的，这是因为他们之间存在着依赖关系。</para>
 		</section>
+		<section id="hosts">
+			<title>准备物理机</title>
+			<itemizedlist>
+				<title>物理机</title>
+				<listitem>
+					<para>ca 节点，域名：ca.example.com，端口：7054</para>
+				</listitem>
+				<listitem>
+					<para>orderer 节点，域名 orderer.example.com，端口：7050</para>
+				</listitem>
+				<listitem>
+					<para>peer 节点，域名：peer.example.com，端口：7051、7053</para>
+				</listitem>
+				<listitem>
+					<para>couchdb 节点，域名 couchdb.example.com，端口：5984</para>
+				</listitem>
+				<listitem>
+					<para>tools 节点，域名：tools.example.com</para>
+				</listitem>
+			</itemizedlist>
+		</section>
 	</section>
-	<section id="">
+	<section id="genesis">
 		<title>生成证书和创世区块</title>
 		<para>这里我们需要几个命令（configtxgen configtxlator cryptogen），官方的安装方式：</para>
 		<screen>
@@ -107,12 +129,11 @@ curl -sSL https://goo.gl/byy2Qj | bash -s 1.0.5
 		]]>
 		</screen>
 
-		<section id="">
+		<section id="genesis.block">
 			<title>创建配置文件</title>
 
-			<section id="">
+			<section id="crypto-config.yaml">
 				<title>crypto-config.yaml</title>
-
 				<para>创建证书</para>
 				<screen>
 				<![CDATA[
@@ -128,31 +149,6 @@ PeerOrgs:
       Count: 1
     Users:
       Count: 1			
-				]]>
-				</screen>
-				<para>如果有多个Peer节点参考下面配置。</para>
-				<screen>
-				<![CDATA[
-[root@localhost netkiller]# vim crypto-config.yaml
-
-OrdererOrgs:
-  - Name: Orderer
-    Domain: example.com
-    Specs:
-      - Hostname: orderer
-PeerOrgs:
-  - Name: Org1
-    Domain: org1.example.com
-    Template:
-      Count: 2
-    Users:
-      Count: 1
-  - Name: Org2
-    Domain: org2.example.com
-    Template:
-      Count: 2
-    Users:
-      Count: 1
 				]]>
 				</screen>
 			</section>
@@ -230,9 +226,9 @@ Application: &ApplicationDefaults
 			</section>
 		</section>
 
-		<section id="">
+		<section id="genesis.fabric-tools">
 			<title>启动 fabric-tools 容器</title>
-			<para>创建文件 docker-compose-fabric-tools.yml</para>
+			<para>创建文件 docker-compose-tools.yml</para>
 			<screen>
 			<![CDATA[
 version: '2'
@@ -271,14 +267,14 @@ services:
 				<para>启动 Docker 容器</para>
 				<screen>
 				<![CDATA[
-[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml up -d
+[root@localhost netkiller]# docker-compose -f docker-compose-tools.yml up -d
 Creating tools
 				]]>
 				</screen>
 				<para>进入容器</para>
 				<screen>
 				<![CDATA[
-[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml exec tools bash
+[root@localhost netkiller]# docker-compose -f docker-compose-tools.yml exec tools bash
 root@88e9040d2d2a:/opt/gopath/src/github.com/hyperledger/fabric/peer#				
 				]]>
 				</screen>
@@ -296,7 +292,6 @@ cryptogen generate --config=./crypto-config.yaml
 				<![CDATA[
 root@8f467a88de99:~/netkiller# cryptogen generate --config=./crypto-config.yaml
 org1.example.com
-org2.example.com				
 
 root@8f467a88de99:~/netkiller# ls -1 crypto-config
 ordererOrganizations
@@ -308,6 +303,7 @@ peerOrganizations
 				<title>生成创世区块</title>
 				<screen>
 				<![CDATA[
+root@8f467a88de99:~/netkiller# export FABRIC_CFG_PATH=$PWD				
 root@8f467a88de99:~/netkiller# configtxgen -profile OneOrgOrdererGenesis -outputBlock ./config/genesis.block
 2018-02-08 08:35:30.121 UTC [common/configtx/tool] main -> INFO 001 Loading configuration
 2018-02-08 08:35:30.236 UTC [common/configtx/tool] doOutputBlock -> INFO 002 Generating genesis block
@@ -361,13 +357,13 @@ root@8f467a88de99:~/netkiller# configtxgen -profile OneOrgChannel -outputAnchorP
 				<para>至此所需的证书与创世区块都已生产完毕，fabric-tools 容易完成了它的使命，你可以继续保留或者清理干净。</para>
 				<screen>
 				<![CDATA[
-[root@localhost netkiller]# docker-compose -f docker-compose-fabric-tools.yml down
+[root@localhost netkiller]# docker-compose -f docker-compose-tools.yml down
 Stopping tools ... done
 Removing tools ... done
 Removing network netkiller_basic
 				]]>
 				</screen>
-				<para>清理 fabric-tools 容器</para>
+				<para>清理 tools 容器</para>
 				<screen>
 				<![CDATA[
 docker rm -f $(docker ps -qa)
@@ -396,14 +392,14 @@ docker rm -f $(docker ps -qa)
 		<para>如果你对 Docker 比较熟悉就采用 Docker
 			方案。如果不熟悉就采用本地安装方式。总之选择一种你能Hold住（掌控）的方案，一旦出现故障，你能第一时间排查并处理。</para>
 
-		<section id="">
+		<section id="couchdb.docker-compose">
 			<title>安装 CouchDB</title>
 			<para>下面是 Docker 方案</para>
 			<screen>
 			<![CDATA[
 [root@localhost netkiller]# vim docker-compose-couchdb.yml
 		
-version: '2'
+version: '3'
 
 networks:
   basic:
@@ -424,7 +420,7 @@ services:
 			]]>
 			</screen>
 		</section>
-		<section id="">
+		<section id="couchdb.up">
 			<title>启动 CouchDB</title>
 			<para>启动 Docker 容器</para>
 			<screen>
@@ -441,7 +437,7 @@ docker-compose -f docker-compose-couchdb.yml exec couchdb bash
 			</screen>
 			<para>至此 CouchDB 节点部署完毕。</para>
 		</section>
-		<section id="">
+		<section id="couchdb.backup">
 			<title>备份与恢复 CouchDB </title>
 			<para>既然是运维区块链，对于运维工作我们最关心的就是如何备份数据，在出现故障的时候恢复数据。</para>
 			<screen>
@@ -474,22 +470,241 @@ fs.createReadStream('./db-backup.tar.gz').pipe(cbr.restore(config, done));
 
 	</section>
 
+	<section id="ca">
+		<title>CA 节点安装</title>
+		<para>CA 节点需要我们之前生成 crypto-config </para>
+		<section id="docker-compose-ca.yaml">
+			<title>docker-compose-ca.yml</title>
+			<screen>
+			<![CDATA[
+version: '3'
+
+networks:
+  basic:
+
+services:
+  ca.example.com:
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.example.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/4239aa0dcd76daeeb8ba0cda701851d14504d31aad1b2ddddbac6a57365e497c_sk
+    ports:
+      - "XXX.XXX.XXX.XXX:7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.example.com
+    networks:
+      - basic			
+			]]>
+			</screen>
+		</section>
+		<section id="ca.up">
+			<title>启动 CA 节点</title>
+			<screen>
+			<![CDATA[
+docker-compose -f docker-compose-ca.yaml up -d			
+			]]>
+			</screen>
+		</section>
+	</section>
 	<section id="orderer">
 		<title>Orderer 节点安装</title>
 		<para></para>
+		<section id="">
+			<title>docker-compose-orderer.yml</title>
+			<screen>
+			<![CDATA[
+version: '3'
+
+networks:
+  basic:
+
+services:
+  orderer.example.com:
+    container_name: orderer.example.com
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - 7050:7050
+    volumes:
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/:/etc/hyperledger/msp/orderer
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/:/etc/hyperledger/msp/peerOrg1
+    networks:
+      - basic			
+			]]>
+			</screen>
+		</section>
+		<section id="">
+			<title>启动 Orderer 节点</title>
+			<screen>
+			<![CDATA[
+docker-compose -f docker-compose-orderer.yaml up -d			
+			]]>
+			</screen>
+		</section>
 	</section>
 
 	<section id="peer">
 		<title>Peer 节点安装</title>
 		<para></para>
+		<section id="">
+			<title>docker-compose-peer.yml</title>
+			<screen>
+			<![CDATA[
+version: '3'
+
+networks:
+  basic:
+
+services:
+
+  peer0.org1.example.com:
+    container_name: peer0.org1.example.com
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      # # the following setting starts chaincode containers on the same
+      # # bridge network as the peers
+      # # https://docs.docker.com/compose/networking/
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=172.16.0.17:5984
+      # The CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME and CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD
+      # provide the credentials for ledger to connect to CouchDB.  The username and password must
+      # match the username and password set for the associated CouchDB.
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=passw0rd
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 7051:7051
+      - 7053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.example.com/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    #depends_on:
+    #  - orderer.example.com
+    #  - couchdb
+    networks:
+      - basic
+			]]>
+			</screen>
+			<para>Peer 需要连接到 CouchDB 注意配置项 CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=172.16.0.17:5984 </para>
+			<para>同时连接CouchDB的用户与密码要正确</para>
+		</section>
+		<section id="peer.up">
+			<title>启动 Peer 节点</title>
+			<screen>
+			<![CDATA[
+[root@localhost netkiller]# docker-compose -f docker-compose-peer.yaml up -d
+			]]>
+			</screen>
+		</section>
+		<section id="peel.channel">
+			<title>创建 Channel</title>
+			<para>进入 Peer 容器</para>
+			<screen>
+			<![CDATA[
+docker-compose -f docker-compose-peer.yaml exec peer0.org1.example.com bash
+			]]>
+			</screen>
+			<para>添加 Orderer 节点并创建 Channel</para>
+			<screen>
+			<![CDATA[
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+peer channel create -o orderer.example.com:7050 -c mychannel -f /etc/hyperledger/configtx/channel.tx			
+			]]>
+			</screen>
+			<para>加入到 mychannel</para>
+			<screen>
+			<![CDATA[
+CORE_PEER_LOCALMSPID=Org1MSP
+CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+peer channel join -b mychannel.block
+			]]>
+			</screen>
+			<para>查看通道</para>
+			<screen>
+			<![CDATA[
+st t@f39764f58ff7:/opt/gopath/src/github.com/hyperledger/fabric# peer channel list
+2018-02-09 08:12:46.454 UTC [msp] GetLocalMSP -> DEBU 001 Returning existing local MSP
+2018-02-09 08:12:46.454 UTC [msp] GetDefaultSigningIdentity -> DEBU 002 Obtaining default signing identity
+2018-02-09 08:12:46.456 UTC [channelCmd] InitCmdFactory -> INFO 003 Endorser and orderer connections initialized
+2018-02-09 08:12:46.457 UTC [msp/identity] Sign -> DEBU 004 Sign: plaintext: 0A8A070A5C08031A0C08FEAFF5D30510...631A0D0A0B4765744368616E6E656C73 
+2018-02-09 08:12:46.458 UTC [msp/identity] Sign -> DEBU 005 Sign: digest: E27446498819AA4FE8EE835ADEF16195489975377A3C18D89C36D37AA24E5CA2 
+2018-02-09 08:12:46.469 UTC [channelCmd] list -> INFO 006 Channels peers has joined to: 
+2018-02-09 08:12:46.469 UTC [channelCmd] list -> INFO 007 mychannel 
+2018-02-09 08:12:46.469 UTC [main] main -> INFO 008 Exiting.....			
+			]]>
+			</screen>
+		</section>
+		
 	</section>
-	<section id="ca">
-		<title>CA 节点安装</title>
-		<para></para>
-	</section>
+	
 	<section id="tools">
 		<title>Tools 节点安装</title>
-		<para></para>
+		<para>Tools 在生成创世区块的时候我们就曾经使用，你可以沿用之前的 tools 简单，或者创建一个 cli 节点，这个节点主要是用于管理区块链集群，例如合约部署，调试等等。</para>
+		<section id="">
+			<title></title>
+			<screen>
+			<![CDATA[
+version: '3'
+
+networks:
+  basic:
+
+services:
+			
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./chaincode/:/opt/gopath/src/github.com/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    networks:
+        - basic
+    #depends_on:
+    #  - orderer.example.com
+    #  - peer0.org1.example.com
+    #  - couchdb	
+			]]>
+			</screen>
+		</section>
 	</section>
 	<section id="test">
 		<title>验收与测试</title>
@@ -497,5 +712,4 @@ fs.createReadStream('./db-backup.tar.gz').pipe(cbr.restore(config, done));
 	<section id="summary">
 		<title>总结</title>
 	</section>
-	<!-- Conclusion -->
 </article>
