@@ -1453,6 +1453,15 @@ chaincode_example02  chaincode_example02.go  chaincode_example02_test.go
 			</screen>
 		</section>
 	</section>
+	<section id="">
+		<title>hyperledger/fabric-ca	</title>
+		<para>go 安装方式</para>
+		<screen>
+		<![CDATA[
+go get github.com/hyperledger/fabric-ca		
+		]]>
+		</screen>
+	</section>
 	<section id="restful">
 		<title>Restful 接口</title>
 		<section id="restful.register">
