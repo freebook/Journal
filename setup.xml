@@ -69,7 +69,7 @@ nameserver 4.4.4.4
 cat >> /etc/security/limits.conf <<EOF
 root 	soft nofile 65536
 root 	hard nofile 65536
-www	soft nofile 65536
+www		soft nofile 65536
 www 	hard nofile 65536
 mysql	soft nofile 65536
 mysql 	hard nofile 65536
