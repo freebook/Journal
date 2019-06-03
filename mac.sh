@@ -5,4 +5,6 @@ PREFIX=~/tmp/
 #DATE=$(shell date --iso-8601)
 
 #rm -rf $(PREFIX)/$@
-${XSLTPROC} ${DSSSL} $1 > ${PREFIX}/$1.html
+${XSLTPROC} --stringparam section.autolabel 1 \
+	--stringparam toc.section.depth 5 \
+	${DSSSL} $1 > ${PREFIX}/$1.html

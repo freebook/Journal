@@ -8,7 +8,7 @@
 <article xml:base="http://netkiller.github.io/journal/spring.html" xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>Spring cloud 安全部署与性能优化</title>
-		<subtitle></subtitle>
+		<subtitle>http://www.netkiller.cn/journal/spring.html</subtitle>
 		&article.author.xml;
 		&book.info.legalnotice.xml;
 		<abstract>
@@ -24,49 +24,13 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-	<section>
-		<title>规划</title>
-		<section>
-			<title>目录规划</title>
-			<screen>
-			<![CDATA[
-/srv		服务器软件安装目录，例如 jdk
-/opt		
-			]]>
-			</screen>
 
-		</section>
-		<section>
-			<title>用户规划</title>
-			<para>禁止使用 root 用户启动应用，每个应用拥有自己的用户。</para>
-			<screen>
-			<![CDATA[	
-nginx		Nginx Web 服务器用户
-redis 		Redis 缓存用户
-mysql		MySQL 数据库用户
-			]]>
-			</screen>
-			<para>为 Springboot 进程创建启动用户</para>
-			<para>应用程序放在/www目录下www所有者是www用户。下面是创建www用户的命令</para>
-			<screen>
-			<![CDATA[
-adduser --home /www -c "Web Application" www
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>权限规划</title>
-			<para>应用程序部署与应用程序启动不能使用同一个用户。</para>
-			<para>上传权限与应用启动不使用一个用户。</para>
-		</section>
-
-	</section>
 	<section id="os">
 		<title>操作系统配置与优化</title>
 		<para>操作系统要求 CentOS 7 Minimal ISO</para>
 		<section>
-			<title>/etc/resolv.conf</title>
-			<para>配置DNS</para>
+			<title>配置DNS</title>
+			<para>修改 /etc/resolv.conf 配置 DNS</para>
 			<screen>
 			<![CDATA[
 echo -ne "
@@ -80,8 +44,8 @@ nameserver 4.4.4.4
 			</screen>
 		</section>
 		<section>
-			<title>.history 文件</title>
-			<para>SA的操作记录问题</para>
+			<title>历史记录操作留痕</title>
+			<para>定义 .history 文件格式，记录每一步操作，便于查看什么时间执行了什么命令</para>
 			<para>通过~/.bash_history文件记录系统管理员的操作记录，定制.bash_history格式</para>
 			<screen>
 			<![CDATA[
@@ -196,6 +160,15 @@ EOF
 
 
 		</section>
+		<section>
+			<title>关闭 SELINUX</title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/selinux.sh | bash				
+			]]>
+			</screen>
+		</section>
+
 
 		<section>
 			<title>关闭写磁盘I/O功能</title>
@@ -628,155 +601,7 @@ securerandom.source=file:/dev/./urandom
 		</section>
 	</section>
 
-	<section id="nginx">
-		<title>配置 Nginx</title>
-		<section>
-			<title>处理器数量和连接数配置</title>
-			<para>worker_processes = CPU 数量</para>
-			<screen>
-			<![CDATA[
-user www;
-worker_processes 1;
-
-error_log /var/log/nginx/error.log warn;
-pid /var/run/nginx.pid;				
-			]]>
-			</screen>
-			<para>连接数配置</para>
-			<screen>
-			<![CDATA[
-events {
-    worker_connections  4096;
-}				
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>隐藏nginx版本号</title>
-			<para>隐藏nginx版本号可以有效的增加黑客攻击难度</para>
-			<screen>
-			<![CDATA[
-vim /etc/nginx/nginx.conf
-
-http {
-...
-server_tokens off;
-}
-			]]>
-			</screen>
-		</section>
-		<section id="http2">
-			<title>HTTP2</title>
-			<screen>
-			<![CDATA[
-	server {
-		listen 443 ssl http2;
 	
-		ssl_certificate server.crt;
-		ssl_certificate_key server.key;
-	}
-			]]>
-			</screen>
-		</section>
-		<section id="http2.redirect">
-			<title>用户访问 HTTP时强制跳转到 HTTPS</title>
-			<para>497 - normal request was sent to HTTPS  </para>
-			<screen>
-			<![CDATA[
-				#让http请求重定向到https请求
-
-	server {
-		listen 80;
-		error_page 497 https://$host$uri?$args;
-		rewrite ^(.*)$ https://$host$1 permanent;
-	}
-			]]>
-			</screen>
-			<screen>
-			<![CDATA[
-	server {
-		listen 80
-		listen 443 ssl http2;
-	
-		ssl_certificate server.crt;
-		ssl_certificate_key server.key;
-	
-		error_page 497 https://$host$uri?$args;
-	
-		if ($scheme = http) {
-			return 301 https://$server_name$request_uri;
-		}
-	}
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>开启 gzip 压缩传输</title>
-			<para>gzip_types 压缩类型</para>
-			<screen>
-			<![CDATA[	
-	gzip_types text/plain text/css application/javascript text/javascript application/x-javascript text/xml application/xml application/xml+rss application/json;			
-			]]>
-			</screen>
-			<para>text/html 是 gzip_types 默认值，所以不要将text/html加入到gzip_types</para>
-		</section>
-		<section>
-			<title>过期时间</title>
-			<screen>
-			<![CDATA[
-	location ~ .*\.(htm|html|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$
-	{
-		expires 30d;
-	}
-	location ~ .*\.(js|css)$
-	{
-		expires 1h;
-	}
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>上传文件尺寸限制</title>
-			<para>client_max_body_size 上传文件尺寸限制</para>
-			<screen>
-			<![CDATA[			
-client_max_body_size 2M;				
-			]]>
-			</screen>
-		</section>
-
-		<section>
-			<title>实现相互备份</title>
-			<para>两台服务器 server1，server2 相互备份</para>
-			<screen>
-			<![CDATA[
-	upstream backend {
-		server server1.example.com:8080;
-		server server2.example.com:8080 backup;
-	}
-	server {
-		location / {
-			proxy_pass http://backend;
-		}
-	}
-					
-			]]>
-			</screen>
-			<screen>
-			<![CDATA[
-	upstream frontend {
-		server server1.example.com:8080 backup;
-		server server2.example.com:8080;
-	}
-	server {
-		location / {
-			proxy_pass http://frontend;
-		}
-	}			
-			]]>
-			</screen>
-		</section>
-	</section>
 
 	<section id="springboot">
 		<title>配置 Spring boot</title>
@@ -1061,17 +886,320 @@ spring.redis.jedis.pool.min-idle=0
 			]]>
 			</screen>
 		</section>
+		<section>
+			<title>数据库配置</title>
+			<section>
+				<title>PostgreSQL</title>
+				<screen>
+				<![CDATA[
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.platform=postgres
+spring.datasource.url=jdbc:postgresql://192.168.1.240:5432/saas_data?currentSchema=public&useUnicode=true&characterEncoding=UTF-8
+spring.datasource.username=ctsuser
+spring.datasource.password=saas				
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>MySQL</title>
+				<screen>
+				<![CDATA[
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+spring.datasource.url=jdbc:mysql://主机地址:端口号/数据库
+spring.datasource.username=用户名
+spring.datasource.password=密码
+spring.jpa.database=MYSQL # 启用JPA支持			
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>Oracle</title>
+				<screen>
+				<![CDATA[
+spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+spring.datasource.url=jdbc:oracle:thin:@//odb.netkiller.cn:1521/orcl
+spring.datasource.username=orcl
+spring.datasource.password=passw0rd
+spring.datasource.connection-test-query="SELECT 1 FROM DUAL"
+spring.jpa.database-platform=org.hibernate.dialect.Oracle10gDialect
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>链接池</title>
+				<screen>
+				<![CDATA[
+spring.jpa.show-sql=true
+#spring.jpa.hibernate.ddl-auto=none
+#spring.jpa.hibernate.ddl-auto=create-drop
+spring.datasource.max-active=50
+spring.datasource.initial-size=5
+spring.datasource.max-idle=10
+spring.datasource.min-idle=5
+spring.datasource.test-while-idle=true
+spring.datasource.test-on-borrow=false
+spring.datasource.validation-query=SELECT 1 FROM DUAL
+spring.datasource.time-between-eviction-runs-millis=5000
+spring.datasource.min-evictable-idle-time-millis=60000				
+				]]>
+				</screen>
+			</section>
+		</section>
+	</section>
+	<section id="nginx">
+		<title>配置 Nginx</title>
+		<section>
+			<title>处理器数量和连接数配置</title>
+			<para>worker_processes = CPU 数量</para>
+			<screen>
+			<![CDATA[
+user www;
+worker_processes 1;
+
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;				
+			]]>
+			</screen>
+			<para>连接数配置</para>
+			<screen>
+			<![CDATA[
+events {
+    worker_connections  4096;
+}				
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>隐藏nginx版本号</title>
+			<para>隐藏nginx版本号可以有效的增加黑客攻击难度</para>
+			<screen>
+			<![CDATA[
+vim /etc/nginx/nginx.conf
+
+http {
+...
+server_tokens off;
+}
+			]]>
+			</screen>
+		</section>
+		<section id="http2">
+			<title>HTTP2</title>
+			<screen>
+			<![CDATA[
+	server {
+		listen 443 ssl http2;
+	
+		ssl_certificate server.crt;
+		ssl_certificate_key server.key;
+	}
+			]]>
+			</screen>
+		</section>
+		<section id="http2.redirect">
+			<title>用户访问 HTTP时强制跳转到 HTTPS</title>
+			<para>497 - normal request was sent to HTTPS  </para>
+			<screen>
+			<![CDATA[
+				#让http请求重定向到https请求
+
+	server {
+		listen 80;
+		error_page 497 https://$host$uri?$args;
+		rewrite ^(.*)$ https://$host$1 permanent;
+	}
+			]]>
+			</screen>
+			<screen>
+			<![CDATA[
+	server {
+		listen 80
+		listen 443 ssl http2;
+	
+		ssl_certificate server.crt;
+		ssl_certificate_key server.key;
+	
+		error_page 497 https://$host$uri?$args;
+	
+		if ($scheme = http) {
+			return 301 https://$server_name$request_uri;
+		}
+	}
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>开启 gzip 压缩传输</title>
+			<para>gzip_types 压缩类型</para>
+			<screen>
+			<![CDATA[	
+	gzip_types text/plain text/css application/javascript text/javascript application/x-javascript text/xml application/xml application/xml+rss application/json;			
+			]]>
+			</screen>
+			<para>text/html 是 gzip_types 默认值，所以不要将text/html加入到gzip_types</para>
+		</section>
+		<section>
+			<title>缓存过期时间</title>
+			<screen>
+			<![CDATA[
+	location ~ .*\.(htm|html|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$
+	{
+		expires 30d;
+	}
+	location ~ .*\.(js|css)$
+	{
+		expires 1h;
+	}
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>上传文件尺寸限制</title>
+			<para>client_max_body_size 上传文件尺寸限制</para>
+			<screen>
+			<![CDATA[			
+client_max_body_size 2M;				
+			]]>
+			</screen>
+		</section>
+
+		<section>
+			<title>实现相互备份</title>
+			<para>两台服务器 server1，server2 相互备份</para>
+			<screen>
+			<![CDATA[
+	upstream backend {
+		server server1.example.com:8080;
+		server server2.example.com:8080 backup;
+	}
+	server {
+		location / {
+			proxy_pass http://backend;
+		}
+	}
+					
+			]]>
+			</screen>
+			<screen>
+			<![CDATA[
+	upstream frontend {
+		server server1.example.com:8080 backup;
+		server server2.example.com:8080;
+	}
+	server {
+		location / {
+			proxy_pass http://frontend;
+		}
+	}
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Nginx 状态信息</title>
+			<para>允许监控软件从 localhost 收集 nginx 状态信息</para>
+			<screen>
+			<![CDATA[			
+server {
+    listen       80;
+    server_name  localhost;
+
+    location /status {
+        stub_status on;
+        access_log off;
+        allow 127.0.0.1;
+        deny all;
+    }
+}			
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>禁止公网访问 Spring Boot Actuator</title>
+			<para>Spring Boot Actuator 是会泄漏一些环境变量等敏感信息，甚至可以通过 localhost:8080/actuator/shutdown 远程关闭服务器。所以需要禁止公网访问，只允许内部服务器采集信息。</para>
+			<screen>
+			<![CDATA[
+	location ~ ^/actuator
+	{
+		allow 172.16.0.10;
+		deny all;
+	}
+			]]>
+			</screen>
+			<para>172.16.0.10 是监控服务器</para>
+		</section>
+	</section>
+		
+	<section>
+		<title>部署应用程序</title>
+		<section>
+			<title>服务器软件安装目录</title>
+			<screen>
+			<![CDATA[
+/srv		服务器软件安装目录，例如 jdk
+/opt		
+			]]>
+			</screen>
+		</section>
+		
+		<section>
+			<title>应用程序部署目录</title>
+			<para>应用程序放在/www目录下，一般是这样的结构。</para>
+			<screen>
+			<![CDATA[
+/www/example.com/www.example.com
+			]]>
+			</screen>
+			<para>每次升级将压错包解压到 /www/example.com/目录下，www.example.com 是符号连接，连接到刚刚解压的目录。</para>
+			<para>这个可以实现通过符号连接在多个版本之间快速切换。</para>
+		</section>
+		<section>
+			<title>数据盘</title>
+			<screen>
+			<![CDATA[
+curl https://github.com/oscm/shell/blob/master/cloud/aliyun/xvdb.exp.sh | bash
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>用户与权限</title>
+			<section>
+				<title>禁止使用 root 用户启动服务</title>
+				<para>禁止使用 root 用户启动应用，每个应用拥有自己的用户。例如：</para>
+				<screen>
+				<![CDATA[	
+nginx		Nginx Web 服务器用户
+redis 		Redis 缓存用户
+mysql		MySQL 数据库用户
+				]]>
+				</screen>
+				<para>我门常常会看到有人编译安装了nginx，并没有为nginx创建用户，也没有使用 nobody,daemon 等用户启动nginx，而是使用root启动了 nginx.</para>
+				<para>通过 ps ax 可以看到 nginx 所有者是 root，一旦 nginx 被入侵，黑客将获得 root 权限。</para>
+			</section>
+			<section>
+				<title>Springboot 用户</title>
+				<para>为 Springboot 进程创建启动用户</para>
+				<para>应用程序放在/www目录下www所有者是www用户。下面是创建www用户的命令</para>
+				<screen>
+				<![CDATA[
+adduser --home /www -c "Web Application" www
+				]]>
+				</screen>
+			</section>
+			
+			<section>
+				<title>规划</title>
+				<para>应用程序部署与应用程序启动不能使用同一个用户。</para>
+				<para>上传权限与应用启动不使用一个用户。</para>
+			</section>
+		</section>
+		
+	</section>
+	<section>
+		<title>监控</title>
+		<subtitle>Spring Boot Actuator 健康检查、审计、统计和监控</subtitle>
 
 	</section>
 	<section>
-		<title>如何部署应用程序</title>
-		<para>应用程序放在/www目录下，一般是这样的结构。</para>
-		<screen>
-		<![CDATA[
-/www/example.com/www.example.com
-		]]>
-		</screen>
-		<para>每次升级将压错包解压到 /www/example.com/目录下，www.example.com 是符号连接，连接到刚刚解压的目录。</para>
-		<para>这个可以实现通过符号连接在多个版本之间快速切换。</para>
+		<title>备份</title>
 	</section>
 </article>
