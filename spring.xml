@@ -948,16 +948,27 @@ spring.datasource.min-evictable-idle-time-millis=60000
 		<title>Spring Cloud 配置</title>
 		<section>
 			<title>Config Server</title>
-			<para>下面是给配置服务器增加用户认证，访问配置服务器用户名cfg, 密码 s3cr3t</para>
+			<para>下面是给配置服务器增加用户认证，访问配置服务器用户名config, 密码 s3cr3t</para>
 			<screen>
 			<![CDATA[
 server.port=8888
 spring.cloud.config.server.git.uri=/opt/config
-security.user.name=cfg
+security.user.name=config
 security.user.password=s3cr3t			
 			]]>
 			</screen>
 		</section>
+		<section>
+			<title>Eureka 安全配置</title>
+			<para>为 eureka 增加HTTP认证，周泽任何人都能注册进来。</para>
+			<screen>
+			<![CDATA[
+security.user.name=eureka
+security.user.password=s3cr3t			
+			]]>
+			</screen>
+		</section>
+
 		<section>
 			<title>Openfeign 优化</title>
 			<para>开发压缩传输</para>
@@ -1161,11 +1172,10 @@ server {
 			<screen>
 			<![CDATA[
 /srv		服务器软件安装目录，例如 jdk
-/opt		
+/opt		系统保留，可以用于安装软件，存储备份文件
 			]]>
 			</screen>
 		</section>
-
 		<section>
 			<title>应用程序部署目录</title>
 			<para>应用程序放在/www目录下，一般是这样的结构。</para>
@@ -1179,6 +1189,8 @@ server {
 		</section>
 		<section>
 			<title>数据盘</title>
+			<para>数据盘是指云主机额外增加一个磁盘，用于数据存储。</para>
+			<para>如果是阿里云可以使用下面脚本，自动化分区格式化为 Btrfs 格式的文件系统。</para>
 			<screen>
 			<![CDATA[
 curl https://github.com/oscm/shell/blob/master/cloud/aliyun/xvdb.exp.sh | bash
@@ -1201,7 +1213,7 @@ mysql		MySQL 数据库用户
 				<para>通过 ps ax 可以看到 nginx 所有者是 root，一旦 nginx 被入侵，黑客将获得 root 权限。</para>
 			</section>
 			<section>
-				<title>Springboot 用户</title>
+				<title>Springboot 应用程序启动用户</title>
 				<para>为 Springboot 进程创建启动用户</para>
 				<para>应用程序放在/www目录下www所有者是www用户。下面是创建www用户的命令</para>
 				<screen>
@@ -1212,9 +1224,20 @@ adduser --home /www -c "Web Application" www
 			</section>
 
 			<section>
-				<title>规划</title>
+				<title>用户隔离更安全</title>
 				<para>应用程序部署与应用程序启动不能使用同一个用户。</para>
 				<para>上传权限与应用启动不使用一个用户。</para>
+				<screen>
+				<![CDATA[
+用户 --> nginx (nginx 用户) --> springboot (www 用户)	--> xxxx.jar (root 用户)
+               |
+               V
+      HTML 文件 （nobody 用户 644）			
+				]]>
+				</screen>
+				<para>例如 nginx 被黑客攻击，黑客想修改 HTML文件，但HTML权限是 nobody，所以只能查看无法修改。</para>
+				<para>同理 nginx 也没有权限修改 xxxx.jar 文件。</para>
+				
 			</section>
 		</section>
 
