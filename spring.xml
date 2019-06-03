@@ -601,8 +601,6 @@ securerandom.source=file:/dev/./urandom
 		</section>
 	</section>
 
-	
-
 	<section id="springboot">
 		<title>配置 Spring boot</title>
 		<para>下面以 Springboot 2.0 为例。</para>
@@ -946,6 +944,33 @@ spring.datasource.min-evictable-idle-time-millis=60000
 			</section>
 		</section>
 	</section>
+	<section id="springcloud">
+		<title>Spring Cloud 配置</title>
+		<section>
+			<title>Config Server</title>
+			<para>下面是给配置服务器增加用户认证，访问配置服务器用户名cfg, 密码 s3cr3t</para>
+			<screen>
+			<![CDATA[
+server.port=8888
+spring.cloud.config.server.git.uri=/opt/config
+security.user.name=cfg
+security.user.password=s3cr3t			
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Openfeign 优化</title>
+			<para>开发压缩传输</para>
+			<screen>
+			<![CDATA[
+feign.compression.response.enabled=true
+feign.compression.request.enabled=true
+feign.compression.request.mime-types=text/xml,application/xml,application/json
+feign.compression.request.min-request-size=2048		
+			]]>
+			</screen>
+		</section>
+	</section>
 	<section id="nginx">
 		<title>配置 Nginx</title>
 		<section>
@@ -1128,7 +1153,7 @@ server {
 			<para>172.16.0.10 是监控服务器</para>
 		</section>
 	</section>
-		
+
 	<section>
 		<title>部署应用程序</title>
 		<section>
@@ -1140,7 +1165,7 @@ server {
 			]]>
 			</screen>
 		</section>
-		
+
 		<section>
 			<title>应用程序部署目录</title>
 			<para>应用程序放在/www目录下，一般是这样的结构。</para>
@@ -1185,14 +1210,14 @@ adduser --home /www -c "Web Application" www
 				]]>
 				</screen>
 			</section>
-			
+
 			<section>
 				<title>规划</title>
 				<para>应用程序部署与应用程序启动不能使用同一个用户。</para>
 				<para>上传权限与应用启动不使用一个用户。</para>
 			</section>
 		</section>
-		
+
 	</section>
 	<section>
 		<title>监控</title>
