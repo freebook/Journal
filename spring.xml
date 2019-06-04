@@ -29,10 +29,21 @@
 		<title>操作系统配置与优化</title>
 		<para>操作系统要求 CentOS 7 Minimal ISO</para>
 		<section>
-			<title>配置DNS</title>
-			<para>修改 /etc/resolv.conf 配置 DNS</para>
+			<title>一键优化</title>
 			<screen>
 			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/personalise.sh | bash			
+			]]>
+			</screen>
+		</section>
+
+		<section>
+			<title>域名</title>
+			<section>
+				<title>配置 DNS</title>
+				<para>修改 /etc/resolv.conf 配置 DNS 确保域名解析正确</para>
+				<screen>
+				<![CDATA[
 echo -ne "
 search example.com
 nameserver 208.67.222.222
@@ -40,8 +51,27 @@ nameserver 202.67.220.220
 nameserver 8.8.8.8
 nameserver 4.4.4.4
 " > /etc/resolv.conf
-			]]>
-			</screen>
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>/etc/hosts</title>
+				<para>DNS 解析有延迟，很多不可控因素，将域名写入 /etc/hosts 更为保险</para>
+				<screen>
+				<![CDATA[
+192.168.1.1		www.netkiller.cn
+192.168.1.2		api.netkiller.cn
+192.168.1.3		db.netkiller.cn
+				]]>
+				</screen>
+				<para>使用域名链接数据的例子</para>
+				<screen>
+				<![CDATA[
+spring.datasource.url=jdbc:mysql://db.netkiller.cn:3306/neo				
+				]]>
+				</screen>
+				<para>DNS 不可靠的原因分析，因为DNS使用UDP传输，网络拥堵，电磁干扰等等都能导致丢包。</para>
+			</section>
 		</section>
 		<section>
 			<title>历史记录操作留痕</title>
@@ -157,8 +187,6 @@ EOF
 			]]>
 				</screen>
 			</section>
-
-
 		</section>
 		<section>
 			<title>关闭 SELINUX</title>
@@ -183,15 +211,21 @@ curl -s https://raw.githubusercontent.com/oscm/shell/master/os/selinux.sh | bash
 			<para>我一般分区规划是，/系统根分区,swap交换分区,/www数据分区，同时 禁止写入atime时间,因为/www频繁请求会影响IO </para>
 			<para>临时mount</para>
 			<screen>
-				mount -o remount,noatime,nodiratime /dev/sda3 /mnt/your
+			<![CDATA[
+mount -o remount,noatime,nodiratime /dev/sda3 /mnt/your
+			]]>
 			</screen>
 			<para>LABEL 方式</para>
 			<screen>
-				LABEL=/www /www ext3 defaults,noatime,nodiratime 1 1
+			<![CDATA[
+LABEL=/www /www ext3 defaults,noatime,nodiratime 1 1
+			]]>
 			</screen>
 			<para>UUID 方式</para>
 			<screen>
-				UUID=eeff3e86-7964-4a48-ac02-51ea167ea6b2 /www ext4 defaults,noatime,nodiratime 1 2
+			<![CDATA[
+UUID=eeff3e86-7964-4a48-ac02-51ea167ea6b2 /www ext4 defaults,noatime,nodiratime 1 2
+			]]>
 			</screen>
 			<para>至此，Linux 的OS部分安装配置与优化完成。</para>
 
@@ -280,14 +314,14 @@ ChallengeResponseAuthentication yes
 			<section>
 				<title>关闭 GSSAPI</title>
 				<screen>
-			<![CDATA[
+				<![CDATA[
 GSSAPIAuthentication no
 #GSSAPIAuthentication yes
 #GSSAPICleanupCredentials yes
 #GSSAPICleanupCredentials yes
 #GSSAPIStrictAcceptorCheck yes
 #GSSAPIKeyExchange no
-			]]>
+				]]>
 				</screen>
 			</section>
 			<section>
@@ -563,6 +597,56 @@ curl -s https://raw.githubusercontent.com/oscm/shell/master/os/ntpd/ntpdate.sh |
 	</section>
 	<section id="jvm">
 		<title>Java 虚拟机</title>
+		<section>
+			<title>安装脚本</title>
+			<para>OpenJDK 1.8</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/openjdk/java-1.8.0-openjdk.sh | bash			
+			]]>
+			</screen>
+			<para>OpenJDK 11</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/openjdk/java-11-openjdk.sh | bash			
+			]]>
+			</screen>
+			<para>Oracle Server JRE 1.8</para>
+			<para>http://java.oracle.com 下载 server-jre-8u212-linux-x64.tar.gz 然后运行下面安装脚本</para>	
+			<screen>
+			<![CDATA[
+#!/bin/bash
+tar zxf server-jre-8u212-linux-x64.tar.gz*
+mv jdk1.8.0_212 /srv/
+ln -s /srv/jdk1.8.0_212 /srv/java
+
+cat >> /etc/profile.d/java.sh <<'EOF'
+export JAVA_HOME=/srv/java
+export JAVA_OPTS="-server -Xms512m -Xmx8192m"
+export CLASSPATH=$JAVA_HOME/lib:$JAVA_HOME/jre/lib:.
+export PATH=$PATH:$JAVA_HOME/bin:$JAVA_HOME/jre/bin:
+EOF
+
+sed -i '117s/securerandom.source/#securerandom.source/' /srv/java/jre/lib/security/java.security
+sed -i '117isecurerandom.source=file:/dev/./urandom' /srv/java/jre/lib/security/java.security
+
+cat >> /etc/man.config <<EOF
+MANPATH  /srv/java/man
+EOF
+
+alternatives --install /usr/bin/java java /srv/jdk1.8.0_212/bin/java 100 \
+	--family java-1.8.0-server-jre \
+	--slave /usr/bin/javac javac /srv/jdk1.8.0_212/bin/javac			
+			]]>
+			</screen>
+			<para>如果服务器上安装了多个 JAVA 版本，切换 JAVA 版本使用下面命令</para>
+			<screen>
+			<![CDATA[
+alternatives --config java			
+			]]>
+			</screen>
+			
+		</section>
 		<section id="jre">
 			<title>使用 Server JRE 替代JDK。</title>
 			<para>服务器上不要安装JDK，请使用 Server JRE. 服务器上根本不需要编译器，代码应该在Release服务器上完成编译打包工作。</para>
@@ -599,8 +683,74 @@ securerandom.source=file:/dev/./urandom
 			]]>
 			</screen>
 		</section>
+		<section>
+			<title>jconsole 配置</title>
+			<screen>
+			<![CDATA[
+java -jar -Djava.rmi.server.hostname=192.168.0.1 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=911 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false netkiller-1.0-SNAPSHOT.jar			
+			]]>
+			</screen>
+			<para>如果是云主机，配置 java.rmi.server.hostname=192.168.0.1 为内网IP地址，这样只能从内网监控 JVM</para>
+			<para>启动 jconsole</para>
+			<screen>
+			<![CDATA[
+jconsole localhost:911
+			]]>
+			</screen>
+		</section>
 	</section>
+	<section>
+		<title>数据库</title>
+		<section>
+			<title>MySQL</title>
+			<para>5.7</para>
+			<screen>
+			<![CDATA[			
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql.server.sh | bash
+			]]>
+			</screen>
+			<para>安装完成会看到下面输出</para>
+			<screen>
+			<![CDATA[
+2019-06-04T08:54:24.419092Z 1 [Note] A temporary password is generated for root@localhost: 8X!pE(o+urv;			
+			]]>
+			</screen>
+			<para></para>
+			<para>8.0</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/server.sh | bash
 
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/client.sh | bash			
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>PostgreSQL</title>
+			<para>PostgreSQL 9.4</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/postgresql/postgresql94-centos7.sh | bash			
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Redis</title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/redis/source/redis-5.0.5.sh | bash			
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>RabbitMQ</title>
+		<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/queue/rabbitmq/rabbitmq-server-3.7.15.sh | bash		
+		]]>
+		</screen>
+	</section>
 	<section id="springboot">
 		<title>配置 Spring boot</title>
 		<para>下面以 Springboot 2.0 为例。</para>
@@ -609,7 +759,7 @@ securerandom.source=file:/dev/./urandom
 			<para>配置文件位置，默认application.properties是放在jar包中的，这样对于运维并不友好。通过spring.config.location可以制定外部配置文件，这样更便于运维。</para>
 			<para>--spring.config.location 指定配置文件</para>
 			<screen>
-			<![CDATA[	
+			<![CDATA[
 java -jar demo.jar --spring.config.location=/opt/config/application.properties
 			]]>
 			</screen>
@@ -801,17 +951,34 @@ iptables -t nat -L
 		</section>
 		<section>
 			<title>连接数配置</title>
-			<para>系统默认 2048</para>
+			<para>系统默认 2048，这里 max-threads 是 4096 表示服务器最大连接数是 4096</para>
 			<screen>
 			<![CDATA[				
 server.tomcat.max-threads=4096 # 最大线程数				
 			]]>
 			</screen>
+			<para>空闲线程数，静止没有访问时，服务器保留的线程数。</para>
+			<screen>
+			<![CDATA[
+server:
+  tomcat:
+    min-spare-threads: 20
+    max-threads: 100
+  connection-timeout: 20000		
+			]]>
+			</screen>
+			<para>配置 min-spare-threads 可以防止服务器静止的状态下，突然发起大量的链接请求导致系统没有响应。</para>
+			<screen>
+			<![CDATA[
+server.tomcat.connection-timeout=20000
+			]]>
+			</screen>
+			<para>链接超时时间建议设置 60～20秒之间。</para>
 		</section>
 
 		<section>
 			<title>编码配置</title>
-			<para>Spring boot 默认并非 UTF-8 建议强制配置编码</para>
+			<para>有些版本的 Spring boot 默认并非 UTF-8 建议强制配置编码</para>
 			<screen>
 			<![CDATA[
 spring.messages.encoding=UTF-8
@@ -856,8 +1023,6 @@ spring.http.multipart.enabled=false
 			]]>
 			</screen>
 		</section>
-
-
 		<section>
 			<title>Redis 配置</title>
 			<screen>
@@ -1237,10 +1402,14 @@ adduser --home /www -c "Web Application" www
 				</screen>
 				<para>例如 nginx 被黑客攻击，黑客想修改 HTML文件，但HTML权限是 nobody，所以只能查看无法修改。</para>
 				<para>同理 nginx 也没有权限修改 xxxx.jar 文件。</para>
-				
+
 			</section>
 		</section>
-
+		<section>
+			<title>进程监控与重启</title>
+			<para>程序运行一段时间后，可能会出现崩溃，异常退出，没有任何日志可以排查。</para>
+			<para>所以我们需要监控程序，一旦退出就重新启动。</para>
+		</section>
 	</section>
 	<section>
 		<title>监控</title>
