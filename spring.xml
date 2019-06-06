@@ -24,19 +24,114 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-
-	<section id="os">
-		<title>操作系统配置与优化</title>
-		<para>操作系统要求 CentOS 7 Minimal ISO</para>
+	<section>
+		<title>环境安装</title>
 		<section>
-			<title>一键优化</title>
+			<title>操作系统初始化</title>
+			<para>操作系统按完成后，使用下面脚本做一次初始化</para>
 			<screen>
 			<![CDATA[
 curl -s https://raw.githubusercontent.com/oscm/shell/master/os/personalise.sh | bash			
 			]]>
 			</screen>
 		</section>
+		<section>
+			<title>安装 Nginx </title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/web/nginx/stable/nginx.sh | bash
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>安装数据库</title>
+			<section>
+				<title>MySQL</title>
+				<para>5.7</para>
+				<screen>
+			<![CDATA[			
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql.server.sh | bash
+			]]>
+				</screen>
+				<para>安装完成会看到下面输出</para>
+				<screen>
+			<![CDATA[
+2019-06-04T08:54:24.419092Z 1 [Note] A temporary password is generated for root@localhost: 8X!pE(o+urv;			
+			]]>
+				</screen>
+				<para></para>
+				<para>8.0</para>
+				<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/server.sh | bash
 
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/client.sh | bash			
+			]]>
+				</screen>
+			</section>
+			<section>
+				<title>PostgreSQL</title>
+				<para>PostgreSQL 9.4</para>
+				<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/postgresql/postgresql94-centos7.sh | bash			
+			]]>
+				</screen>
+			</section>
+			<section>
+				<title>Redis</title>
+				<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/database/redis/source/redis-5.0.5.sh | bash			
+			]]>
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>RabbitMQ</title>
+			<screen>
+		<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/queue/rabbitmq/rabbitmq-server-3.7.15.sh | bash		
+		]]>
+			</screen>
+		</section>
+		<section>
+			<title>OpenJDK</title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/openjdk/java-1.8.0-openjdk.sh | bash
+			]]>
+			</screen>
+			<section>
+				<title>Maven</title>
+				<screen>
+				<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/maven/apache-maven-3.6.1.sh | bash				
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>Gradle</title>
+				<screen>
+				<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/gradle/gradle-5.4.1.sh | bash				
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>Node</title>
+			<para>前端开发会用到Node.js</para>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/node.js/binrary/node-v12.4.0.sh | bash			
+			]]>
+			</screen>
+		</section>
+	</section>
+	<section id="os">
+		<title>操作系统配置与优化</title>
+		<para>操作系统要求 CentOS 7 Minimal ISO</para>
 		<section>
 			<title>域名</title>
 			<section>
@@ -612,7 +707,7 @@ curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/openjdk/ja
 			]]>
 			</screen>
 			<para>Oracle Server JRE 1.8</para>
-			<para>http://java.oracle.com 下载 server-jre-8u212-linux-x64.tar.gz 然后运行下面安装脚本</para>	
+			<para>http://java.oracle.com 下载 server-jre-8u212-linux-x64.tar.gz 然后运行下面安装脚本</para>
 			<screen>
 			<![CDATA[
 #!/bin/bash
@@ -645,7 +740,7 @@ alternatives --install /usr/bin/java java /srv/jdk1.8.0_212/bin/java 100 \
 alternatives --config java			
 			]]>
 			</screen>
-			
+
 		</section>
 		<section id="jre">
 			<title>使用 Server JRE 替代JDK。</title>
@@ -699,58 +794,7 @@ jconsole localhost:911
 			</screen>
 		</section>
 	</section>
-	<section>
-		<title>数据库</title>
-		<section>
-			<title>MySQL</title>
-			<para>5.7</para>
-			<screen>
-			<![CDATA[			
-curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/5.7/mysql.server.sh | bash
-			]]>
-			</screen>
-			<para>安装完成会看到下面输出</para>
-			<screen>
-			<![CDATA[
-2019-06-04T08:54:24.419092Z 1 [Note] A temporary password is generated for root@localhost: 8X!pE(o+urv;			
-			]]>
-			</screen>
-			<para></para>
-			<para>8.0</para>
-			<screen>
-			<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/server.sh | bash
 
-curl -s https://raw.githubusercontent.com/oscm/shell/master/database/mysql/8.0/client.sh | bash			
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>PostgreSQL</title>
-			<para>PostgreSQL 9.4</para>
-			<screen>
-			<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/database/postgresql/postgresql94-centos7.sh | bash			
-			]]>
-			</screen>
-		</section>
-		<section>
-			<title>Redis</title>
-			<screen>
-			<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/database/redis/source/redis-5.0.5.sh | bash			
-			]]>
-			</screen>
-		</section>
-	</section>
-	<section>
-		<title>RabbitMQ</title>
-		<screen>
-		<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/queue/rabbitmq/rabbitmq-server-3.7.15.sh | bash		
-		]]>
-		</screen>
-	</section>
 	<section id="springboot">
 		<title>配置 Spring boot</title>
 		<para>下面以 Springboot 2.0 为例。</para>
