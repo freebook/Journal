@@ -24,14 +24,14 @@
 		<pubdate>$Date$</pubdate>
 		<release>$Id$</release>
 	</articleinfo>
-	<section>
+	<section id="env">
 		<title>环境安装</title>
 		<section>
 			<title>操作系统初始化</title>
 			<para>操作系统按完成后，使用下面脚本做一次初始化</para>
 			<screen>
 			<![CDATA[
-curl -s https://raw.githubusercontent.com/oscm/shell/master/os/personalise.sh | bash			
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/personalise.sh | bash
 			]]>
 			</screen>
 		</section>
@@ -127,6 +127,33 @@ curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/gradle/gra
 curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/node.js/binrary/node-v12.4.0.sh | bash			
 			]]>
 			</screen>
+		</section>
+		<section>
+			<title>Gitlab</title>
+			<screen>
+			<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/project/gitlab/gitlab.centos7.sh | bash			
+			]]>
+			</screen>
+			<para>Gitlab 配置请参考 《Netkiller Project 手札》</para>
+			<section>
+				<title>Gitlab runner</title>
+				<screen>
+				<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/project/gitlab/gitlab-runner.sh | bash				
+				]]>
+				</screen>
+				<para>java 编译环境</para>
+				<para>去 Oracle 网站下载 java 8 jdk-8u212-linux-x64.rpm</para>
+				<screen>
+				<![CDATA[
+yum localinstall jdk-8u212-linux-x64.rpm
+
+curl -s https://raw.githubusercontent.com/oscm/shell/master/project/git.sh | bash
+curl -s https://raw.githubusercontent.com/oscm/shell/master/lang/java/maven/apache-maven-3.6.1.sh | bash
+				]]>
+				</screen>
+			</section>
 		</section>
 	</section>
 	<section id="os">
@@ -1374,7 +1401,7 @@ server {
 		</section>
 	</section>
 
-	<section>
+	<section id="directory">
 		<title>部署应用程序</title>
 		<section>
 			<title>服务器软件安装目录</title>
@@ -1453,6 +1480,113 @@ adduser --home /www -c "Web Application" www
 			<title>进程监控与重启</title>
 			<para>程序运行一段时间后，可能会出现崩溃，异常退出，没有任何日志可以排查。</para>
 			<para>所以我们需要监控程序，一旦退出就重新启动。</para>
+		</section>
+	</section>
+	<section id="ci">
+		<title>持续集成</title>
+		<section>
+			<title>Gitlab CI/CD</title>
+			<para>保存到 master 分支根目录，命名为 .gitlab-ci.yml</para>
+			<screen>
+			<![CDATA[
+#image: java:8
+#image: maven:latest
+#image: maven:3.5.0-jdk-8
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository/
+    - target/
+
+stages:
+  - build
+  - test
+  - package
+
+build:
+  stage: build
+  script: mvn compile
+
+unittest:
+  stage: test
+  script: mvn test
+  
+  
+package:
+  stage: package
+  script: mvn package
+  artifacts:
+    paths:
+      - target/*.jar
+
+			]]>
+			</screen>
+		</section>
+		<section>
+			<title>Jenkins</title>
+			<para>保存在 master 分支根目录，命名为 Jenkinsfile</para>
+			<screen>
+			<![CDATA[
+pipeline {
+    agent {
+        label "java-8"
+    }
+    stages  {
+        stage("初始化") {
+        	steps{
+        	    sh 'apt install -y sshpass'
+                sh 'sshpass -v'
+        	}
+        }
+        stage("检出") {
+            steps {
+                checkout(
+                  [$class: 'GitSCM', branches: [[name: env.GIT_BUILD_REF]], 
+                  userRemoteConfigs: [[url: env.GIT_REPO_URL]]]
+                )
+            }
+        }
+
+        stage("编译") {
+            steps {
+                sh "mvn package -Dmaven.test.skip=true"
+            }
+        }
+
+        stage("测试") {
+            steps {
+              	sh "mvn test"
+            }
+        }
+        
+        stage("保存构建产物") {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+              	sh "ls -l target/*.jar"
+            }
+        }
+        stage("部署"){
+            parallel{
+            	stage('stop') {
+			         steps {
+			            sh 'sshpass -p 123456 ssh -f www@www.netkiller.cn pkill -f java-project-0.0.2-SNAPSHOT'
+			         }
+			    }
+			    stage('start') {
+			         steps {
+			            sh 'sshpass -p 123456 scp target/*.jar www@www.netkiller.cn:/opt/'
+                	    sh 'sshpass -p 123456 ssh -f www@www.netkiller.cn java -jar /opt/java-project-0.0.2-SNAPSHOT.jar'
+			          }
+			    }	                
+    	    }
+    	}
+    }
+}
+			]]>
+			</screen>
 		</section>
 	</section>
 	<section>
