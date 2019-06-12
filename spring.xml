@@ -522,6 +522,15 @@ done
 			]]>
 				</screen>
 			</section>
+			<section>
+				<title>解决 SSH 超时退出的问题</title>
+				<para>很多云主机 SSH 登录后，会自动断开。执行下面脚本可以解决。</para>
+				<screen>
+				<![CDATA[
+curl -s https://raw.githubusercontent.com/oscm/shell/master/os/ssh/config.sh | bash				
+				]]>
+				</screen>
+			</section>
 		</section>
 		<section id="pam">
 			<title>PAM 插件认证加固配置</title>
