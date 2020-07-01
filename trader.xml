@@ -212,14 +212,14 @@
 				<para>解决挂单问题，通常交易是即时完成的，较难处理的就是挂单。</para>
 				<para>下面的方案是最简单的，开发难度最低。</para>
 				<para>数据库表中增加一个字段例如</para>
-				<screen>
+				<screen><![CDATA[
 -----------------------------------------
 Id  | node | status | xxxxx
 -----------------------------------------
 1 | trader1 | N | xxxxx
 2 | trader2 | Y | xxxxx
 -----------------------------------------
-				</screen>
+				]]></screen>
 				<para>trader1 表示该记录产生在trader1 必须在Trader 1上完成成交</para>
 				<para>trader2 表示该记录产生在trader2 必须在Trader 2上完成成交</para>
 				<orderedlist>
@@ -230,11 +230,11 @@ Id  | node | status | xxxxx
 					<listitem>如果登陆Trader2前1 | trader1 | xxxxx 已经成交，就放弃载入内存。</listitem>
 				</orderedlist>
 				<tip>更新记录状态必须增加node条件</tip>
-				<screen>
+				<screen><![CDATA[
 				<![CDATA[
 Update tab set status=Y where id=1 and node =<my node> …
 				]]>
-				</screen>
+				]]></screen>
 			</section>
 			<section>
 				<title>分布式交易解决方案一</title>
@@ -545,16 +545,16 @@ Update tab set status=Y where id=1 and node =<my node> …
 			<title>双活怎么解决数据冲突问题</title>
 			<para>此文章已发布，收到很多读者的提问，双活就是双写那麽怎么解决同时写入时的数据冲突问题。</para>
 			<para>如有下面两个服务器，每个服务器有各自的ID，它们产生的数据类似下面</para>
-			<screen>
+			<screen><![CDATA[
 A服务器: 1, 3, 5, 7
 B服务器: 2, 4, 6, 8
-			</screen>
+			]]></screen>
 			<para>如果是三地数据中心，将产生类似如下的数据</para>
-			<screen>
+			<screen><![CDATA[
 A服务器: 1, 4, 7, 10
 B服务器: 2, 5, 8, 11
 C服务器: 3, 6, 9, 12
-			</screen>
+			]]></screen>
 		</section>
 	</section>
 </article>

@@ -5,13 +5,12 @@
 	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
-<article xml:base="http://netkiller.github.io/journal/"
-	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+<article xml:base="http://netkiller.github.io/journal/" xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>植入式攻击入侵检测解决方案</title>
 		<subtitle>http://netkiller.github.io/journal/security.implants.html</subtitle>
 		&article.author.xml;
-		
+
 		<copyright>
 			<year>2014</year>
 			<holder>http://netkiller.github.io</holder>
@@ -33,7 +32,7 @@
 	</articleinfo>
 	<section id="what">
 		<title>什么是植入式攻击？</title>
-		<para>什么是植入式攻击，通俗的说就是挂马，通过各种手段将木马上传到你的系统，修改原有程序，或者伪装程序是你很难发现，常住系统等等。</para>		
+		<para>什么是植入式攻击，通俗的说就是挂马，通过各种手段将木马上传到你的系统，修改原有程序，或者伪装程序是你很难发现，常住系统等等。</para>
 	</section>
 	<section id="why">
 		<title>为什么骇客会在你的系统里面植入木马？</title>
@@ -66,20 +65,20 @@
 		<section>
 			<title>监控文件变化</title>
 			<para>我使用 Incron 监控文件变化</para>
-			<screen>
+			<screen><![CDATA[
 # yum install -y incron
 # systemctl enable incrond
 # systemctl start incrond
-			</screen>
+			]]></screen>
 			<para>安装日志推送程序</para>
-			<screen>
+			<screen><![CDATA[
 $ git clone https://github.com/netkiller/logging.git
 $ cd logging
 $ python3 setup.py sdist
 $ python3 setup.py install			
-			</screen>
+			]]></screen>
 			<para>配置触发事件</para>
-			<screen>
+			<screen><![CDATA[
 # incrontab -e
 /etc IN_MODIFY /srv/bin/monitor.sh $@/$#
 /www IN_MODIFY /srv/bin/monitor.sh $@/$#
@@ -87,23 +86,23 @@ $ python3 setup.py install
 # incrontab -l
 /etc IN_MODIFY /srv/bin/monitor.sh $@/$#
 /www IN_MODIFY /srv/bin/monitor.sh $@/$#
-			</screen>
+			]]></screen>
 			<para>/srv/bin/monitor.sh 脚本</para>
-			<screen>
+			<screen><![CDATA[
 # cat /srv/bin/monitor.sh
 #!/bin/bash
 echo $@ | /usr/local/bin/rlog -d -H 172.16.0.10 -p 1220 --stdin						
-			</screen>
+			]]></screen>
 			<para>/etc 与 /www 目录中的任何文件被修改都回运行/srv/bin/monitor.sh脚本，/srv/bin/monitor.sh脚本通过/usr/local/bin/rlog程序将文件路径数据发给远程主机172.16.0.10。</para>
 		</section>
 		<section>
 			<title>安装日志收集程序</title>
-			<screen>
+			<screen><![CDATA[
 $ git clone https://github.com/netkiller/logging.git
 $ cd logging
 $ python3 setup.py sdist
 $ python3 setup.py install				
-			</screen>
+			]]></screen>
 			<para>配置收集端端口，编辑文件logging/init.d/ucollection</para>
 			<screen>
 			<![CDATA[
@@ -115,15 +114,27 @@ EOF
 			]]>
 			</screen>
 			<para>然后根据incron.log给相关管理人员发送邮件或短信警报等等，关于怎么发邮件与短信不再本文谈论范围，有兴趣留意我的官网。</para>
-		</section>		
+		</section>
 	</section>
 	<section>
 		<title>延伸阅读</title>
-		<para><ulink url="http://netkiller.github.io/journal/mysql.security.html">数据库记录安全解决方案</ulink></para>
-		<para><ulink url="http://netkiller.github.io/journal/tomcat.html">Tomcat 安全配置与性能优化</ulink></para>
-		<para><ulink url="http://netkiller.github.io/journal/security.html">Linux 系统安全与优化配置</ulink></para>
-		<para><ulink url="http://netkiller.github.io/journal/refresh.html">网站防刷方案</ulink></para>
-		<para><ulink url="http://netkiller.github.io/journal/security.php.html">PHP 安全与性能</ulink></para>
-		<para><ulink url="http://netkiller.github.io/storage/incron.html" /></para>
+		<para>
+			<ulink url="http://netkiller.github.io/journal/mysql.security.html">数据库记录安全解决方案</ulink>
+		</para>
+		<para>
+			<ulink url="http://netkiller.github.io/journal/tomcat.html">Tomcat 安全配置与性能优化</ulink>
+		</para>
+		<para>
+			<ulink url="http://netkiller.github.io/journal/security.html">Linux 系统安全与优化配置</ulink>
+		</para>
+		<para>
+			<ulink url="http://netkiller.github.io/journal/refresh.html">网站防刷方案</ulink>
+		</para>
+		<para>
+			<ulink url="http://netkiller.github.io/journal/security.php.html">PHP 安全与性能</ulink>
+		</para>
+		<para>
+			<ulink url="http://netkiller.github.io/storage/incron.html" />
+		</para>
 	</section>
 </article>

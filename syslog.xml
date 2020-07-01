@@ -26,11 +26,13 @@
 	<section>
 		<title>配置Cisco ASA 5550 Firewall</title>
 		<screen>
+		<![CDATA[
 logging enable 
 logging timestamp 
 logging trap warnings 
 logging host inside 172.16.0.5
 logging facility local0 
+		]]>
 		</screen>
 		<para>172.16.0.5 改为你的syslog服务器地址</para>
 	</section>	

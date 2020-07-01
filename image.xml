@@ -89,6 +89,7 @@ http://img.example.com/sample.jpg => http://img.example.com/index.php/sample.jpg
 			</screen>
 			<para>配置nginx通过try_files配置项可以实现检查静态文件是否存在，如果不存在边调用index.php生成图片，当再次访问时会直接读取静态文件，不会再重新生成。 </para>
 			<screen>
+			<![CDATA[
 server {
     listen       80;
     server_name  inf.example.com;
@@ -135,6 +136,7 @@ server {
         deny  all;
     }
 }			
+			]]>
 			</screen>
 			<para>通过这种方法还可以实现更复杂的需求，例如调整亮度，对比度，饱和度，色阶，图层叠加等等......</para>
 		</section>

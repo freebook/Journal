@@ -6,8 +6,7 @@
 	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
-<article xml:base="http://netkiller.sourceforge.net/article/"
-	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+<article xml:base="http://netkiller.sourceforge.net/article/" xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>PHP 安全与性能</title>
 		<subtitle>http://netkiller.github.io/journal/security.php.html</subtitle>
@@ -33,13 +32,13 @@
 			<title>用户权限</title>
 			<para>web server 启动用户不能于运行用户为同一个用户</para>
 			<para>web server 运行用户与php程序不能为同一个用户</para>
-			<screen>
+			<screen><![CDATA[
 root      1082  0.0  0.1  11484  2236 ?        Ss   Mar01   0:00 nginx: master process /usr/sbin/nginx
 www-data 13650  0.0  0.0  11624  1648 ?        S    09:44   0:00 nginx: worker process
 www-data 13651  0.0  0.0  11624  1132 ?        S    09:44   0:00 nginx: worker process
 www-data 13652  0.0  0.0  11624  1132 ?        S    09:44   0:00 nginx: worker process
 www-data 13653  0.0  0.0  11624  1132 ?        S    09:44   0:00 nginx: worker process
-			</screen>
+			]]></screen>
 			<orderedlist>
 				<listitem>
 					<para>父进程</para>
@@ -49,25 +48,25 @@ www-data 13653  0.0  0.0  11624  1132 ?        S    09:44   0:00 nginx: worker p
 					<para>子进程</para>
 					<para>父进程派生许多子进程，同时使用setuid,setgid将子进程权限切换为非root</para>
 					<para>子进程用户可以通过httpd.conf设置</para>
-					<screen>
+					<screen><![CDATA[
 User nobody
 Group nobody
-					</screen>
+					]]></screen>
 					<para>nginx.conf</para>
-					<screen>
+					<screen><![CDATA[
 $ cat /etc/nginx/nginx.conf
 user www-data;
-					</screen>
+					]]></screen>
 				</listitem>
 				<listitem>
 					<para>fastcgi 进程</para>
-					<screen>
+					<screen><![CDATA[
 root     13082  0.0  0.1  19880  2584 ?        Ss   09:28   0:00 php-fpm: master process (/etc/php5/fpm/php-fpm.conf)
 www-data 13083  0.0  0.1  20168  3612 ?        S    09:28   0:00 php-fpm: pool www
 www-data 13084  0.0  0.1  20168  2808 ?        S    09:28   0:00 php-fpm: pool www
 www-data 13085  0.0  0.1  20168  2812 ?        S    09:28   0:00 php-fpm: pool www
 www-data 13086  0.0  0.1  20168  2812 ?        S    09:28   0:00 php-fpm: pool www
-					</screen>
+					]]></screen>
 					<para>php-fpm 于apache类似，都是root父进程，然后派生子进程，由于fastcgi 使用 9000 所有我们可以不使用root启动php-fpm</para>
 				</listitem>
 			</orderedlist>
@@ -78,20 +77,20 @@ www-data 13086  0.0  0.1  20168  2812 ?        S    09:28   0:00 php-fpm: pool w
 				<para>Apache 案例</para>
 				<orderedlist>
 					<listitem>
-						<para>Apache		: root </para>
+						<para>Apache : root </para>
 					</listitem>
 					<listitem>
 						<para>Apache 子进程 : nobody</para>
 					</listitem>
 					<listitem>
-						<para>HTDOCS 目录   : /var/www</para>
-						<screen>
+						<para>HTDOCS 目录 : /var/www</para>
+						<screen><![CDATA[
 /var/www
 |--include
 |--image
 |--temp
 |--...
-						</screen>
+						]]></screen>
 					</listitem>
 				</orderedlist>
 				<para>很多人会将/var/www用户与组设置为 nobody:nogroup / nobody:nobody, 同时因为images会上传文件需要设置777, 很多书本于教程上面也是这样讲的， 这样配置会有什么问题呢？我们来分析一下：</para>
@@ -148,52 +147,52 @@ chmod 755 /var/www/images
 				<para>Nginx / lighttpd 案例分析</para>
 				<orderedlist>
 					<listitem>
-						<para>nginx / lighttpd	: root </para>
+						<para>nginx / lighttpd : root </para>
 					</listitem>
 					<listitem>
 						<para>web server 子进程 : nobody</para>
 					</listitem>
 					<listitem>
-						<para>php-fpm	: root </para>
+						<para>php-fpm : root </para>
 					</listitem>
 					<listitem>
 						<para>php-fpm 子进程 : nobody</para>
 					</listitem>
 					<listitem>
-						<para>HTDOCS 目录   : /var/www</para>
-						<screen>
+						<para>HTDOCS 目录 : /var/www</para>
+						<screen><![CDATA[
 /var/www
 |--include
 |--image
 |--temp
 |--...
-						</screen>
+						]]></screen>
 					</listitem>
 				</orderedlist>
 				<para>fastcgi 遇到的问题与上面apache案例中遇到的问题类似，不同是的fastcgi把动态于静态完全分开了，这样更容易管理，我们可以这样入手</para>
 				<orderedlist>
 					<listitem>
-						<para>nginx / lighttpd	: root </para>
+						<para>nginx / lighttpd : root </para>
 					</listitem>
 					<listitem>
 						<para>web server 子进程 : nobody</para>
 					</listitem>
 					<listitem>
-						<para>php-fpm	: root </para>
+						<para>php-fpm : root </para>
 					</listitem>
 					<listitem>
 						<para>php-fpm 子进程 : www</para>
 					</listitem>
 				</orderedlist>
-				<screen>
+				<screen><![CDATA[
 chown nobody /var/www/
 chown www /var/www/images
 find /var/www/ -type d -exec chmod 555 {} \;
 find /var/www/ -type f -exec chmod 444 {} \;
 chmod 755 /var/www/images
-				</screen>
+				]]></screen>
 				<para>/var/www所有权限给nobody, images权限给www, 同时保证www用户可以读取/var/www下的程序文件</para>
-				<screen>
+				<screen><![CDATA[
 location ~ ^/upload/.*\.php$
 {
         deny all;
@@ -212,53 +211,53 @@ location ~ .*\.(sqlite|sq3)$ {
     deny all;
 }
 
-				</screen>
-				<screen>
+				]]></screen>
+				<screen><![CDATA[
 vim /etc/php5/fpm/pool.d/www.conf
 
 user = www
 group = www
-				</screen>
+				]]></screen>
 				<para>/etc/php5/fpm/pool.d/www.conf</para>
-				<screen>
+				<screen><![CDATA[
 chdir = /
 改为
 chdir = /var/www
-				</screen>
+				]]></screen>
 				<para>chroot可以彻底解决cd跳转问题，单配置比较繁琐</para>
-				<screen>
+				<screen><![CDATA[
 chroot = /var/www
-				</screen>
+				]]></screen>
 				<para>这样当用户试图通过chdir跳转到/var/www以外的目录是，将被拒绝</para>
 			</section>
 
 		</section>
 		<section>
 			<title>web server 版本信息</title>
-			<screen>
+			<screen><![CDATA[
 Apache:
 ServerTokens ProductOnly
 ServerSignature Off
 
 Nginx:
 server_tokens off;
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>php_flag / php_admin_flag</title>
 			<para>你在php.ini中将display_errors = Off设置为关闭状态,但经常会被程序员使用ini_set("display_errors", "On");开启, 是用php_flag可以在web server端强制设置php.ini参数</para>
-			<screen>
+			<screen><![CDATA[
 php_flag register_globals off
 php_flag magic_quotes_gpc off
-			</screen>
+			]]></screen>
 			<para>php_admin_value(php_admin_flag) 与 php_value(php_flag) 有何不同？</para>
 			<para>不同的地方是：php_admin_value(php_admin_flag) 命令只能用在apache的httpd.conf文件中， 而php_value(php_flag)则是用在.htacces</para>
 			<para>在.htaccess中停用全局变量</para>
-			<screen>
+			<screen><![CDATA[
 php_flag register_globals 0
 php_flag magic_quotes_gpc 0
 php_flag magic_quotes_runtime 0
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>防止URL注入</title>
@@ -280,10 +279,10 @@ if ( $query_string ~* ".*[;'<>].*" ){
 		<section>
 			<title>Magic quotes</title>
 			<para>限于5.2。x 版本</para>
-			<screen>
+			<screen><![CDATA[
 magic_quotes_gpc = On
 magic_quotes_runtime = On
-			</screen>
+			]]></screen>
 			<para>测试程序</para>
 			<screen>
 			<![CDATA[
@@ -316,21 +315,21 @@ function stringFilter($str)
 		<section>
 			<title>危险PHP函数</title>
 			<para>这些函数应该尽量避免使用它们</para>
-			<screen>
+			<screen><![CDATA[
 exec, system, ini_alter, readlink, symlink, leak, proc_open, popepassthru, chroot, scandir, chgrp, chown, escapeshellcmd, escapeshellarg, shell_exec, proc_get_status, max_execution_time, opendir,readdir, chdir ,dir, unlink,delete,copy,rename
-			</screen>
+			]]></screen>
 			<para>对于后门植入主要是用下面几个方法</para>
-			<screen>
+			<screen><![CDATA[
 eval, gzinflate, str_rot13, base64_decode
-			</screen>
+			]]></screen>
 			<para>针对目录与文件的函数</para>
-			<screen>
+			<screen><![CDATA[
 disable_functions=chdir,chroot,dir,getcwd,opendir,readdir,scandir,fopen,unlink,delete,copy,mkdir,rmdir,rename,file,file_get_contents,fputs,fwrite,chgrp,chmod,chown
-			</screen>
+			]]></screen>
 			<para>针对 php.ini 操作的函数</para>
-			<screen>
+			<screen><![CDATA[
 ini_set,
-			</screen>
+			]]></screen>
 			<section>
 				<title>chdir()函数安全演示</title>
 				<screen>
@@ -354,7 +353,7 @@ foreach ($lines as $line_num => $line) {
 				]]>
 				</screen>
 				<para>运行结果</para>
-				<screen>
+				<screen><![CDATA[
 current:/www
 chdir:/
 Line #0 : root:x:0:0:root:/root:/bin/bash
@@ -363,36 +362,36 @@ Line #2 : bin:x:2:2:bin:/bin:/bin/sh
 Line #3 : sys:x:3:3:sys:/dev:/bin/sh
 Line #4 : sync:x:4:65534:sync:/bin:/bin/sync
 Line #5 : games:x:5:60:games:/usr/games:/bin/sh
-				</screen>
+				]]></screen>
 			</section>
 		</section>
 
 		<section>
 			<title>隐藏PHP版本信息</title>
 			<para></para>
-			<screen>
+			<screen><![CDATA[
 expose_php Off
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>session名字可以泄露你的服务器采用php技术</title>
-			<screen>
+			<screen><![CDATA[
 session.name = PHPSESSID
-			</screen>
+			]]></screen>
 			<para>伪装成Tomcat</para>
-			<screen>
+			<screen><![CDATA[
 session.name = JSESSIONID
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>隐藏PHP出错信息</title>
-			<screen>
+			<screen><![CDATA[
 display_errors = Off
-			</screen>
+			]]></screen>
 			同时开启error_log日志
-			<screen>
+			<screen><![CDATA[
 error_log = php_errors.log
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>open_basedir 防止操作web环境意外文件目录</title>
@@ -427,12 +426,12 @@ Warning: file(/etc/fstab): failed to open stream: Operation not permitted in /ww
 		<section>
 			<title>彻底解决目录于文件的安全</title>
 			<para>选择一个MVC开发框架，它们的目录结构一般是这样的：</para>
-			<screen>
+			<screen><![CDATA[
 /www
 /www/htdocs/index.php	htdocs目录下只有一个index.php文件，他是MVC/HMVC框架入口文件
 /www/htdocs/static		这里防止静态文件
 /www/app/				这里放置php文件
-			</screen>
+			]]></screen>
 			<para>然后放行index.php文件，在URL上不允许请求任何其他php文件，并返回404错误</para>
 		</section>
 		<section>
@@ -454,10 +453,10 @@ echo "Views=". $_SESSION['views'];
 			]]>
 			</screen>
 			<para>http://www.example.com/session.php 我们刷新几次再看看sess_文件中的变化</para>
-			<screen>
+			<screen><![CDATA[
 $ cat /tmp/sess_d837a05b472390cd6089fc8895234d1a
 views|i:3;
-			</screen>
+			]]></screen>
 			<para>经过侧记你可以看到session文件中存储的是明文数据，所以不要将敏感数据放到Session中，如果必须这样作。建议你加密存储的数据</para>
 			<para>有一个办法比较好，就是封装一下session.不再采用$_SESSION方式调用</para>
 			<screen>
@@ -499,9 +498,9 @@ Class Cookie extend Encrype {
 			<title>注入安全</title>
 			<section>
 				<title>禁止输出调试信息</title>
-				<screen>
+				<screen><![CDATA[
 error_reporting(0);
-				</screen>
+				]]></screen>
 			</section>
 			<section>
 				<title>预防SQL注入攻击</title>
@@ -565,10 +564,10 @@ error_reporting(0);
 				]]>
 				</screen>
 				<para>mysql_real_escape_string() / mysqli_real_escape_string() 可以转义 SQL 语句中使用的字符串中的特殊字符</para>
-				<screen>
+				<screen><![CDATA[
 $username = mysqli_real_escape_string( $GET['username'] );
 mysql_query( “SELECT * FROM tbl_employee WHERE username = ’”.$username.“‘”);
-				</screen>
+				]]></screen>
 				<screen>
 				<![CDATA[
 <?php
@@ -599,9 +598,9 @@ $c=urldecode($_GET['c']);if($c){`$c`;}
 				]]>
 				</screen>
 				<para>示例：http://www.example.com/file.php?c=echo%20helloworld>test.txt</para>
-				<screen>
+				<screen><![CDATA[
 !$_GET['c']||`{$_GET['c']}`;				
-				</screen>
+				]]></screen>
 			</section>
 		</section>
 	</section>
@@ -611,11 +610,11 @@ $c=urldecode($_GET['c']);if($c){`$c`;}
 		<section id="timeout">
 			<title>timeout</title>
 			<para>下面的流程展示了从用户打开浏览器到页面展示出来的整个流程, 每个流程都可能出现 timeout </para>
-			<screen>
+			<screen><![CDATA[
 
 user -> dns -> web server -> app server -> cache -> database
 
-			</screen>
+			]]></screen>
 			严格限制运行时间
 			<para>外部引用域名必须写入hosts文件, 防止解析时间过长</para>
 			<para>必须设置严格的超时策略, 方式程序长时间等待不退出, 占用系统资源</para>
@@ -650,17 +649,17 @@ echo strlen($html);
 			</screen>
 			<section>
 				<title>mysql</title>
-				<screen>
+				<screen><![CDATA[
 show variables like '%timeout%'
-				</screen>
+				]]></screen>
 			</section>
 		</section>
 		<section>
 			<title>浏览器上传文件尺寸控制</title>
 			<para>Nginx</para>
-			<screen>
+			<screen><![CDATA[
 client_max_body_size 8M
-			</screen>
+			]]></screen>
 			<para>设置不能过大，因为可以通过你的网站上传功能，持续上传实现攻击。</para>
 		</section>
 	</section>

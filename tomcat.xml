@@ -5,8 +5,7 @@
 	<!ENTITY book.info.legalnotice.xml 	SYSTEM "../common/book.info.legalnotice.xml">
 	<!ENTITY book.info.abstract.xml		SYSTEM "../common/book.info.abstract.xml">
 ]>
-<article xml:base="http://netkiller.sourceforge.net/article/"
-	xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
+<article xml:base="http://netkiller.sourceforge.net/article/" xmlns="http://docbook.org/ns/docbook" xml:lang="zh-cn">
 	<articleinfo>
 		<title>Tomcat 安全配置与性能优化</title>
 		<subtitle>http://netkiller.github.io/journal/tomcat.html</subtitle>
@@ -36,21 +35,23 @@
 		</section>
 		<section id="JAVA_OPTS">
 			<title>JAVA_OPTS</title>
-			<screen>
+			<screen><![CDATA[
 export JAVA_OPTS="-server -Xms512m -Xmx4096m  -XX:PermSize=64M -XX:MaxPermSize=512m"
-			</screen>
+			]]></screen>
 			<para>-Xms 指定初始化时化的栈内存</para>
 			<para>-Xmx 指定最大栈内存</para>
-			<tip><para>Java 8 以后 -XX:PermSize 与 -XX:MaxPermSize 两个配置项被废弃</para></tip>
+			<tip>
+				<para>Java 8 以后 -XX:PermSize 与 -XX:MaxPermSize 两个配置项被废弃</para>
+			</tip>
 		</section>
 		<section>
 			<title>java.security 优化</title>
 			<para>打开$JAVA_HOME/jre/lib/security/java.security文件，找到下面的内容：</para>
-			<screen>
+			<screen><![CDATA[
 securerandom.source=file:/dev/urandom
 替换成  
 securerandom.source=file:/dev/./urandom			
-			</screen>
+			]]></screen>
 		</section>
 	</section>
 
@@ -70,13 +71,15 @@ securerandom.source=file:/dev/./urandom
 
 			]]>
 			</screen>
-			<tip><para>很多做过php运维的朋友在这里会犯一个大错误，php优化服务器通常怎做法是安装cpu以及内存的情况配置连接数，连接数过万都很正常，但java不同jvm配置要非常小心，稍有差错就会崩溃。</para></tip>
+			<tip>
+				<para>很多做过php运维的朋友在这里会犯一个大错误，php优化服务器通常怎做法是安装cpu以及内存的情况配置连接数，连接数过万都很正常，但java不同jvm配置要非常小心，稍有差错就会崩溃。</para>
+			</tip>
 			<para>maxThreads 配置要结合 JVM -Xmx 参数调整，也就是要考虑内存开销。</para>
-			<screen>
+			<screen><![CDATA[
 maxThreads  		客户请求最大线程数
 minSpareThreads    	初始化时创建的 socket 线程数
 maxSpareThreads   	连接器的最大空闲 socket 线程数
-			</screen>
+			]]></screen>
 		</section>
 		<section>
 			<title>虚拟主机</title>
@@ -97,12 +100,14 @@ maxSpareThreads   	连接器的最大空闲 socket 线程数
                compressableMimeType="text/html,text/xml,text/javascript,text/css,text/plain,,application/octet-stream"/>
 			]]>
 			</screen>
-			<tip><para>压缩会增加Tomcat负担，最好采用Nginx + Tomcat 或者 Apache + Tomcat 方式，压缩交由Nginx/Apache 去做。</para></tip>
-			<screen>
+			<tip>
+				<para>压缩会增加Tomcat负担，最好采用Nginx + Tomcat 或者 Apache + Tomcat 方式，压缩交由Nginx/Apache 去做。</para>
+			</tip>
+			<screen><![CDATA[
 compression 			打开压缩功能   
 compressionMinSize   	启用压缩的输出内容大小，这里面默认为2KB
 compressableMimeType 	压缩类型			
-			</screen>
+			]]></screen>
 		</section>
 	</section>
 
@@ -121,9 +126,9 @@ compressableMimeType 	压缩类型
 			<title>安装后初始化配置</title>
 			<para>当Tomcat完成安装后你首先要做的事情如下：</para>
 			<para>首次安装完成后立即删除webapps下面的所有代码</para>
-			<screen>
+			<screen><![CDATA[
 rm -rf /srv/apache-tomcat/webapps/*
-			</screen>
+			]]></screen>
 			<para>注释或删除 tomcat-users.xml 所有用户权限，看上去如下： </para>
 			<screen>
 			<![CDATA[
@@ -161,7 +166,7 @@ Server: Neo App Srv 1.0
 				<para>服务器信息已经被改为 Server: Neo App Srv 1.0</para>
 				<note>
 					<title>注意：当出现 404 页面时仍可能看到Tomcat的版本信息</title>
-					<screen>
+					<screen><![CDATA[
 HTTP Status 404 - /sdf
 
 type Status report
@@ -171,7 +176,7 @@ message /sdf
 description The requested resource is not available.
 
 Apache Tomcat/8.0.32					
-					</screen>
+					]]></screen>
 					<para>隐藏Tomcat 404页面版本信息的方法如下</para>
 					<screen>
 					<![CDATA[
@@ -185,7 +190,7 @@ EOF
 					]]>
 					</screen>
 					<para>测试</para>
-					<screen>
+					<screen><![CDATA[
 HTTP Status 404 - /sdf
 
 type Status report
@@ -195,7 +200,7 @@ message /sdf
 description The requested resource is not available.
 
 Apache
-					</screen>
+					]]></screen>
 				</note>
 			</section>
 			<section>
@@ -211,25 +216,25 @@ Apache
 <Context path="" docBase="path/to/your" reloadable="false" sessionCookiePath="/" sessionCookieName="PHPSESSID">				
 				]]>
 				</screen>
-			</section>			
+			</section>
 		</section>
 		<section>
 			<title>启动用户与端口</title>
 			<para>不要使用root用户启动tomcat，Java程序与C程序不同。nginx,httpd 使用root用户启动守护80端口，子进程/线程会通过setuid(),setgid()两个函数切换到普通用户。即父进程所有者是root用户，子进程与多线程所有者是一个非root用户，这个用户没有shell，无法通过ssh与控制台登陆系统，Java 的JVM 是与系统无关的，是建立在OS之上的，你使用什么用户启动Tomcat，那麽Tomcat 就会继承该所有者的权限。</para>
 			<para>这造成了一个问题，Linux系统小于1024的端口只有root可以使用，这也是为什么Tomcat默认端口是8080。如果你想使用80端口只能使用root启动Tomcat。这有带来了很多安全问题。</para>
 			<para>解决方案是创建一个普通用户，如：</para>
-			<screen>
+			<screen><![CDATA[
 groupadd -g 80 daemon
 adduser -o --home /daemon --shell /sbin/nologin --uid 80 --gid 80 -c "Web Server" daemon
-			</screen>
+			]]></screen>
 			<para>注意 /sbin/nologin , 意味着该用户不能登录，同时我也没有给它指定密码，这个用户只能用于启动tomcat，没有Shell权限就以为只被注入后无法运行linux命令。</para>
-			<screen>
+			<screen><![CDATA[
 chown daemon:daemon -R /srv/*
 su - daemon -c "/srv/apache-tomcat/bin/startup.sh"
-			</screen>
+			]]></screen>
 			<para>接下来解决80端口问题, 思路就是80去调用8080，或者映射端口。</para>
 			<para>下面是影射方案,80 跳转 8080</para>
-			<screen>
+			<screen><![CDATA[
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 
 取消跳转
@@ -237,7 +242,7 @@ iptables -t nat -D PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
 
 查看规则
 iptables -t nat -L
-			</screen>
+			]]></screen>
 			<para>另一个就是从80请求去调用8080的方案</para>
 			<para>这个方案可以在 Tomcat 前段增加反向代理，例如：Nginx,Apache,Squid,Varnish或者F5， Array这类设备等等</para>
 		</section>
@@ -246,18 +251,20 @@ iptables -t nat -L
 		<title>如何部署应用程序</title>
 		<para>应用程序部署与tomcat启动,不能使用同一个用户。</para>
 		<para>我的tomcat 安装在 /srv目录下，Tomcat启动用户为daemon; 应用程序放在/www目录下www所有者是www用户。这样的目的是一旦tomcat被植入web shell程序，它将不能创建或编辑/www目录下面的任何内容。</para>
-		<screen>
+		<screen><![CDATA[
 adduser --home /www -c "Web Application" www
-		</screen>
+		]]></screen>
 		<para>我的Tomcat安装在/srv目录下，但应用程序放在/www目录下，一般是这样的结构。</para>
-		<screen>
+		<screen><![CDATA[
 /www/example.com/www.example.com
-		</screen>
+		]]></screen>
 		<para>每次升级将压错包解压到 /www/example.com/目录下，www.example.com 是符号连接，连接到刚刚解压的目录。</para>
 		<para>这个可以实现通过符号连接在多个版本之间快速切换。</para>
 	</section>
 	<section>
 		<title>延伸阅读</title>
-		<para><ulink url="http://www.netkiller.cn/www/tomcat/">《Netkiller Web 手札》 之 Tomcat 篇</ulink></para>
+		<para>
+			<ulink url="http://www.netkiller.cn/www/tomcat/">《Netkiller Web 手札》 之 Tomcat 篇</ulink>
+		</para>
 	</section>
 </article>
